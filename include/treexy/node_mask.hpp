@@ -100,6 +100,11 @@ public:
 
   uint32_t countOn() const
   {
+    if constexpr(WORD_COUNT == 1)
+    {
+      return  CountOn(*mWords);
+    }
+
     uint32_t sum = 0, n = WORD_COUNT;
     for (const uint64_t* w = mWords; n--; ++w)
       sum += CountOn(*w);
@@ -138,12 +143,20 @@ public:
   /// @brief Initialize all bits to zero.
   Mask()
   {
+    if constexpr(WORD_COUNT == 1)
+    {
+      *mWords = 0;
+    }
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
       mWords[i] = 0;
   }
   Mask(bool on)
   {
     const uint64_t v = on ? ~uint64_t(0) : uint64_t(0);
+    if constexpr(WORD_COUNT == 1)
+    {
+      *mWords = v;
+    }
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
       mWords[i] = v;
   }
@@ -151,6 +164,10 @@ public:
   /// @brief Copy constructor
   Mask(const Mask& other)
   {
+    if constexpr(WORD_COUNT == 1)
+    {
+      mWords[0] = other.mWords[0];
+    }
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
       mWords[i] = other.mWords[i];
   }
@@ -172,15 +189,26 @@ public:
     static_assert(LOG2DIM == MaskT::LOG2DIM, "Mismatching LOG2DIM");
     auto* src = reinterpret_cast<const uint64_t*>(&other);
     uint64_t* dst = mWords;
-    for (uint32_t i = 0; i < WORD_COUNT; ++i)
+    if constexpr(WORD_COUNT == 1)
     {
-      *dst++ = *src++;
+      *dst = *src;
+    }
+    else
+    {
+      for (uint32_t i = 0; i < WORD_COUNT; ++i)
+      {
+        *dst++ = *src++;
+      }
     }
     return *this;
   }
 
   bool operator==(const Mask& other) const
   {
+    if constexpr(WORD_COUNT == 1)
+    {
+      return *mWords == *other.mWords;
+    }
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
     {
       if (mWords[i] != other.mWords[i])
@@ -207,6 +235,10 @@ public:
 
   bool isOn() const
   {
+    if constexpr(WORD_COUNT == 1)
+    {
+      return  mWords[0] == ~uint64_t(0);
+    }
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
       if (mWords[i] != ~uint64_t(0))
         return false;
@@ -215,6 +247,10 @@ public:
 
   bool isOff() const
   {
+    if constexpr(WORD_COUNT == 1)
+    {
+      return  mWords[0] == uint64_t(0);
+    }
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
       if (mWords[i] != uint64_t(0))
         return false;
@@ -284,8 +320,12 @@ public:
 private:
   uint32_t findFirstOn() const
   {
-    uint32_t n = 0;
     const uint64_t* w = mWords;
+    if constexpr(WORD_COUNT == 1)
+    {
+      return *w == 0 ? SIZE : FindLowestOn(*w);
+    }
+    uint32_t n = 0;
     for (; n < WORD_COUNT && !*w; ++w, ++n)
       ;
     return n == WORD_COUNT ? SIZE : (n << 6) + FindLowestOn(*w);
@@ -301,9 +341,13 @@ private:
     if (b & (uint64_t(1) << m))
       return start;          // simple case: start is on
     b &= ~uint64_t(0) << m;  // mask out lower bits
-    while (!b && ++n < WORD_COUNT)
-      b = mWords[n];                                  // find next non-zero word
-    return (!b ? SIZE : (n << 6) + FindLowestOn(b));  // catch last word=0
+    if constexpr(WORD_COUNT != 1)
+    {
+      while (!b && ++n < WORD_COUNT)
+        b = mWords[n];                                  // find next non-zero word
+      return (!b ? SIZE : (n << 6) + FindLowestOn(b));  // catch last word=0
+    }
+    return (!b ? SIZE : FindLowestOn(b));
   }
 };  // Mask class
 
