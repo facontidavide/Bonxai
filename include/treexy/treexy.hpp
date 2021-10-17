@@ -95,9 +95,14 @@ struct VoxelGrid
 
   CoordT posToCoord(const Point3D& pos)
   {
-    return { static_cast<int32_t>(pos.x * inv_resolution) - std::signbit(pos.x),
-             static_cast<int32_t>(pos.y * inv_resolution) - std::signbit(pos.y),
-             static_cast<int32_t>(pos.z * inv_resolution) - std::signbit(pos.z) };
+    return posToCoord(pos.x, pos.y, pos.z);
+  }
+
+  CoordT posToCoord(double x, double y, double z)
+  {
+    return { static_cast<int32_t>(x * inv_resolution) - std::signbit(x),
+             static_cast<int32_t>(y * inv_resolution) - std::signbit(y),
+             static_cast<int32_t>(z * inv_resolution) - std::signbit(z) };
   }
 
   Point3D coordToPos(const CoordT& coord)
