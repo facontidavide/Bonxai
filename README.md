@@ -93,3 +93,20 @@ Finally, to read the value of a cell:
 // If the value of the cell has never been set, return nullptr
 int* value = accessor.value( coord );
 ```
+
+# Frequently Asked Question
+
+**What is the point of reimplementing OpenVDB?**
+
+- The number one reason is to have fun and learn something new :)
+- It is not an exact rewrite, I modified few important aspects of the algorithm to make it faster, at least for my specific use cases.
+- I want this library to be small and easy to integrate into larger projects.
+
+**How much memory does it uses, compared with Octomap?**
+
+It is... complicated.
+
+If you need to store very sparse point clouds, you should expect Treexy to use more memory (20-40% more).
+If the point cloud is relatively dense, Treexy might use much less memory than Octomap (less than half).
+
+

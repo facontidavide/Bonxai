@@ -7,13 +7,27 @@
 
 int main(int argc, char** argv)
 {
-  std::string filename = "data/rgbd.pcd";
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
   if( argc == 2 )
   {
-    filename = argv[1];
+    cloud = ReadCloud(argv[1]);
   }
+  else
+  {
+    cloud.reset(new pcl::PointCloud<pcl::PointXYZ>);
 
-  auto cloud = ReadCloud(filename);
+    for( double x = 0; x < 1.0; x += VOXEL_RESOLUTION )
+    {
+      for( double y = 0; y < 1.0; y += VOXEL_RESOLUTION )
+      {
+        for( double z = 0; z < 1.0; z += VOXEL_RESOLUTION )
+        {
+          cloud->push_back( pcl::PointXYZ(x,y,z) );
+        }
+      }
+    }
+  }
 
   octomap::OcTree octree(VOXEL_RESOLUTION);
   for (const auto& point : *cloud)
@@ -50,7 +64,7 @@ int main(int argc, char** argv)
 
   std::cout << "Octomap: " << octree.memoryUsage() << std::endl;
   std::cout << "OpenVDB: " << vdb_grid->memUsage() << std::endl;
-  std::cout << "Treexy: " << grid.getMemoryUsage() << std::endl;
+  std::cout << "Treexy:  " << grid.getMemoryUsage() << std::endl;
 
   return 0;
 }
