@@ -93,6 +93,8 @@ struct VoxelGrid
   {
   }
 
+  size_t getMemoryUsage() const;
+
   CoordT posToCoord(const Point3D& pos)
   {
     return posToCoord(pos.x, pos.y, pos.z);
@@ -299,6 +301,33 @@ inline const DataT* VoxelGrid<DataT, Log2DIM_INNER, Log2DIM_LEAF>::Accessor::val
     return nullptr;
   }
   return &(leaf_ptr->data[leaf_index]);
+}
+
+
+template<typename DataT, int Log2DIM_INNER, int Log2DIM_LEAF> inline
+size_t VoxelGrid<DataT, Log2DIM_INNER, Log2DIM_LEAF>::getMemoryUsage() const
+{
+  size_t total_size = 0;
+
+   for (unsigned i = 0; i < root_map.bucket_count(); ++i)
+   {
+     size_t bucket_size = root_map.bucket_size(i);
+     if (bucket_size == 0) {
+       total_size++;
+     }
+     else {
+       total_size += bucket_size;
+     }
+   }
+
+  size_t entry_size = sizeof(CoordT) + sizeof(InnerGrid) + sizeof(void*);
+  total_size += root_map.size() * entry_size;
+
+  for (const auto& [key, inner_grid]: root_map)
+  {
+    total_size += inner_grid.mask.countOn() * sizeof(LeafGrid);
+  }
+  return total_size;
 }
 
 }  // namespace Treexy

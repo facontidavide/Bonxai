@@ -63,5 +63,8 @@ message(${BENCHMARK_DEPENDENCIES})
 add_executable(benchmark_treexy ${BENCHMARK_SRC_FILES} )
 target_link_libraries(benchmark_treexy ${BENCHMARK_DEPENDENCIES} )
 
-
+if( BENCHMARK_OCTOMAP AND BENCHMARK_OPENVDB)
+    add_executable(get_memory benchmark/get_memory.cpp )
+    target_link_libraries(get_memory ${BENCHMARK_DEPENDENCIES} )
+endif()
 

@@ -30,7 +30,7 @@ static void Treexy_Update(benchmark::State& state)
     auto accessor = grid.createAccessor();
     for (const auto& point : *cloud)
     {
-      auto coord = grid.posToCoord({ point.x, point.y, point.z });
+      auto coord = grid.posToCoord( point.x, point.y, point.z );
       accessor.setValue(coord, 42);
     }
   }
@@ -41,7 +41,7 @@ static void Treexy_Update(benchmark::State& state)
 
     for (const auto& point : *cloud)
     {
-      auto coord = grid.posToCoord({ point.x, point.y, point.z });
+      auto coord = grid.posToCoord( point.x, point.y, point.z );
       accessor.setValue(coord, 42);
     }
     // std::cout <<"Update misses: " << accessor.cache_misses << std::endl;
@@ -58,7 +58,7 @@ static void Treexy_IterateAllCells(benchmark::State& state)
     auto accessor = grid.createAccessor();
     for (const auto& point : *cloud)
     {
-      auto coord = grid.posToCoord({ point.x, point.y, point.z });
+      auto coord = grid.posToCoord( point.x, point.y, point.z );
       accessor.setValue(coord, 42);
     }
   }

@@ -2,7 +2,15 @@
 #include <openvdb/openvdb.h>
 #include "benchmark_utils.hpp"
 
-double INV_RES = 1.0 / VOXEL_RESOLUTION;
+
+inline openvdb::Coord GetCoord(float x, float y, float z)
+{
+  static float INV_RES = 1.0 / VOXEL_RESOLUTION;
+
+  return openvdb::Coord( static_cast<int32_t>(x * INV_RES) - std::signbit(x),
+                         static_cast<int32_t>(y * INV_RES) - std::signbit(y),
+                         static_cast<int32_t>(z * INV_RES) - std::signbit(z) );
+}
 
 static void OpenVDB_Create(benchmark::State& state)
 {
@@ -18,8 +26,7 @@ static void OpenVDB_Create(benchmark::State& state)
 
     for (const auto& point : *cloud)
     {
-      openvdb::Coord xyz(point.x * INV_RES, point.y * INV_RES, point.z * INV_RES);
-      accessor.setValue(xyz, 42);
+      accessor.setValue(GetCoord(point.x, point.y, point.z), 42);
     }
   }
 }
@@ -31,11 +38,12 @@ static void OpenVDB_Update(benchmark::State& state)
   openvdb::Int32Grid::Ptr grid = openvdb::Int32Grid::create();
   grid->setGridClass(openvdb::GRID_LEVEL_SET);
 
-  for (const auto& point : *cloud)
   {
     openvdb::Int32Grid::Accessor accessor = grid->getAccessor();
-    openvdb::Coord xyz(point.x * INV_RES, point.y * INV_RES, point.z * INV_RES);
-    accessor.setValueOn(xyz, 42);
+    for (const auto& point : *cloud)
+    {
+      accessor.setValue(GetCoord(point.x, point.y, point.z), 42);
+    }
   }
 
   for (auto _ : state)
@@ -43,8 +51,7 @@ static void OpenVDB_Update(benchmark::State& state)
     openvdb::Int32Grid::Accessor accessor = grid->getAccessor();
     for (const auto& point : *cloud)
     {
-      openvdb::Coord xyz(point.x * INV_RES, point.y * INV_RES, point.z * INV_RES);
-      accessor.setValueOn(xyz, 42);
+      accessor.setValue(GetCoord(point.x, point.y, point.z), 42);
     }
   }
 }
@@ -55,17 +62,15 @@ static void OpenVDB_IterateAllCells(benchmark::State& state)
 
   openvdb::Int32Grid::Ptr grid = openvdb::Int32Grid::create();
   grid->setGridClass(openvdb::GRID_LEVEL_SET);
+  openvdb::Int32Grid::Accessor accessor = grid->getAccessor();
 
   for (const auto& point : *cloud)
   {
-    openvdb::Int32Grid::Accessor accessor = grid->getAccessor();
-    openvdb::Coord xyz(point.x * INV_RES, point.y * INV_RES, point.z * INV_RES);
-    accessor.setValueOn(xyz, 42);
+    accessor.setValue(GetCoord(point.x, point.y, point.z), 42);
   }
 
   for (auto _ : state)
   {
-    openvdb::Int32Grid::Accessor accessor = grid->getAccessor();
     for (auto iter = grid->cbeginValueOn(); iter.test(); ++iter)
     {
       benchmark::DoNotOptimize(iter.getCoord());
