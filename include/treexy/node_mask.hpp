@@ -13,10 +13,11 @@
 
 namespace Treexy
 {
-/// @brief Returns the index of the lowest, i.e. least significant, on bit in the
-/// specified 64 bit word
+/// @brief Returns the index of the lowest, i.e. least significant, on bit in
+/// the specified 64 bit word
 ///
-/// @warning Assumes that at least one bit is set in the word, i.e. @a v != uint32_t(0)!
+/// @warning Assumes that at least one bit is set in the word, i.e. @a v !=
+/// uint32_t(0)!
 
 static inline uint32_t FindLowestOn(uint64_t v)
 {
@@ -60,7 +61,8 @@ inline uint32_t CountOn(uint64_t v)
   // Software Implementation
   v = v - ((v >> 1) & uint64_t(0x5555555555555555));
   v = (v & uint64_t(0x3333333333333333)) + ((v >> 2) & uint64_t(0x3333333333333333));
-  v = (((v + (v >> 4)) & uint64_t(0xF0F0F0F0F0F0F0F)) * uint64_t(0x101010101010101)) >>
+  v = (((v + (v >> 4)) & uint64_t(0xF0F0F0F0F0F0F0F)) *
+       uint64_t(0x101010101010101)) >>
       56;
 #endif
   return static_cast<uint32_t>(v);
@@ -153,7 +155,8 @@ public:
       mWords[i] = other.mWords[i];
   }
 
-  /// @brief Return the <i>n</i>th word of the bit mask, for a word of arbitrary size.
+  /// @brief Return the <i>n</i>th word of the bit mask, for a word of arbitrary
+  /// size.
   template <typename WordT>
   WordT getWord(int n) const
   {

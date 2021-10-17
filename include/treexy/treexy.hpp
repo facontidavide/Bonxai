@@ -137,24 +137,23 @@ struct VoxelGrid
 
         for (auto inner_it = mask2.beginOn(); inner_it; ++inner_it)
         {
-          auto inner_index = *inner_it;
-          auto& leaf_grid = inner_grid.data[inner_index];
+          const auto& inner_index = *inner_it;
           // clang-format off
-          int32_t xB = A.x + ((inner_index & MASK_INNER) << Log2DIM_LEAF);
-          int32_t yB = A.y + (((inner_index >> Log2DIM_INNER) & MASK_INNER) << Log2DIM_LEAF);
-          int32_t zB = A.z + (((inner_index >> (Log2DIM_INNER * 2)) & MASK_INNER) << Log2DIM_LEAF);
+          int32_t xB = A.x | ((inner_index & MASK_INNER) << Log2DIM_LEAF);
+          int32_t yB = A.y | (((inner_index >> Log2DIM_INNER) & MASK_INNER) << Log2DIM_LEAF);
+          int32_t zB = A.z | (((inner_index >> (Log2DIM_INNER * 2)) & MASK_INNER) << Log2DIM_LEAF);
+
+          auto& leaf_grid = inner_grid.data[inner_index];
           // clang-format on
           auto& mask1 = leaf_grid->mask;
 
           for (auto leaf_it = mask1.beginOn(); leaf_it; ++leaf_it)
           {
-            auto leaf_index = *leaf_it;
-
-            int32_t pX = xB + ((leaf_index)&MASK_LEAF);
-            int32_t pY = yB + ((leaf_index >> Log2DIM_LEAF) & MASK_LEAF);
-            int32_t pZ = zB + ((leaf_index >> (Log2DIM_LEAF * 2)) & MASK_LEAF);
-
-            CoordT pos = { pX, pY, pZ };
+            const auto& leaf_index = *leaf_it;
+            CoordT pos = { xB | (leaf_index & MASK_LEAF),
+                           yB | ((leaf_index >> Log2DIM_LEAF) & MASK_LEAF),
+                           zB | ((leaf_index >> (Log2DIM_LEAF * 2)) & MASK_LEAF) };
+            // apply the visitor
             func(leaf_grid->data[leaf_index], pos);
           }
         }
@@ -168,9 +167,15 @@ struct VoxelGrid
     InnerGrid* prev_inner_ptr_ = nullptr;
     LeafGrid* prev_leaf_ptr_ = nullptr;
 
-    static inline CoordT getRootCoord(const CoordT& coord)
+    static inline CoordT getRootKey(const CoordT& coord)
     {
       constexpr static int32_t MASK = ~((1 << Log2N) - 1);
+      return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
+    }
+
+    static inline CoordT getInnerKey(const CoordT& coord)
+    {
+      constexpr static int32_t MASK = ~((1 << Log2DIM_LEAF) - 1);
       return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
     }
 
@@ -207,41 +212,38 @@ inline bool VoxelGrid<DataT, Log2DIM_INNER, Log2DIM_LEAF>::Accessor::setValue(
 {
   LeafGrid* leaf_ptr = prev_leaf_ptr_;
 
-  const CoordT inner_key = { coord.x & ~((1 << Log2DIM_LEAF) - 1),
-                             coord.y & ~((1 << Log2DIM_LEAF) - 1),
-                             coord.z & ~((1 << Log2DIM_LEAF) - 1) };
-
-  if( inner_key != prev_inner_coord_ || !prev_leaf_ptr_ )
+  const CoordT inner_key = getInnerKey(coord);
+  if (inner_key != prev_inner_coord_ || !prev_leaf_ptr_)
   {
-      InnerGrid* inner_ptr = prev_inner_ptr_;
-      const CoordT root_key = getRootCoord(coord);
+    InnerGrid* inner_ptr = prev_inner_ptr_;
+    const CoordT root_key = getRootKey(coord);
 
-      // check if the key is the same as prev_inner_ptr_
-      if (root_key != prev_root_coord_ || !prev_inner_ptr_)
+    // check if the key is the same as prev_inner_ptr_
+    if (root_key != prev_root_coord_ || !prev_inner_ptr_)
+    {
+      auto root_it = root_.find(root_key);
+      // Not found: create a new entry in the map
+      if (root_it == root_.end())
       {
-        auto root_it = root_.find(root_key);
-        // Not found: create a new entry in the map
-        if (root_it == root_.end())
-        {
-          root_it = root_.insert({ root_key, InnerGrid() }).first;
-        }
-        inner_ptr = &(root_it->second);
-        // update the cache
-        prev_root_coord_ = root_key;
-        prev_inner_ptr_ = inner_ptr;
+        root_it = root_.insert({ root_key, InnerGrid() }).first;
       }
+      inner_ptr = &(root_it->second);
+      // update the cache
+      prev_root_coord_ = root_key;
+      prev_inner_ptr_ = inner_ptr;
+    }
 
-      const uint32_t inner_index = getInnerIndex(coord);
+    const uint32_t inner_index = getInnerIndex(coord);
 
-      auto& inner_data = inner_ptr->data[inner_index];
-      if (inner_ptr->mask.setOn(inner_index) == false)
-      {
-        inner_data = std::make_unique<LeafGrid>();
-      }
+    auto& inner_data = inner_ptr->data[inner_index];
+    if (inner_ptr->mask.setOn(inner_index) == false)
+    {
+      inner_data = std::make_unique<LeafGrid>();
+    }
 
-      leaf_ptr = inner_data.get();
-      prev_inner_coord_ = inner_key;
-      prev_leaf_ptr_ = leaf_ptr;
+    leaf_ptr = inner_data.get();
+    prev_inner_coord_ = inner_key;
+    prev_leaf_ptr_ = leaf_ptr;
   }
 
   const uint32_t leaf_index = getLeafIndex(coord);
@@ -252,36 +254,44 @@ inline bool VoxelGrid<DataT, Log2DIM_INNER, Log2DIM_LEAF>::Accessor::setValue(
 }
 
 template <typename DataT, int Log2DIM_INNER, int Log2DIM_LEAF>
-inline const DataT*
-VoxelGrid<DataT, Log2DIM_INNER, Log2DIM_LEAF>::Accessor::value(const CoordT& coord) const
+inline const DataT* VoxelGrid<DataT, Log2DIM_INNER, Log2DIM_LEAF>::Accessor::value(
+    const CoordT& coord) const
 {
-  InnerGrid* inner_ptr = prev_inner_ptr_;
+  LeafGrid* leaf_ptr = prev_leaf_ptr_;
 
-  const CoordT root_key = getRootCoord(coord);
-
-  if (root_key != prev_root_coord_ || !prev_inner_ptr_)
+  const CoordT inner_key = getInnerKey(coord);
+  if (inner_key != prev_inner_coord_ || !prev_leaf_ptr_)
   {
-    auto it = root_.find(root_key);
-    if (it == root_.end())
+    InnerGrid* inner_ptr = prev_inner_ptr_;
+    const CoordT root_key = getRootKey(coord);
+
+    if (root_key != prev_root_coord_ || !prev_inner_ptr_)
+    {
+      auto it = root_.find(root_key);
+      if (it == root_.end())
+      {
+        return nullptr;
+      }
+      inner_ptr = it->second;
+      // update the cache
+      prev_root_coord_ = root_key;
+      prev_inner_ptr_ = inner_ptr;
+    }
+
+    const uint32_t inner_index = getInnerIndex(coord);
+
+    auto& inner_data = inner_ptr->data[inner_index];
+
+    if (!inner_ptr->mask.isOn(inner_index))
     {
       return nullptr;
     }
-    inner_ptr = it->second;
-    // update the cache
-    prev_root_coord_ = root_key;
-    prev_inner_ptr_ = inner_ptr;
+
+    leaf_ptr = &(inner_ptr->data[inner_index]);
+    prev_inner_coord_ = inner_key;
+    prev_leaf_ptr_ = leaf_ptr;
   }
 
-  const uint32_t inner_index = getInnerIndex(coord);
-
-  auto& inner_data = inner_ptr->data[inner_index];
-
-  if (!inner_ptr->mask.isOn(inner_index))
-  {
-    return nullptr;
-  }
-
-  LeafGrid* leaf_ptr = &(inner_ptr->data[inner_index]);
   const uint32_t leaf_index = getLeafIndex(coord);
 
   if (!leaf_ptr->mask.isOn(leaf_index))
