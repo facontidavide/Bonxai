@@ -57,13 +57,13 @@ To create a VoxelGrid, where each cell contains an integer value and has size 0.
 
 ```c++
 double voxel_resolution = 0.05;
-treexy::VoxelGrid<int> grid(voxel_resolution);
+treexy::VoxelGrid<int> grid( voxel_resolution );
 ```
 
 Nothing prevents you from having more complex cell values, for instance:
 
 ```c++
-treexy::VoxelGrid<Eigen::Vector4d> vector_grid(voxel_resolution);
+treexy::VoxelGrid<Eigen::Vector4d> vector_grid( voxel_resolution );
 ```
 
 To insert values into a cell with coordinates x, y and z, use a
@@ -80,8 +80,8 @@ for( double x = 0; x < 1.0; x += voxel_resolution )
   {
     for( double z = 0; z < 1.0; z += voxel_resolution )
     {
-      treexy::CoordT coord = grid.posToCoord(x, y, z);
-      accessor.setValue( coord, 42);
+      treexy::CoordT coord = grid.posToCoord( x, y, z );
+      accessor.setValue( coord, 42 );
     }
   }
 }
