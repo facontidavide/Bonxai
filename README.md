@@ -89,7 +89,7 @@ for( double x = 0; x < 1.0; x += voxel_resolution )
 
 Finally, to read the value of a cell:
 
-```
+```c++
 // If the value of the cell has never been set, return nullptr
 int* value = accessor.value( coord );
 ```
