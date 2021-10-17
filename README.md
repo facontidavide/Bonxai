@@ -6,11 +6,7 @@ volumetric data, discretized on a three-dimensional grid (AKA, a "Voxel Grid").
 Treexy data structure is:
 
 - **Sparse**: it uses only a fraction of the memory that a dense 3D voxel grid would use.
-- **Unbonded**: you don't need to define the boundary of the 3D space(*).
-
-For practical purposes, the dimension of the 3D space is virtually "infinite":
-since **32-bits indexes** are used, if a voxel with size of **1 cm** is used,
-the maximum range of your X, Y and Z coordinates will exceed **+/- 20.000 Km** (yes, Kilometers).
+- **Unbonded**: you don't need to define the boundary of the 3D space (*).
 
 If you are familiar with [Octomap](https://octomap.github.io/) and Octrees, you know
 that those data structures are also sparse and unbounded.
@@ -31,6 +27,10 @@ educational purposes. Don't expect any API stability for the time being.
 
 If you think that a data structure like this could be useful for your project,
 for the time being you should probably considered using OpenVDB itself.
+
+>(*) The dimension of the 3D space is virtually "infinite":
+since **32-bits indexes** are used, given a voxel size as small as **1 cm**,
+the maximum range of the X, Y and Z coordinates would be about **+/- 20.000 Km** (yes, Kilometers).
 
 # Benchmark (preliminary)
 
@@ -98,8 +98,8 @@ int* value = accessor.value( coord );
 
 **What is the point of reimplementing OpenVDB?**
 
-- The number one reason is to have fun and learn something new :)
-- It is not an exact rewrite, I modified few important aspects of the algorithm to make it faster, at least for my specific use cases.
+- The number one reason is to have fun and to learn something new :)
+- It is not an "exact" rewrite, I modified few important aspects of the algorithm to make it faster, at least for my specific use cases.
 - I want this library to be small and easy to integrate into larger projects.
 
 **How much memory does it uses, compared with Octomap?**

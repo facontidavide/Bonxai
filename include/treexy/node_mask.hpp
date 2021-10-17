@@ -7,9 +7,7 @@
 #include <array>
 #include <cstdint>
 
-#ifndef TREEXY_USE_INTRINSICS
 #define TREEXY_USE_INTRINSICS
-#endif
 
 namespace Treexy
 {
@@ -21,11 +19,11 @@ namespace Treexy
 
 static inline uint32_t FindLowestOn(uint64_t v)
 {
-#if defined(_MSC_VER) && defined(USE_INTRINSICS)
+#if defined(_MSC_VER) && defined(TREEXY_USE_INTRINSICS)
   unsigned long index;
   _BitScanForward64(&index, v);
   return static_cast<uint32_t>(index);
-#elif (defined(__GNUC__) || defined(__clang__)) && defined(USE_INTRINSICS)
+#elif (defined(__GNUC__) || defined(__clang__)) && defined(TREEXY_USE_INTRINSICS)
   return static_cast<uint32_t>(__builtin_ctzll(v));
 #else
   static const unsigned char DeBruijn[64] = {
