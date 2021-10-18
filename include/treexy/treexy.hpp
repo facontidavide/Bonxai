@@ -36,30 +36,6 @@ inline bool operator!=(const CoordT& a, const CoordT& b)
   return !(a == b);
 }
 
-}  // end namespace Treexy
-
-namespace std
-{
-template <>
-struct hash<Treexy::CoordT>
-{
-  std::size_t operator()(const Treexy::CoordT& p) const
-  {
-    //    same as boost
-    //    size_t seed = 0.0;
-    //    std::hash<int32_t> hasher;
-    //    seed ^= hasher(p.x) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-    //    seed ^= hasher(p.y) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-    //    seed ^= hasher(p.z) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-    //    return seed;
-    //    same as OpenVDB
-    return ((1 << 20) - 1) & (p.x * 73856093 ^ p.y * 19349663 ^ p.z * 83492791);
-  }
-};
-}  // namespace std
-
-namespace Treexy
-{
 template <typename DataT, int Log2DIM>
 struct Grid
 {
@@ -69,15 +45,13 @@ struct Grid
   Treexy::Mask<Log2DIM> mask;
 };
 
-template <typename DataT, int Log2DIM_INNER = 2, int Log2DIM_LEAF = 3>
+template <typename DataT, int INNER_BITS = 2, int LEAF_BITS = 3>
 struct VoxelGrid
 {
-  /// @brief Return a hash key derived from the existing coordinates.
-  /// @details For details on this hash function please see the VDB paper.
-  constexpr static int32_t Log2N = Log2DIM_INNER + Log2DIM_LEAF;
+  constexpr static int32_t Log2N = INNER_BITS + LEAF_BITS;
 
-  using LeafGrid = Grid<DataT, Log2DIM_LEAF>;
-  using InnerGrid = Grid<std::unique_ptr<LeafGrid>, Log2DIM_INNER>;
+  using LeafGrid = Grid<DataT, LEAF_BITS>;
+  using InnerGrid = Grid<std::unique_ptr<LeafGrid>, INNER_BITS>;
   using RootMap = std::unordered_map<CoordT, InnerGrid>;
 
   RootMap root_map;
@@ -86,6 +60,12 @@ struct VoxelGrid
   const double inv_resolution;
   const double half_resolution;
 
+  /**
+   * @brief VoxelGrid constructor
+   *
+   * @param voxel_size  dimension of the voxel. Used to convert between Point3D and
+   * CoordT
+   */
   VoxelGrid(double voxel_size)
     : resolution(voxel_size)
     , inv_resolution(1.0 / voxel_size)
@@ -93,27 +73,41 @@ struct VoxelGrid
   {
   }
 
+  /**
+   * @brief getMemoryUsage returns the amount of bytes used by this data structure
+   */
   size_t getMemoryUsage() const;
+
+  /**
+   * @brief posToCoord MUST be used to convert real coordinates to CoordT indexes.
+   */
+  CoordT posToCoord(double x, double y, double z);
 
   CoordT posToCoord(const Point3D& pos)
   {
     return posToCoord(pos.x, pos.y, pos.z);
   }
 
-  CoordT posToCoord(double x, double y, double z)
-  {
-    return { static_cast<int32_t>(x * inv_resolution) - std::signbit(x),
-             static_cast<int32_t>(y * inv_resolution) - std::signbit(y),
-             static_cast<int32_t>(z * inv_resolution) - std::signbit(z) };
-  }
+  /**
+   * @brief coordToPos converts CoordT indexes to Point3D.
+   */
+  Point3D coordToPos(const CoordT& coord);
 
-  Point3D coordToPos(const CoordT& coord)
-  {
-    return { half_resolution + static_cast<double>(coord.x * resolution),
-             half_resolution + static_cast<double>(coord.y * resolution),
-             half_resolution + static_cast<double>(coord.z * resolution) };
-  }
+  /**
+   *  @brief forEachCell apply a function of type:
+   *
+   *      void(DataT*, const CoordT&)
+   *
+   * to each active element of the grid.
+   */
+  template <class VisitorFunction>
+  void forEachCell(VisitorFunction func);
 
+  /** Class to be used to set and get values of a cell of the Grid.
+   *  It uses caching to speed up computation.
+   *
+   *  Create an instance of this object with the method VoxelGrid::greateAccessor()
+   */
   class Accessor
   {
   public:
@@ -121,45 +115,37 @@ struct VoxelGrid
     {
     }
 
+    /**
+     * @brief setValue of a cell. If the cell did not exist, it is created.
+     *
+     * @param coord   coordinate of the cell
+     * @param value   value to set.
+     * @return        true if the cell was already active, false otherwise.
+     */
     bool setValue(const CoordT& coord, const DataT& value);
 
-    const DataT* value(const CoordT& coord) const;
+    /** @brief value getter.
+     *
+     * @param coord   coordinate of the cell
+     * @return        retunr the const pointer to the value or nullptr if it was not
+     * set.
+     */
+    DataT* value(const CoordT& coord);
 
-    template <class VisitorFunction>
-    void forEachCell(const VisitorFunction& func)
+    /**
+     * @brief lastInnerdGrid returns the pointer to the InnerGrid in the cache.
+     */
+    const InnerGrid* lastInnerdGrid() const
     {
-      constexpr static int32_t MASK_INNER = ((1 << Log2DIM_INNER) - 1);
-      constexpr static int32_t MASK_LEAF = ((1 << Log2DIM_LEAF) - 1);
+      return prev_inner_ptr_;
+    }
 
-      for (auto& map_it : root_)
-      {
-        const auto& A = (map_it.first);
-        InnerGrid& inner_grid = map_it.second;
-        auto& mask2 = inner_grid.mask;
-
-        for (auto inner_it = mask2.beginOn(); inner_it; ++inner_it)
-        {
-          const auto& inner_index = *inner_it;
-          // clang-format off
-          int32_t xB = A.x | ((inner_index & MASK_INNER) << Log2DIM_LEAF);
-          int32_t yB = A.y | (((inner_index >> Log2DIM_INNER) & MASK_INNER) << Log2DIM_LEAF);
-          int32_t zB = A.z | (((inner_index >> (Log2DIM_INNER * 2)) & MASK_INNER) << Log2DIM_LEAF);
-
-          auto& leaf_grid = inner_grid.data[inner_index];
-          // clang-format on
-          auto& mask1 = leaf_grid->mask;
-
-          for (auto leaf_it = mask1.beginOn(); leaf_it; ++leaf_it)
-          {
-            const auto& leaf_index = *leaf_it;
-            CoordT pos = { xB | (leaf_index & MASK_LEAF),
-                           yB | ((leaf_index >> Log2DIM_LEAF) & MASK_LEAF),
-                           zB | ((leaf_index >> (Log2DIM_LEAF * 2)) & MASK_LEAF) };
-            // apply the visitor
-            func(leaf_grid->data[leaf_index], pos);
-          }
-        }
-      }
+    /**
+     * @brief lastLeafGrid returns the pointer to the LeafGrid in the cache.
+     */
+    const LeafGrid* lastLeafGrid() const
+    {
+      return prev_leaf_ptr_;
     }
 
   private:
@@ -177,27 +163,27 @@ struct VoxelGrid
 
     static inline CoordT getInnerKey(const CoordT& coord)
     {
-      constexpr static int32_t MASK = ~((1 << Log2DIM_LEAF) - 1);
+      constexpr static int32_t MASK = ~((1 << LEAF_BITS) - 1);
       return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
     }
 
     static inline uint32_t getInnerIndex(const CoordT& coord)
     {
-      constexpr static int32_t MASK = ((1 << Log2DIM_INNER) - 1);
+      constexpr static int32_t MASK = ((1 << INNER_BITS) - 1);
       // clang-format off
-      return ((coord.x >> Log2DIM_LEAF) & MASK) +
-            (((coord.y >> Log2DIM_LEAF) & MASK) <<  Log2DIM_INNER) +
-            (((coord.z >> Log2DIM_LEAF) & MASK) << (Log2DIM_INNER * 2));
+      return ((coord.x >> LEAF_BITS) & MASK) +
+            (((coord.y >> LEAF_BITS) & MASK) <<  INNER_BITS) +
+            (((coord.z >> LEAF_BITS) & MASK) << (INNER_BITS * 2));
       // clang-format on
     }
 
     static inline uint32_t getLeafIndex(const CoordT& coord)
     {
-      constexpr static int32_t MASK = ((1 << Log2DIM_LEAF) - 1);
+      constexpr static int32_t MASK = ((1 << LEAF_BITS) - 1);
       // clang-format off
       return (coord.x & MASK) +
-            ((coord.y & MASK) <<  Log2DIM_LEAF) +
-            ((coord.z & MASK) << (Log2DIM_LEAF * 2));
+            ((coord.y & MASK) <<  LEAF_BITS) +
+            ((coord.z & MASK) << (LEAF_BITS * 2));
       // clang-format on
     }
   };
@@ -208,128 +194,8 @@ struct VoxelGrid
   }
 };
 
-template <typename DataT, int Log2DIM_INNER, int Log2DIM_LEAF>
-inline bool VoxelGrid<DataT, Log2DIM_INNER, Log2DIM_LEAF>::Accessor::setValue(
-    const CoordT& coord, const DataT& value)
-{
-  LeafGrid* leaf_ptr = prev_leaf_ptr_;
-
-  const CoordT inner_key = getInnerKey(coord);
-  if (inner_key != prev_inner_coord_ || !prev_leaf_ptr_)
-  {
-    InnerGrid* inner_ptr = prev_inner_ptr_;
-    const CoordT root_key = getRootKey(coord);
-
-    // check if the key is the same as prev_inner_ptr_
-    if (root_key != prev_root_coord_ || !prev_inner_ptr_)
-    {
-      auto root_it = root_.find(root_key);
-      // Not found: create a new entry in the map
-      if (root_it == root_.end())
-      {
-        root_it = root_.insert({ root_key, InnerGrid() }).first;
-      }
-      inner_ptr = &(root_it->second);
-      // update the cache
-      prev_root_coord_ = root_key;
-      prev_inner_ptr_ = inner_ptr;
-    }
-
-    const uint32_t inner_index = getInnerIndex(coord);
-
-    auto& inner_data = inner_ptr->data[inner_index];
-    if (inner_ptr->mask.setOn(inner_index) == false)
-    {
-      inner_data = std::make_unique<LeafGrid>();
-    }
-
-    leaf_ptr = inner_data.get();
-    prev_inner_coord_ = inner_key;
-    prev_leaf_ptr_ = leaf_ptr;
-  }
-
-  const uint32_t leaf_index = getLeafIndex(coord);
-
-  bool was_on = leaf_ptr->mask.setOn(leaf_index);
-  leaf_ptr->data[leaf_index] = value;
-  return !was_on;
-}
-
-template <typename DataT, int Log2DIM_INNER, int Log2DIM_LEAF>
-inline const DataT* VoxelGrid<DataT, Log2DIM_INNER, Log2DIM_LEAF>::Accessor::value(
-    const CoordT& coord) const
-{
-  LeafGrid* leaf_ptr = prev_leaf_ptr_;
-
-  const CoordT inner_key = getInnerKey(coord);
-  if (inner_key != prev_inner_coord_ || !prev_leaf_ptr_)
-  {
-    InnerGrid* inner_ptr = prev_inner_ptr_;
-    const CoordT root_key = getRootKey(coord);
-
-    if (root_key != prev_root_coord_ || !prev_inner_ptr_)
-    {
-      auto it = root_.find(root_key);
-      if (it == root_.end())
-      {
-        return nullptr;
-      }
-      inner_ptr = it->second;
-      // update the cache
-      prev_root_coord_ = root_key;
-      prev_inner_ptr_ = inner_ptr;
-    }
-
-    const uint32_t inner_index = getInnerIndex(coord);
-
-    auto& inner_data = inner_ptr->data[inner_index];
-
-    if (!inner_ptr->mask.isOn(inner_index))
-    {
-      return nullptr;
-    }
-
-    leaf_ptr = &(inner_ptr->data[inner_index]);
-    prev_inner_coord_ = inner_key;
-    prev_leaf_ptr_ = leaf_ptr;
-  }
-
-  const uint32_t leaf_index = getLeafIndex(coord);
-
-  if (!leaf_ptr->mask.isOn(leaf_index))
-  {
-    return nullptr;
-  }
-  return &(leaf_ptr->data[leaf_index]);
-}
-
-
-template<typename DataT, int Log2DIM_INNER, int Log2DIM_LEAF> inline
-size_t VoxelGrid<DataT, Log2DIM_INNER, Log2DIM_LEAF>::getMemoryUsage() const
-{
-  size_t total_size = 0;
-
-   for (unsigned i = 0; i < root_map.bucket_count(); ++i)
-   {
-     size_t bucket_size = root_map.bucket_size(i);
-     if (bucket_size == 0) {
-       total_size++;
-     }
-     else {
-       total_size += bucket_size;
-     }
-   }
-
-  size_t entry_size = sizeof(CoordT) + sizeof(InnerGrid) + sizeof(void*);
-  total_size += root_map.size() * entry_size;
-
-  for (const auto& [key, inner_grid]: root_map)
-  {
-    total_size += inner_grid.mask.countOn() * sizeof(LeafGrid);
-  }
-  return total_size;
-}
-
 }  // namespace Treexy
 
 #endif  // TREEXY_HPP
+
+#include "treexy_impl.hpp"

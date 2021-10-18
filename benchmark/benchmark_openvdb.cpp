@@ -2,14 +2,16 @@
 #include <openvdb/openvdb.h>
 #include "benchmark_utils.hpp"
 
+// To make a fair comparison, use Log2DIM values similar to Treexy
+using GridType = openvdb::Grid<openvdb::tree::Tree4<int32_t, 2, 2, 3>::Type>;
 
 inline openvdb::Coord GetCoord(float x, float y, float z)
 {
   static float INV_RES = 1.0 / VOXEL_RESOLUTION;
 
-  return openvdb::Coord( static_cast<int32_t>(x * INV_RES) - std::signbit(x),
-                         static_cast<int32_t>(y * INV_RES) - std::signbit(y),
-                         static_cast<int32_t>(z * INV_RES) - std::signbit(z) );
+  return openvdb::Coord(static_cast<int32_t>(x * INV_RES) - std::signbit(x),
+                        static_cast<int32_t>(y * INV_RES) - std::signbit(y),
+                        static_cast<int32_t>(z * INV_RES) - std::signbit(z));
 }
 
 static void OpenVDB_Create(benchmark::State& state)
@@ -20,8 +22,8 @@ static void OpenVDB_Create(benchmark::State& state)
 
   for (auto _ : state)
   {
-    openvdb::Int32Grid::Ptr grid = openvdb::Int32Grid::create();
-    openvdb::Int32Grid::Accessor accessor = grid->getAccessor();
+    GridType::Ptr grid = GridType::create();
+    GridType::Accessor accessor = grid->getAccessor();
     grid->setGridClass(openvdb::GRID_LEVEL_SET);
 
     for (const auto& point : *cloud)
@@ -35,11 +37,11 @@ static void OpenVDB_Update(benchmark::State& state)
 {
   auto cloud = ReadCloud();
 
-  openvdb::Int32Grid::Ptr grid = openvdb::Int32Grid::create();
+  GridType::Ptr grid = GridType::create();
   grid->setGridClass(openvdb::GRID_LEVEL_SET);
 
   {
-    openvdb::Int32Grid::Accessor accessor = grid->getAccessor();
+    GridType::Accessor accessor = grid->getAccessor();
     for (const auto& point : *cloud)
     {
       accessor.setValue(GetCoord(point.x, point.y, point.z), 42);
@@ -48,7 +50,7 @@ static void OpenVDB_Update(benchmark::State& state)
 
   for (auto _ : state)
   {
-    openvdb::Int32Grid::Accessor accessor = grid->getAccessor();
+    GridType::Accessor accessor = grid->getAccessor();
     for (const auto& point : *cloud)
     {
       accessor.setValue(GetCoord(point.x, point.y, point.z), 42);
@@ -60,9 +62,9 @@ static void OpenVDB_IterateAllCells(benchmark::State& state)
 {
   auto cloud = ReadCloud();
 
-  openvdb::Int32Grid::Ptr grid = openvdb::Int32Grid::create();
+  GridType::Ptr grid = GridType::create();
   grid->setGridClass(openvdb::GRID_LEVEL_SET);
-  openvdb::Int32Grid::Accessor accessor = grid->getAccessor();
+  GridType::Accessor accessor = grid->getAccessor();
 
   for (const auto& point : *cloud)
   {

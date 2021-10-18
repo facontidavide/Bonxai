@@ -13,7 +13,8 @@ AlwaysBreakBeforeMultilineStrings: true
 BreakBeforeBinaryOperators: false
 BreakBeforeTernaryOperators: false
 BreakConstructorInitializersBeforeComma: true
-BinPackParameters: true
+BinPackArguments: false
+BinPackParameters: false
 ColumnLimit: 85
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 DerivePointerBinding: false

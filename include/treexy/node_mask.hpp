@@ -98,14 +98,11 @@ public:
 
   uint32_t countOn() const
   {
-    if constexpr(WORD_COUNT == 1)
-    {
-      return  CountOn(*mWords);
-    }
-
     uint32_t sum = 0, n = WORD_COUNT;
     for (const uint64_t* w = mWords; n--; ++w)
+    {
       sum += CountOn(*w);
+    }
     return sum;
   }
 
@@ -141,33 +138,27 @@ public:
   /// @brief Initialize all bits to zero.
   Mask()
   {
-    if constexpr(WORD_COUNT == 1)
-    {
-      *mWords = 0;
-    }
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
+    {
       mWords[i] = 0;
+    }
   }
   Mask(bool on)
   {
     const uint64_t v = on ? ~uint64_t(0) : uint64_t(0);
-    if constexpr(WORD_COUNT == 1)
-    {
-      *mWords = v;
-    }
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
+    {
       mWords[i] = v;
+    }
   }
 
   /// @brief Copy constructor
   Mask(const Mask& other)
   {
-    if constexpr(WORD_COUNT == 1)
-    {
-      mWords[0] = other.mWords[0];
-    }
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
+    {
       mWords[i] = other.mWords[i];
+    }
   }
 
   /// @brief Return the <i>n</i>th word of the bit mask, for a word of arbitrary
@@ -187,26 +178,15 @@ public:
     static_assert(LOG2DIM == MaskT::LOG2DIM, "Mismatching LOG2DIM");
     auto* src = reinterpret_cast<const uint64_t*>(&other);
     uint64_t* dst = mWords;
-    if constexpr(WORD_COUNT == 1)
+    for (uint32_t i = 0; i < WORD_COUNT; ++i)
     {
-      *dst = *src;
-    }
-    else
-    {
-      for (uint32_t i = 0; i < WORD_COUNT; ++i)
-      {
-        *dst++ = *src++;
-      }
+      *dst++ = *src++;
     }
     return *this;
   }
 
   bool operator==(const Mask& other) const
   {
-    if constexpr(WORD_COUNT == 1)
-    {
-      return *mWords == *other.mWords;
-    }
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
     {
       if (mWords[i] != other.mWords[i])
@@ -233,10 +213,6 @@ public:
 
   bool isOn() const
   {
-    if constexpr(WORD_COUNT == 1)
-    {
-      return  mWords[0] == ~uint64_t(0);
-    }
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
       if (mWords[i] != ~uint64_t(0))
         return false;
@@ -245,10 +221,6 @@ public:
 
   bool isOff() const
   {
-    if constexpr(WORD_COUNT == 1)
-    {
-      return  mWords[0] == uint64_t(0);
-    }
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
       if (mWords[i] != uint64_t(0))
         return false;
@@ -286,14 +258,18 @@ public:
   void setOn()
   {
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
+    {
       mWords[i] = ~uint64_t(0);
+    }
   }
 
   /// @brief Set all bits off
   void setOff()
   {
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
+    {
       mWords[i] = uint64_t(0);
+    }
   }
 
   /// @brief Set all bits off
@@ -301,14 +277,18 @@ public:
   {
     const uint64_t v = on ? ~uint64_t(0) : uint64_t(0);
     for (uint32_t i = 0; i < WORD_COUNT; ++i)
+    {
       mWords[i] = v;
+    }
   }
   /// brief Toggle the state of all bits in the mask
   void toggle()
   {
     uint32_t n = WORD_COUNT;
     for (auto* w = mWords; n--; ++w)
+    {
       *w = ~*w;
+    }
   }
   void toggle(uint32_t n)
   {
@@ -319,13 +299,12 @@ private:
   uint32_t findFirstOn() const
   {
     const uint64_t* w = mWords;
-    if constexpr(WORD_COUNT == 1)
-    {
-      return *w == 0 ? SIZE : FindLowestOn(*w);
-    }
     uint32_t n = 0;
-    for (; n < WORD_COUNT && !*w; ++w, ++n)
-      ;
+    while (n < WORD_COUNT && !*w)
+    {
+      ++w;
+      ++n;
+    }
     return n == WORD_COUNT ? SIZE : (n << 6) + FindLowestOn(*w);
   }
 
@@ -333,19 +312,21 @@ private:
   {
     uint32_t n = start >> 6;  // initiate
     if (n >= WORD_COUNT)
+    {
       return SIZE;  // check for out of bounds
+    }
     uint32_t m = start & 63;
     uint64_t b = mWords[n];
     if (b & (uint64_t(1) << m))
-      return start;          // simple case: start is on
-    b &= ~uint64_t(0) << m;  // mask out lower bits
-    if constexpr(WORD_COUNT != 1)
     {
-      while (!b && ++n < WORD_COUNT)
-        b = mWords[n];                                  // find next non-zero word
-      return (!b ? SIZE : (n << 6) + FindLowestOn(b));  // catch last word=0
+      return start;  // simple case: start is on
     }
-    return (!b ? SIZE : FindLowestOn(b));
+    b &= ~uint64_t(0) << m;  // mask out lower bits
+    while (!b && ++n < WORD_COUNT)
+    {
+      b = mWords[n];
+    }                                                 // find next non-zero word
+    return (!b ? SIZE : (n << 6) + FindLowestOn(b));  // catch last word=0
   }
 };  // Mask class
 
