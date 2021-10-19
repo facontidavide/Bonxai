@@ -81,9 +81,9 @@ struct VoxelGrid
   /**
    * @brief posToCoord MUST be used to convert real coordinates to CoordT indexes.
    */
-  CoordT posToCoord(double x, double y, double z);
+  inline CoordT posToCoord(double x, double y, double z);
 
-  CoordT posToCoord(const Point3D& pos)
+  inline CoordT posToCoord(const Point3D& pos)
   {
     return posToCoord(pos.x, pos.y, pos.z);
   }
@@ -154,43 +154,43 @@ struct VoxelGrid
     CoordT prev_inner_coord_;
     InnerGrid* prev_inner_ptr_ = nullptr;
     LeafGrid* prev_leaf_ptr_ = nullptr;
-
-    static inline CoordT getRootKey(const CoordT& coord)
-    {
-      constexpr static int32_t MASK = ~((1 << Log2N) - 1);
-      return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
-    }
-
-    static inline CoordT getInnerKey(const CoordT& coord)
-    {
-      constexpr static int32_t MASK = ~((1 << LEAF_BITS) - 1);
-      return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
-    }
-
-    static inline uint32_t getInnerIndex(const CoordT& coord)
-    {
-      constexpr static int32_t MASK = ((1 << INNER_BITS) - 1);
-      // clang-format off
-      return ((coord.x >> LEAF_BITS) & MASK) +
-            (((coord.y >> LEAF_BITS) & MASK) <<  INNER_BITS) +
-            (((coord.z >> LEAF_BITS) & MASK) << (INNER_BITS * 2));
-      // clang-format on
-    }
-
-    static inline uint32_t getLeafIndex(const CoordT& coord)
-    {
-      constexpr static int32_t MASK = ((1 << LEAF_BITS) - 1);
-      // clang-format off
-      return (coord.x & MASK) +
-            ((coord.y & MASK) <<  LEAF_BITS) +
-            ((coord.z & MASK) << (LEAF_BITS * 2));
-      // clang-format on
-    }
   };
 
   Accessor createAccessor()
   {
     return Accessor(root_map);
+  }
+
+  static inline CoordT getRootKey(const CoordT& coord)
+  {
+    constexpr static int32_t MASK = ~((1 << Log2N) - 1);
+    return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
+  }
+
+  static inline CoordT getInnerKey(const CoordT& coord)
+  {
+    constexpr static int32_t MASK = ~((1 << LEAF_BITS) - 1);
+    return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
+  }
+
+  static inline uint32_t getInnerIndex(const CoordT& coord)
+  {
+    constexpr static int32_t MASK = ((1 << INNER_BITS) - 1);
+    // clang-format off
+    return ((coord.x >> LEAF_BITS) & MASK) +
+          (((coord.y >> LEAF_BITS) & MASK) <<  INNER_BITS) +
+          (((coord.z >> LEAF_BITS) & MASK) << (INNER_BITS * 2));
+    // clang-format on
+  }
+
+  static inline uint32_t getLeafIndex(const CoordT& coord)
+  {
+    constexpr static int32_t MASK = ((1 << LEAF_BITS) - 1);
+    // clang-format off
+    return (coord.x & MASK) +
+          ((coord.y & MASK) <<  LEAF_BITS) +
+          ((coord.z & MASK) << (LEAF_BITS * 2));
+    // clang-format on
   }
 };
 
