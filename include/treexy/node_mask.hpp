@@ -96,6 +96,16 @@ public:
     return WORD_COUNT;
   }
 
+  uint64_t getWord(size_t n) const
+  {
+    return mWords[n];
+  }
+
+  void setWord(size_t n, uint64_t v)
+  {
+    mWords[n] = v;
+  }
+
   uint32_t countOn() const
   {
     uint32_t sum = 0, n = WORD_COUNT;

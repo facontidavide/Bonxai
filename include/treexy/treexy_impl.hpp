@@ -1,8 +1,10 @@
-#ifndef TREEXY_IMPL_HPP
-#define TREEXY_IMPL_HPP
+#ifdef TREEXY_USE_SSE
 
-#include "treexy.hpp"
+#include <xmmintrin.h>
+#include <emmintrin.h>
+#include <smmintrin.h>
 
+#endif
 namespace std
 {
 template <>
@@ -18,6 +20,30 @@ struct hash<Treexy::CoordT>
 
 namespace Treexy
 {
+template <typename DataT, int INNER_BITS, int LEAF_BITS>
+inline CoordT VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::posToCoord(float x,
+                                                                  float y,
+                                                                  float z)
+{
+#ifdef TREEXY_USE_SSE
+  union VI
+  {
+    __m128i m;
+    int32_t i[4];
+  };
+  static __m128 RES = _mm_set1_ps(inv_resolution);
+  __m128 vect = _mm_set_ps(x, y, z, 0.0);
+  __m128 res = _mm_mul_ps(vect, RES);
+  VI out;
+  out.m = _mm_cvttps_epi32(_mm_floor_ps(res));
+  return { out.i[3], out.i[2], out.i[1] };
+#else
+  return { static_cast<int32_t>(x * inv_resolution) - std::signbit(x),
+           static_cast<int32_t>(y * inv_resolution) - std::signbit(y),
+           static_cast<int32_t>(z * inv_resolution) - std::signbit(z) };
+#endif
+}
+
 template <typename DataT, int INNER_BITS, int LEAF_BITS>
 inline CoordT VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::posToCoord(double x,
                                                                   double y,
@@ -205,5 +231,3 @@ VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::forEachCell(VisitorFunction func)
 }
 
 }  // namespace Treexy
-
-#endif

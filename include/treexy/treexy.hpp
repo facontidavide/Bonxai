@@ -81,6 +81,8 @@ struct VoxelGrid
   /**
    * @brief posToCoord MUST be used to convert real coordinates to CoordT indexes.
    */
+  inline CoordT posToCoord(float x, float y, float z);
+
   inline CoordT posToCoord(double x, double y, double z);
 
   inline CoordT posToCoord(const Point3D& pos)
@@ -196,6 +198,6 @@ struct VoxelGrid
 
 }  // namespace Treexy
 
-#endif  // TREEXY_HPP
-
 #include "treexy_impl.hpp"
+
+#endif  // TREEXY_HPP

@@ -5,16 +5,23 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
 
-set (CMAKE_CXX_DEBUG_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
-set (CMAKE_LINKER_DEBUG_FLAGS "${CMAKE_LINKER_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
+set (CMAKE_CXX_DEBUG_FLAGS "${CMAKE_CXX_DEBUG_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
+set (CMAKE_LINKER_DEBUG_FLAGS "${CMAKE_LINKER_DEBUG_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic -msse4.1)
 endif()
+
 
 option(BENCHMARK_OCTOMAP "Benchmark against Octomap" ON)
 option(BENCHMARK_OPENVDB "Benchmark against OpenVDB" ON)
+option(ENABLE_SSE4_1 "Compile with SSE 4.1 support" ON)
 #option(BENCHMARK_OPEN3D "Benchmark against Open3D" OFF)
+
+if(ENABLE_SSE4_1)
+    add_compile_options(-msse4.1)
+    set ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTREEXY_USE_SSE")
+endif()
 
 find_package(benchmark REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common io)
@@ -67,4 +74,7 @@ if( BENCHMARK_OCTOMAP AND BENCHMARK_OPENVDB)
     add_executable(get_memory benchmark/get_memory.cpp )
     target_link_libraries(get_memory ${BENCHMARK_DEPENDENCIES} )
 endif()
+
+add_executable(test test/test.cpp )
+
 

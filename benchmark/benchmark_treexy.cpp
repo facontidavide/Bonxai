@@ -15,7 +15,7 @@ static void Treexy_Create(benchmark::State& state)
 
     for (const auto& point : *cloud)
     {
-      auto coord = grid.posToCoord({ point.x, point.y, point.z });
+      auto coord = grid.posToCoord(point.x, point.y, point.z);
       accessor.setValue(coord, 42);
     }
   }
