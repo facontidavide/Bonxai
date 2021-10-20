@@ -97,7 +97,7 @@ VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::Accessor::setValue(const CoordT& coord,
     auto& inner_data = inner_ptr->data[inner_index];
     if (inner_ptr->mask.setOn(inner_index) == false)
     {
-      inner_data = std::make_unique<LeafGrid>();
+      inner_data = std::make_shared<LeafGrid>();
     }
 
     leaf_ptr = inner_data.get();
@@ -132,7 +132,7 @@ VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::Accessor::value(const CoordT& coord)
       {
         return nullptr;
       }
-      inner_ptr = it->second;
+      inner_ptr = &(it->second);
       // update the cache
       prev_root_coord_ = root_key;
       prev_inner_ptr_ = inner_ptr;
@@ -147,7 +147,7 @@ VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::Accessor::value(const CoordT& coord)
       return nullptr;
     }
 
-    leaf_ptr = &(inner_ptr->data[inner_index]);
+    leaf_ptr = inner_ptr->data[inner_index].get();
     prev_inner_coord_ = inner_key;
     prev_leaf_ptr_ = leaf_ptr;
   }

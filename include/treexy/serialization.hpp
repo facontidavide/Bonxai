@@ -101,53 +101,68 @@ inline T Read(std::istream& input)
   return out;
 }
 
+struct HeaderInfo
+{
+    std::string type_name;
+    int inner_bits = 0;
+    int leaf_bits = 0;
+    double resolution = 0;
+};
+
+inline HeaderInfo GetHeaderInfo(std::string header)
+{
+    const std::string expected_prefix = "Treexy::VoxelGrid<";
+    if (header.rfind(expected_prefix, 0) != 0)
+    {
+        throw std::runtime_error("Header wasn't recognized");
+    }
+    int p1 = header.find(",", 18) + 1;
+    auto part_type = header.substr(18, p1-18 -1);
+
+    int p2 = header.find(",", p1+1) + 1;
+    auto part_ibits = header.substr(p1, p2 -p1 -1) ;
+
+    int p3 = header.find(">", p2) + 1;
+    auto part_lbits = header.substr(p2, p3 -p2 -1);
+
+    int p4 = header.find("(", p3) + 1;
+    int p5 = header.find(")", p4);
+    auto part_res = header.substr(p4, p5 -p4);
+
+    HeaderInfo info;
+    info.type_name = part_type;
+    info.inner_bits = std::stoi(part_ibits);
+    info.leaf_bits = std::stoi(part_lbits);
+    info.resolution = std::stod(part_res);
+
+    return info;
+}
+
 template <typename DataT, int IBITS=2, int LBITS=3> inline
 VoxelGrid<DataT, IBITS, LBITS> Deserialize(std::istream& input)
 {
     char header[256];
     input.getline(header, 256);
 
-    char type[100];
-    int inner_bits = 2;
-    int leaf_bits = 3;
-    double resolution = 1.0;
-
-    const char expected_prefix[] = "Treexy::VoxelGrid<";
-    char prefix[18];
-    input.read(prefix, 18);
-
-    if( std::strncmp(prefix, expected_prefix, 18) != 0 )
-    {
-        throw std::runtime_error("Header wasn't recognized");
-    }
-
-    char part[100];
-
-    int res = sscanf(header, "Treexy::VoxelGrid<%s,%d,%d>(%lf)\n",
-            type, &inner_bits, &leaf_bits, &resolution);
-
-    if( res != 4 )
-    {
-        throw std::runtime_error("Header wasn't recognized");
-    }
+    HeaderInfo info = GetHeaderInfo(header);
 
     std::string type_name = demangle(typeid(DataT).name());
-    if( type_name == type )
+    if( type_name != info.type_name )
     {
         throw std::runtime_error("DataT does not match");
     }
-    if( inner_bits != IBITS )
+    if( info.inner_bits != IBITS )
     {
         throw std::runtime_error("INNER_BITS does not match");
     }
-    if( leaf_bits != LBITS )
+    if( info.leaf_bits != LBITS )
     {
         throw std::runtime_error("LEAF_BITS does not match");
     }
 
     //------------
 
-    VoxelGrid<DataT, IBITS, LBITS> grid(resolution);
+    VoxelGrid<DataT, IBITS, LBITS> grid(info.resolution);
 
     uint32_t root_count = Read<uint32_t>(input);
 
@@ -169,7 +184,7 @@ VoxelGrid<DataT, IBITS, LBITS> Deserialize(std::istream& input)
       {
         const uint32_t inner_index = *inner;
         using LeafGridT = typename VoxelGrid<DataT, IBITS, LBITS>::LeafGrid;
-        inner_grid.data[inner_index] = std::make_unique<LeafGridT>();
+        inner_grid.data[inner_index] = std::make_shared<LeafGridT>();
         auto& leaf_grid = inner_grid.data[inner_index];
 
         for (size_t w = 0; w < leaf_grid->mask.wordCount(); w++)
@@ -184,6 +199,7 @@ VoxelGrid<DataT, IBITS, LBITS> Deserialize(std::istream& input)
         }
       }
     }
+    return grid;
 }
 
 }

@@ -51,7 +51,7 @@ struct VoxelGrid
   constexpr static int32_t Log2N = INNER_BITS + LEAF_BITS;
 
   using LeafGrid = Grid<DataT, LEAF_BITS>;
-  using InnerGrid = Grid<std::unique_ptr<LeafGrid>, INNER_BITS>;
+  using InnerGrid = Grid<std::shared_ptr<LeafGrid>, INNER_BITS>;
   using RootMap = std::unordered_map<CoordT, InnerGrid>;
 
   RootMap root_map;
