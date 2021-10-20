@@ -96,11 +96,11 @@ int* value = accessor.value( coord );
 
 # Roadmap
 
-- [ ]: serialization to/from file.
-- [ ]: full implementation of the Octomap algorithm (ray tracing + probability map).
-- [ ]: integration with ROS.
-- [ ]: RViz/RViz2 visualization plugins.
-- [ ]: integration with [FCL](https://github.com/flexible-collision-library/fcl) for collision detection (?)
+- [x] serialization to/from file.
+- [ ] full implementation of the Octomap algorithm (ray tracing + probability map).
+- [ ] integration with ROS.
+- [ ] RViz/RViz2 visualization plugins.
+- [ ] integration with [FCL](https://github.com/flexible-collision-library/fcl) for collision detection (?)
 
 # Frequently Asked Question
 
