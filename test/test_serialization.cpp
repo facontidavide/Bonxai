@@ -26,7 +26,11 @@ int main()
   ofile.close();
 
   std::ifstream ifile("box.txy", std::ios::binary);
-  auto new_grid = Treexy::Deserialize<int>(ifile);
+
+  char header[256];
+  ifile.getline(header, 256);
+  Treexy::HeaderInfo info = Treexy::GetHeaderInfo(header);
+  auto new_grid = Treexy::Deserialize<int>(ifile, info);
   ifile.close();
 
   std::cout << "Original grid memory: " << grid.getMemoryUsage() << std::endl;
@@ -44,7 +48,7 @@ int main()
       for (double z = -0.4; z < 0.4; z += VOXEL_RESOLUTION)
       {
         auto value_ptr = new_accessor.value(grid.posToCoord(x, y, z));
-        if( !value_ptr || *value_ptr != count )
+        if (!value_ptr || *value_ptr != count)
         {
           std::cout << " Problem at cell " << x << " " << y << " " << z << std::endl;
           everything_fine = false;
@@ -53,7 +57,7 @@ int main()
       }
     }
   }
-  if( everything_fine )
+  if (everything_fine)
   {
     std::cout << "Round trip looks good!" << std::endl;
   }
