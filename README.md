@@ -23,11 +23,11 @@ an implementation of the original paper, with a couple of non-trivial changes:
     
 You can read the previous paper [here](http://www.museth.org/Ken/Publications_files/Museth_TOG13.pdf).
 
-There is also some interesting overlap with this other paper (their implementations is **much** simpler,
-but the concept is similar):
+There is also some overlap with this other paper, but their implementations is **much** simpler,
+even if conceptually similar:
 
      Eurico Pedrosa, Artur Pereira, Nuno Lau 
-     A Sparse-Dense Approach for Efficient Grid Mapping"
+     "A Sparse-Dense Approach for Efficient Grid Mapping"
      2018 IEEE International Conference on Autonomous Robot Systems and Competitions (ICARSC)
 
 
