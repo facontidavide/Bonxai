@@ -17,10 +17,19 @@ than an Octree.
 This work is strongly based on [OpenVDB](https://www.openvdb.org/) and it can be considered
 an implementation of the original paper, with a couple of non-trivial changes:
 
-    K. Museth, “VDB: High-Resolution Sparse Volumes with Dynamic Topology”,
+    K. Museth, 
+    “VDB: High-Resolution Sparse Volumes with Dynamic Topology”,
     ACM Transactions on Graphics 32(3), 2013. Presented at SIGGRAPH 2013.
     
-You can read the paper [here](http://www.museth.org/Ken/Publications_files/Museth_TOG13.pdf).
+You can read the previous paper [here](http://www.museth.org/Ken/Publications_files/Museth_TOG13.pdf).
+
+There is also some interesting overlap with this other paper (their implementations is **much** simpler,
+but the concept is similar):
+
+     Eurico Pedrosa, Artur Pereira, Nuno Lau 
+     A Sparse-Dense Approach for Efficient Grid Mapping"
+     2018 IEEE International Conference on Autonomous Robot Systems and Competitions (ICARSC)
+
 
 **Treexy** is currently under development and I am building this mostly for fun and for
 educational purposes. Don't expect any API stability for the time being.
