@@ -99,6 +99,7 @@ int* value = accessor.value( coord );
 - [x] serialization to/from file.
 - [ ] full implementation of the Octomap algorithm (ray tracing + probability map).
 - [ ] integration with ROS.
+- [ ] implement thread-safe, multi-threading accessors.
 - [ ] RViz/RViz2 visualization plugins.
 - [ ] integration with [FCL](https://github.com/flexible-collision-library/fcl) for collision detection (?)
 
