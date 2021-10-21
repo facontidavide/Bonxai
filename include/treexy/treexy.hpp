@@ -8,6 +8,10 @@
 #include <functional>
 #include <cmath>
 #include <iostream>
+#include <atomic>
+#include <mutex>
+#include <shared_mutex>
+
 #include "treexy/node_mask.hpp"
 
 namespace Treexy
@@ -43,6 +47,7 @@ struct Grid
   constexpr static int SIZE = DIM * DIM * DIM;
   std::array<DataT, SIZE> data;
   Treexy::Mask<Log2DIM> mask;
+  std::shared_mutex mutex;
 };
 
 template <typename DataT, int INNER_BITS = 2, int LEAF_BITS = 3>
@@ -55,6 +60,7 @@ struct VoxelGrid
   using RootMap = std::unordered_map<CoordT, InnerGrid>;
 
   RootMap root_map;
+  mutable std::mutex root_mutex;
 
   const double resolution;
   const double inv_resolution;
@@ -68,9 +74,17 @@ struct VoxelGrid
    */
   VoxelGrid(double voxel_size)
     : resolution(voxel_size)
-    , inv_resolution(1.0 / voxel_size)
-    , half_resolution(0.5 * voxel_size)
+    , inv_resolution(1.0 / resolution)
+    , half_resolution(0.5 * resolution)
   {
+  }
+
+  VoxelGrid(VoxelGrid&& other)
+    : resolution(other.resolution)
+    , inv_resolution(1.0 / resolution)
+    , half_resolution(0.5 * resolution)
+  {
+    root_map = std::move(other.root_map);
   }
 
   /**
@@ -105,6 +119,12 @@ struct VoxelGrid
   template <class VisitorFunction>
   void forEachCell(VisitorFunction func);
 
+  struct CellInfo
+  {
+    LeafGrid* leaf_grid;
+    uint32_t index;
+  };
+
   /** Class to be used to set and get values of a cell of the Grid.
    *  It uses caching to speed up computation.
    *
@@ -113,7 +133,7 @@ struct VoxelGrid
   class Accessor
   {
   public:
-    Accessor(RootMap& root) : root_(root)
+    Accessor(VoxelGrid& grid) : grid_(grid)
     {
     }
 
@@ -122,15 +142,13 @@ struct VoxelGrid
      *
      * @param coord   coordinate of the cell
      * @param value   value to set.
-     * @return        true if the cell was already active, false otherwise.
      */
-    bool setValue(const CoordT& coord, const DataT& value);
+    void setValue(const CoordT& coord, const DataT& value);
 
     /** @brief value getter.
      *
      * @param coord   coordinate of the cell
-     * @return        retunr the const pointer to the value or nullptr if it was not
-     * set.
+     * @return        return the pointer to the value or nullptr if not set.
      */
     DataT* value(const CoordT& coord);
 
@@ -150,8 +168,17 @@ struct VoxelGrid
       return prev_leaf_ptr_;
     }
 
+    /**
+     * @brief getCell gets the point to the LeafGrid containing the cell
+     *        and its index. It is the basic class used by setValue() and value().
+     *
+     * @param coord               Coordinate of the cell.
+     * @param create_if_missing   if true, create the Root, Inner and Leaf, if not present.
+     */
+    CellInfo getCell(const CoordT& coord, bool create_if_missing = false);
+
   private:
-    RootMap& root_;
+    VoxelGrid& grid_;
     CoordT prev_root_coord_;
     CoordT prev_inner_coord_;
     InnerGrid* prev_inner_ptr_ = nullptr;
@@ -160,7 +187,7 @@ struct VoxelGrid
 
   Accessor createAccessor()
   {
-    return Accessor(root_map);
+    return Accessor(*this);
   }
 
   static inline CoordT getRootKey(const CoordT& coord)
