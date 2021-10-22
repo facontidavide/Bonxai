@@ -44,16 +44,11 @@ template <typename DataT, int Log2DIM>
 struct Grid
 {
   Grid() = default;
-  Grid(Grid&& other):
-    data(std::move(other.data)),
-    mask(std::move(other.mask))
-  {}
 
   constexpr static int DIM = 1 << Log2DIM;
   constexpr static int SIZE = DIM * DIM * DIM;
   std::array<DataT, SIZE> data;
   Treexy::Mask<Log2DIM> mask;
-  std::shared_mutex mutex;
 };
 
 template <typename DataT, int INNER_BITS = 2, int LEAF_BITS = 3>
@@ -66,7 +61,6 @@ struct VoxelGrid
   using RootMap = std::unordered_map<CoordT, InnerGrid>;
 
   RootMap root_map;
-  mutable std::mutex root_mutex;
 
   const double resolution;
   const double inv_resolution;
@@ -179,7 +173,8 @@ struct VoxelGrid
      *        and its index. It is the basic class used by setValue() and value().
      *
      * @param coord               Coordinate of the cell.
-     * @param create_if_missing   if true, create the Root, Inner and Leaf, if not present.
+     * @param create_if_missing   if true, create the Root, Inner and Leaf, if not
+     * present.
      */
     CellInfo getCell(const CoordT& coord, bool create_if_missing = false);
 
@@ -212,18 +207,18 @@ struct VoxelGrid
   {
     constexpr static int32_t MASK = ((1 << INNER_BITS) - 1);
     // clang-format off
-    return ((coord.x >> LEAF_BITS) & MASK) +
-          (((coord.y >> LEAF_BITS) & MASK) <<  INNER_BITS) +
+    return ((coord.x >> LEAF_BITS) & MASK) |
+          (((coord.y >> LEAF_BITS) & MASK) <<  INNER_BITS) |
           (((coord.z >> LEAF_BITS) & MASK) << (INNER_BITS * 2));
     // clang-format on
   }
 
   static inline uint32_t getLeafIndex(const CoordT& coord)
   {
-    constexpr static int32_t MASK = ((1 << LEAF_BITS) - 1);
+    constexpr static uint32_t MASK = ((1 << LEAF_BITS) - 1);
     // clang-format off
-    return (coord.x & MASK) +
-          ((coord.y & MASK) <<  LEAF_BITS) +
+    return (coord.x & MASK) |
+          ((coord.y & MASK) <<  LEAF_BITS) |
           ((coord.z & MASK) << (LEAF_BITS * 2));
     // clang-format on
   }

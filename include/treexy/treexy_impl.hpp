@@ -72,7 +72,6 @@ VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::Accessor::setValue(const CoordT& coord,
 {
   auto info = this->getCell(coord, true);
 
-  std::unique_lock<std::shared_mutex> lk(info.leaf_grid->mutex);
   info.leaf_grid->mask.setOn(info.index);
   info.leaf_grid->data[info.index] = value;
 }
@@ -84,7 +83,6 @@ VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::Accessor::value(const CoordT& coord)
 {
   auto info = this->getCell(coord, false);
 
-  std::shared_lock<std::shared_mutex> lk(info.leaf_grid->mutex);
   if (info.leaf_grid->mask.isOn(info.index))
   {
     return &(info.leaf_grid->data[info.index]);
@@ -108,8 +106,6 @@ VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::Accessor::getCell(const CoordT& coord,
 
     if (root_key != prev_root_coord_ || !prev_inner_ptr_)
     {
-      std::unique_lock<std::mutex> lk(grid_.root_mutex);
-
       auto it = grid_.root_map.find(root_key);
       if (it == grid_.root_map.end())
       {
@@ -117,7 +113,7 @@ VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::Accessor::getCell(const CoordT& coord,
         {
           return { nullptr, 0 };
         }
-        it = grid_.root_map.insert( {root_key, InnerGrid()} ).first;
+        it = grid_.root_map.insert({ root_key, InnerGrid() }).first;
       }
       inner_ptr = &(it->second);
 
@@ -129,25 +125,27 @@ VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::Accessor::getCell(const CoordT& coord,
     const uint32_t inner_index = getInnerIndex(coord);
     auto& inner_data = inner_ptr->data[inner_index];
 
-    std::unique_lock<std::shared_mutex> lk(inner_ptr->mutex);
-
-    if (!inner_ptr->mask.isOn(inner_index))
+    if (create_if_missing)
     {
-      if (!create_if_missing)
+      if (!inner_ptr->mask.setOn(inner_index))
+      {
+        inner_data = std::make_shared<LeafGrid>();
+      }
+    }
+    else
+    {
+      if (!inner_ptr->mask.isOn(inner_index))
       {
         return { nullptr, 0 };
       }
-      inner_data = std::make_shared<LeafGrid>();
     }
 
-    leaf_ptr = inner_ptr->data[inner_index].get();
+    leaf_ptr = inner_data.get();
     prev_inner_coord_ = inner_key;
     prev_leaf_ptr_ = leaf_ptr;
   }
 
-  const uint32_t leaf_index = getLeafIndex(coord);
-
-  return { leaf_ptr, leaf_index };
+  return { leaf_ptr, getLeafIndex(coord) };
 }
 
 //----------------------------------
