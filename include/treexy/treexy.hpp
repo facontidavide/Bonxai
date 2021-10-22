@@ -43,6 +43,12 @@ inline bool operator!=(const CoordT& a, const CoordT& b)
 template <typename DataT, int Log2DIM>
 struct Grid
 {
+  Grid() = default;
+  Grid(Grid&& other):
+    data(std::move(other.data)),
+    mask(std::move(other.mask))
+  {}
+
   constexpr static int DIM = 1 << Log2DIM;
   constexpr static int SIZE = DIM * DIM * DIM;
   std::array<DataT, SIZE> data;

@@ -117,12 +117,10 @@ VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::Accessor::getCell(const CoordT& coord,
         {
           return { nullptr, 0 };
         }
-        inner_ptr = &(it->second);
+        it = grid_.root_map.insert( {root_key, InnerGrid()} ).first;
       }
-      else
-      {
-        inner_ptr = &(it->second);
-      }
+      inner_ptr = &(it->second);
+
       // update the cache
       prev_root_coord_ = root_key;
       prev_inner_ptr_ = inner_ptr;
