@@ -119,12 +119,6 @@ struct VoxelGrid
   template <class VisitorFunction>
   void forEachCell(VisitorFunction func);
 
-  struct CellInfo
-  {
-    LeafGrid* leaf_grid;
-    uint32_t index;
-  };
-
   /** Class to be used to set and get values of a cell of the Grid.
    *  It uses caching to speed up computation.
    *
@@ -176,12 +170,12 @@ struct VoxelGrid
      * @param create_if_missing   if true, create the Root, Inner and Leaf, if not
      * present.
      */
-    CellInfo getCell(const CoordT& coord, bool create_if_missing = false);
+    LeafGrid*  getLeafGrid(const CoordT& coord, bool create_if_missing = false);
 
   private:
     VoxelGrid& grid_;
-    CoordT prev_root_coord_;
-    CoordT prev_inner_coord_;
+    CoordT prev_root_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
+    CoordT prev_inner_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
     InnerGrid* prev_inner_ptr_ = nullptr;
     LeafGrid* prev_leaf_ptr_ = nullptr;
   };

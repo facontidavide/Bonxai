@@ -5,11 +5,11 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
 
-set (CMAKE_CXX_DEBUG_FLAGS "${CMAKE_CXX_DEBUG_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
-set (CMAKE_LINKER_DEBUG_FLAGS "${CMAKE_LINKER_DEBUG_FLAGS} -fno-omit-frame-pointer -fsanitize=address")
+set (CMAKE_CXX_DEBUG_FLAGS "${CMAKE_CXX_DEBUG_FLAGS}  -fsanitize=address")
+set (CMAKE_LINKER_DEBUG_FLAGS "${CMAKE_LINKER_DEBUG_FLAGS}  -fsanitize=address")
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -msse4.1)
+  add_compile_options(-Wall -Wextra -Wpedantic -fno-omit-frame-pointer)
 endif()
 
 

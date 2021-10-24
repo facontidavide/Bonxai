@@ -70,10 +70,16 @@ inline void
 VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::Accessor::setValue(const CoordT& coord,
                                                             const DataT& value)
 {
-  auto info = this->getCell(coord, true);
+  const CoordT inner_key = getInnerKey(coord);
+  if(inner_key != prev_inner_coord_)
+  {
+    prev_leaf_ptr_ = getLeafGrid(coord, true);
+    prev_inner_coord_ = inner_key;
+  }
 
-  info.leaf_grid->mask.setOn(info.index);
-  info.leaf_grid->data[info.index] = value;
+  uint32_t index = getLeafIndex(coord);
+  prev_leaf_ptr_->mask.setOn(index);
+  prev_leaf_ptr_->data[index] = value;
 }
 
 //----------------------------------
@@ -81,72 +87,68 @@ template <typename DataT, int INNER_BITS, int LEAF_BITS>
 inline DataT*
 VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::Accessor::value(const CoordT& coord)
 {
-  auto info = this->getCell(coord, false);
-
-  if (info.leaf_grid->mask.isOn(info.index))
+  const CoordT inner_key = getInnerKey(coord);
+  if(inner_key != prev_inner_coord_)
   {
-    return &(info.leaf_grid->data[info.index]);
+    prev_leaf_ptr_ = getLeafGrid(coord, true);
+    prev_inner_coord_ = inner_key;
+  }
+
+  uint32_t index = getLeafIndex(coord);
+  if (prev_leaf_ptr_->mask.isOn(index))
+  {
+    return &(prev_leaf_ptr_->data[index]);
   }
   return nullptr;
 }
 
 //----------------------------------
 template <typename DataT, int INNER_BITS, int LEAF_BITS>
-inline typename VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::CellInfo
-VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::Accessor::getCell(const CoordT& coord,
-                                                           bool create_if_missing)
+inline typename VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::LeafGrid*
+VoxelGrid<DataT, INNER_BITS, LEAF_BITS>::Accessor::getLeafGrid(const CoordT& coord,
+                                                               bool create_if_missing)
 {
-  LeafGrid* leaf_ptr = prev_leaf_ptr_;
+  InnerGrid* inner_ptr = prev_inner_ptr_;
+  const CoordT root_key = getRootKey(coord);
 
-  const CoordT inner_key = getInnerKey(coord);
-  if (inner_key != prev_inner_coord_ || !prev_leaf_ptr_)
+  if (root_key != prev_root_coord_)
   {
-    InnerGrid* inner_ptr = prev_inner_ptr_;
-    const CoordT root_key = getRootKey(coord);
-
-    if (root_key != prev_root_coord_ || !prev_inner_ptr_)
+    auto it = grid_.root_map.find(root_key);
+    if (it == grid_.root_map.end())
     {
-      auto it = grid_.root_map.find(root_key);
-      if (it == grid_.root_map.end())
+      if (!create_if_missing)
       {
-        if (!create_if_missing)
-        {
-          return { nullptr, 0 };
-        }
-        it = grid_.root_map.insert({ root_key, InnerGrid() }).first;
+        return nullptr;
       }
-      inner_ptr = &(it->second);
-
-      // update the cache
-      prev_root_coord_ = root_key;
-      prev_inner_ptr_ = inner_ptr;
+      it = grid_.root_map.insert({ root_key, InnerGrid() }).first;
     }
+    inner_ptr = &(it->second);
 
-    const uint32_t inner_index = getInnerIndex(coord);
-    auto& inner_data = inner_ptr->data[inner_index];
-
-    if (create_if_missing)
-    {
-      if (!inner_ptr->mask.setOn(inner_index))
-      {
-        inner_data = std::make_shared<LeafGrid>();
-      }
-    }
-    else
-    {
-      if (!inner_ptr->mask.isOn(inner_index))
-      {
-        return { nullptr, 0 };
-      }
-    }
-
-    leaf_ptr = inner_data.get();
-    prev_inner_coord_ = inner_key;
-    prev_leaf_ptr_ = leaf_ptr;
+    // update the cache
+    prev_root_coord_ = root_key;
+    prev_inner_ptr_ = inner_ptr;
   }
 
-  return { leaf_ptr, getLeafIndex(coord) };
+  const uint32_t inner_index = getInnerIndex(coord);
+  auto& inner_data = inner_ptr->data[inner_index];
+
+  if (create_if_missing)
+  {
+    if (!inner_ptr->mask.setOn(inner_index))
+    {
+      inner_data = std::make_shared<LeafGrid>();
+    }
+  }
+  else
+  {
+    if (!inner_ptr->mask.isOn(inner_index))
+    {
+      return nullptr;
+    }
+  }
+  return inner_data.get();
 }
+
 
 //----------------------------------
 template <typename DataT, int INNER_BITS, int LEAF_BITS>
