@@ -44,7 +44,7 @@ inline void VoxelGrid<DataT>::Accessor::setValue(const CoordT& coord,
                                                  const DataT& value)
 {
   const CoordT inner_key = grid_.getInnerKey(coord);
-  if (inner_key != prev_inner_coord_ || !prev_leaf_ptr_)
+  if (inner_key != prev_inner_coord_)
   {
     prev_leaf_ptr_ = getLeafGrid(coord, true);
     prev_inner_coord_ = inner_key;
@@ -60,23 +60,19 @@ template <typename DataT>
 inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord)
 {
   const CoordT inner_key = grid_.getInnerKey(coord);
-  LeafGrid* leaf_grid = prev_leaf_ptr_;
 
-  if (inner_key != prev_inner_coord_ || !prev_leaf_ptr_)
+  if (inner_key != prev_inner_coord_)
   {
-    leaf_grid = getLeafGrid(coord, false);
-    prev_leaf_ptr_ = leaf_grid;
+    prev_leaf_ptr_ = getLeafGrid(coord, false);
     prev_inner_coord_ = inner_key;
   }
-  if (!leaf_grid)
+  if (prev_leaf_ptr_)
   {
-    return nullptr;
-  }
-
-  uint32_t index = grid_.getLeafIndex(coord);
-  if (leaf_grid->mask.isOn(index))
-  {
-    return &(leaf_grid->data[index]);
+    uint32_t index = grid_.getLeafIndex(coord);
+    if (prev_leaf_ptr_->mask.isOn(index))
+    {
+      return &(prev_leaf_ptr_->data[index]);
+    }
   }
   return nullptr;
 }

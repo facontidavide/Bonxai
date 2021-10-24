@@ -208,8 +208,8 @@ public:
 
   private:
     VoxelGrid& grid_;
-    CoordT prev_root_coord_ = { 0, 0, 0 };
-    CoordT prev_inner_coord_ = { 0, 0, 0 };
+    CoordT prev_root_coord_ = { std::numeric_limits<int32_t>::max(), 0, 0 };
+    CoordT prev_inner_coord_ = { std::numeric_limits<int32_t>::max(), 0, 0 };
     InnerGrid* prev_inner_ptr_ = nullptr;
     LeafGrid* prev_leaf_ptr_ = nullptr;
   };
@@ -227,7 +227,7 @@ public:
 
   inline CoordT getInnerKey(const CoordT& coord)
   {
-    const uint32_t MASK = ~((1 << LEAF_BITS) - 1);
+    const int32_t MASK = ~((1 << LEAF_BITS) - 1);
     return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
   }
 
