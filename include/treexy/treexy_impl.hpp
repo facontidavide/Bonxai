@@ -1,11 +1,3 @@
-#ifdef TREEXY_USE_SSE
-
-#include <xmmintrin.h>
-#include <emmintrin.h>
-#include <smmintrin.h>
-
-#endif
-
 namespace std
 {
 template <>
@@ -24,23 +16,9 @@ namespace Treexy
 template <typename DataT>
 inline CoordT VoxelGrid<DataT>::posToCoord(float x, float y, float z)
 {
-#ifdef TREEXY_USE_SSE
-  union VI
-  {
-    __m128i m;
-    int32_t i[4];
-  };
-  static __m128 RES = _mm_set1_ps(inv_resolution);
-  __m128 vect = _mm_set_ps(x, y, z, 0.0);
-  __m128 res = _mm_mul_ps(vect, RES);
-  VI out;
-  out.m = _mm_cvttps_epi32(_mm_floor_ps(res));
-  return { out.i[3], out.i[2], out.i[1] };
-#else
   return { static_cast<int32_t>(x * inv_resolution) - std::signbit(x),
            static_cast<int32_t>(y * inv_resolution) - std::signbit(y),
            static_cast<int32_t>(z * inv_resolution) - std::signbit(z) };
-#endif
 }
 
 template <typename DataT>
@@ -66,7 +44,7 @@ inline void VoxelGrid<DataT>::Accessor::setValue(const CoordT& coord,
                                                  const DataT& value)
 {
   const CoordT inner_key = grid_.getInnerKey(coord);
-  if (inner_key != prev_inner_coord_)
+  if (inner_key != prev_inner_coord_ || !prev_leaf_ptr_)
   {
     prev_leaf_ptr_ = getLeafGrid(coord, true);
     prev_inner_coord_ = inner_key;
@@ -82,16 +60,23 @@ template <typename DataT>
 inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord)
 {
   const CoordT inner_key = grid_.getInnerKey(coord);
-  if (inner_key != prev_inner_coord_)
+  LeafGrid* leaf_grid = prev_leaf_ptr_;
+
+  if (inner_key != prev_inner_coord_ || !prev_leaf_ptr_)
   {
-    prev_leaf_ptr_ = getLeafGrid(coord, true);
+    leaf_grid = getLeafGrid(coord, false);
+    prev_leaf_ptr_ = leaf_grid;
     prev_inner_coord_ = inner_key;
+  }
+  if (!leaf_grid)
+  {
+    return nullptr;
   }
 
   uint32_t index = grid_.getLeafIndex(coord);
-  if (prev_leaf_ptr_->mask.isOn(index))
+  if (leaf_grid->mask.isOn(index))
   {
-    return &(prev_leaf_ptr_->data[index]);
+    return &(leaf_grid->data[index]);
   }
   return nullptr;
 }
@@ -104,7 +89,7 @@ VoxelGrid<DataT>::Accessor::getLeafGrid(const CoordT& coord, bool create_if_miss
   InnerGrid* inner_ptr = prev_inner_ptr_;
   const CoordT root_key = grid_.getRootKey(coord);
 
-  if (root_key != prev_root_coord_)
+  if (root_key != prev_root_coord_ || !inner_ptr)
   {
     auto it = grid_.root_map.find(root_key);
     if (it == grid_.root_map.end())

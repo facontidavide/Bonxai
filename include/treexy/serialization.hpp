@@ -179,7 +179,7 @@ inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info)
 
   //------------
 
-  VoxelGrid<DataT> grid(info.inner_bits, info.leaf_bits, info.resolution);
+  VoxelGrid<DataT> grid(info.resolution, info.inner_bits, info.leaf_bits);
 
   uint32_t root_count = Read<uint32_t>(input);
 

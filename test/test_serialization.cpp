@@ -47,7 +47,8 @@ int main()
     {
       for (double z = -0.5; z < 0.5; z += VOXEL_RESOLUTION)
       {
-        auto value_ptr = new_accessor.value(grid.posToCoord(x, y, z));
+        Treexy::CoordT coord = grid.posToCoord(x, y, z);
+        int* value_ptr = new_accessor.value(coord);
         if (!value_ptr || *value_ptr != count)
         {
           std::cout << " Problem at cell " << x << " " << y << " " << z << std::endl;

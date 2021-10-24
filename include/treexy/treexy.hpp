@@ -44,7 +44,10 @@ template <typename DataT>
 struct Grid
 {
   Grid(size_t log2dim)
-    : LOG2DIM(log2dim), DIM(1 << LOG2DIM), SIZE(DIM * DIM * DIM), mask(LOG2DIM)
+    : LOG2DIM(log2dim)
+    , DIM(1 << LOG2DIM)
+    , SIZE(DIM * DIM * DIM)
+    , mask(LOG2DIM)
   {
     data = new DataT[SIZE];
   }
@@ -74,9 +77,9 @@ struct Grid
            sizeof(DataT) * SIZE;
   }
 
-  const int32_t LOG2DIM;
-  const int32_t DIM;
-  const int32_t SIZE;
+  const uint32_t LOG2DIM;
+  const uint32_t DIM;
+  const uint32_t SIZE;
   DataT* data = nullptr;
   Treexy::Mask mask;
 };
@@ -85,9 +88,9 @@ template <typename DataT>
 class VoxelGrid
 {
 public:
-  const int32_t INNER_BITS;
-  const int32_t LEAF_BITS;
-  const int32_t Log2N;
+  const uint32_t INNER_BITS;
+  const uint32_t LEAF_BITS;
+  const uint32_t Log2N;
   const double resolution;
   const double inv_resolution;
 
@@ -110,6 +113,11 @@ public:
     , resolution(voxel_size)
     , inv_resolution(1.0 / resolution)
   {
+    if (LEAF_BITS < 1 || INNER_BITS < 1)
+    {
+      throw std::runtime_error(
+          "The minimum value of the inner_bits and leaf_bits should be 1");
+    }
   }
 
   /**
@@ -152,7 +160,8 @@ public:
   class Accessor
   {
   public:
-    Accessor(VoxelGrid& grid) : grid_(grid)
+    Accessor(VoxelGrid& grid)
+      : grid_(grid)
     {
     }
 
@@ -199,8 +208,8 @@ public:
 
   private:
     VoxelGrid& grid_;
-    CoordT prev_root_coord_ = { std::numeric_limits<int32_t>::max(), 0, 0 };
-    CoordT prev_inner_coord_ = { std::numeric_limits<int32_t>::max(), 0, 0 };
+    CoordT prev_root_coord_ = { 0, 0, 0 };
+    CoordT prev_inner_coord_ = { 0, 0, 0 };
     InnerGrid* prev_inner_ptr_ = nullptr;
     LeafGrid* prev_leaf_ptr_ = nullptr;
   };
@@ -218,13 +227,13 @@ public:
 
   inline CoordT getInnerKey(const CoordT& coord)
   {
-    const int32_t MASK = ~((1 << LEAF_BITS) - 1);
+    const uint32_t MASK = ~((1 << LEAF_BITS) - 1);
     return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
   }
 
   inline uint32_t getInnerIndex(const CoordT& coord)
   {
-    const int32_t MASK = ((1 << INNER_BITS) - 1);
+    const uint32_t MASK = ((1 << INNER_BITS) - 1);
     // clang-format off
     return ((coord.x >> LEAF_BITS) & MASK) |
           (((coord.y >> LEAF_BITS) & MASK) <<  INNER_BITS) |
@@ -234,7 +243,7 @@ public:
 
   inline uint32_t getLeafIndex(const CoordT& coord)
   {
-    const int32_t MASK = ((1 << LEAF_BITS) - 1);
+    const uint32_t MASK = ((1 << LEAF_BITS) - 1);
     // clang-format off
     return (coord.x & MASK) |
           ((coord.y & MASK) <<  LEAF_BITS) |

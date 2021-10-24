@@ -82,7 +82,9 @@ public:
 
   /// @brief Initialize all bits to zero.
   Mask(size_t log2dim)
-    : LOG2DIM(log2dim), SIZE(1U << (3 * LOG2DIM)), WORD_COUNT(SIZE >> 6)
+    : LOG2DIM(log2dim)
+    , SIZE(1U << (3 * LOG2DIM))
+    , WORD_COUNT(std::max(SIZE >> 6, 1u))
   {
     mWords = (WORD_COUNT <= 8) ? staticWords : new uint64_t[WORD_COUNT];
 
@@ -92,7 +94,9 @@ public:
     }
   }
   Mask(size_t log2dim, bool on)
-    : LOG2DIM(log2dim), SIZE(1U << (3 * LOG2DIM)), WORD_COUNT(SIZE >> 6)
+    : LOG2DIM(log2dim)
+    , SIZE(1U << (3 * LOG2DIM))
+    , WORD_COUNT(std::max(SIZE >> 6, 1u))
   {
     mWords = (WORD_COUNT <= 8) ? staticWords : new uint64_t[WORD_COUNT];
 
@@ -105,7 +109,9 @@ public:
 
   /// @brief Copy constructor
   Mask(const Mask& other)
-    : LOG2DIM(other.LOG2DIM), SIZE(1U << (3 * LOG2DIM)), WORD_COUNT(SIZE >> 6)
+    : LOG2DIM(other.LOG2DIM)
+    , SIZE(other.SIZE)
+    , WORD_COUNT(other.WORD_COUNT)
   {
     mWords = (WORD_COUNT <= 8) ? staticWords : new uint64_t[WORD_COUNT];
 
@@ -116,7 +122,9 @@ public:
   }
 
   Mask(Mask&& other)
-    : LOG2DIM(other.LOG2DIM), SIZE(1U << (3 * LOG2DIM)), WORD_COUNT(SIZE >> 6)
+    : LOG2DIM(other.LOG2DIM)
+    , SIZE(other.SIZE)
+    , WORD_COUNT(other.WORD_COUNT)
   {
     if (WORD_COUNT <= 8)
     {
@@ -185,10 +193,14 @@ public:
   class Iterator
   {
   public:
-    Iterator(const Mask* parent) : mPos(parent->SIZE), mParent(parent)
+    Iterator(const Mask* parent)
+      : mPos(parent->SIZE)
+      , mParent(parent)
     {
     }
-    Iterator(uint32_t pos, const Mask* parent) : mPos(pos), mParent(parent)
+    Iterator(uint32_t pos, const Mask* parent)
+      : mPos(pos)
+      , mParent(parent)
     {
     }
     Iterator& operator=(const Iterator&) = default;
