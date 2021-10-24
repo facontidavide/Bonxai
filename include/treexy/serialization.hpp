@@ -21,8 +21,8 @@ namespace Treexy
 /**
  * Serialize a grid to ostream. Easy :)
  */
-template <typename DataT, int IBITS, int LBITS>
-inline void Serialize(std::ostream& out, const VoxelGrid<DataT, IBITS, LBITS>& grid);
+template <typename DataT>
+inline void Serialize(std::ostream& out, const VoxelGrid<DataT>& grid);
 
 struct HeaderInfo
 {
@@ -44,9 +44,8 @@ inline HeaderInfo GetHeaderInfo(std::string header);
  * @brief Deserialize create a grid. Note that template arguments need to be
  * consistent with HeaderInfo
  */
-template <typename DataT, int IBITS = 2, int LBITS = 3>
-inline VoxelGrid<DataT, IBITS, LBITS> Deserialize(std::istream& input,
-                                                  HeaderInfo info);
+template <typename DataT>
+inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info);
 
 //---------------------------------------------------------
 namespace details
@@ -80,8 +79,8 @@ inline void Write(std::ostream& out, const T& val)
   out.write(reinterpret_cast<const char*>(&val), sizeof(T));
 }
 
-template <typename DataT, int IBITS, int LBITS>
-inline void Serialize(std::ostream& out, const VoxelGrid<DataT, IBITS, LBITS>& grid)
+template <typename DataT>
+inline void Serialize(std::ostream& out, const VoxelGrid<DataT>& grid)
 {
   static_assert(std::is_trivially_copyable_v<DataT>,
                 "DataT must ne trivially copyable");
@@ -92,8 +91,8 @@ inline void Serialize(std::ostream& out, const VoxelGrid<DataT, IBITS, LBITS>& g
   sprintf(header,
           "Treexy::VoxelGrid<%s,%d,%d>(%lf)\n",
           type_name.c_str(),
-          IBITS,
-          LBITS,
+          grid.INNER_BITS,
+          grid.LEAF_BITS,
           grid.resolution);
 
   out.write(header, std::strlen(header));
@@ -169,27 +168,18 @@ inline HeaderInfo GetHeaderInfo(std::string header)
   return info;
 }
 
-template <typename DataT, int IBITS = 2, int LBITS = 3>
-inline VoxelGrid<DataT, IBITS, LBITS> Deserialize(std::istream& input,
-                                                  HeaderInfo info)
+template <typename DataT>
+inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info)
 {
   std::string type_name = details::demangle(typeid(DataT).name());
   if (type_name != info.type_name)
   {
     throw std::runtime_error("DataT does not match");
   }
-  if (info.inner_bits != IBITS)
-  {
-    throw std::runtime_error("INNER_BITS does not match");
-  }
-  if (info.leaf_bits != LBITS)
-  {
-    throw std::runtime_error("LEAF_BITS does not match");
-  }
 
   //------------
 
-  VoxelGrid<DataT, IBITS, LBITS> grid(info.resolution);
+  VoxelGrid<DataT> grid(info.inner_bits, info.leaf_bits, info.resolution);
 
   uint32_t root_count = Read<uint32_t>(input);
 
@@ -200,7 +190,16 @@ inline VoxelGrid<DataT, IBITS, LBITS> Deserialize(std::istream& input,
     root_coord.y = Read<int32_t>(input);
     root_coord.z = Read<int32_t>(input);
 
-    auto& inner_grid = grid.root_map[root_coord];
+    auto inner_it = grid.root_map.find(root_coord);
+    if (inner_it == grid.root_map.end())
+    {
+      inner_it =
+          grid.root_map
+              .insert({ root_coord,
+                        typename VoxelGrid<DataT>::InnerGrid(info.inner_bits) })
+              .first;
+    }
+    auto& inner_grid = inner_it->second;
 
     for (size_t w = 0; w < inner_grid.mask.wordCount(); w++)
     {
@@ -210,8 +209,8 @@ inline VoxelGrid<DataT, IBITS, LBITS> Deserialize(std::istream& input,
     for (auto inner = inner_grid.mask.beginOn(); inner; ++inner)
     {
       const uint32_t inner_index = *inner;
-      using LeafGridT = typename VoxelGrid<DataT, IBITS, LBITS>::LeafGrid;
-      inner_grid.data[inner_index] = std::make_shared<LeafGridT>();
+      using LeafGridT = typename VoxelGrid<DataT>::LeafGrid;
+      inner_grid.data[inner_index] = std::make_shared<LeafGridT>(info.leaf_bits);
       auto& leaf_grid = inner_grid.data[inner_index];
 
       for (size_t w = 0; w < leaf_grid->mask.wordCount(); w++)

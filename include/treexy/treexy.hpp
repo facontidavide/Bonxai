@@ -40,31 +40,56 @@ inline bool operator!=(const CoordT& a, const CoordT& b)
   return !(a == b);
 }
 
-template <typename DataT, int Log2DIM>
+template <typename DataT>
 struct Grid
 {
-  Grid() = default;
+  Grid(size_t log2dim)
+    : LOG2DIM(log2dim), DIM(1 << LOG2DIM), SIZE(DIM * DIM * DIM), mask(LOG2DIM)
+  {
+    data = new DataT[SIZE];
+  }
 
-  constexpr static int DIM = 1 << Log2DIM;
-  constexpr static int SIZE = DIM * DIM * DIM;
-  std::array<DataT, SIZE> data;
-  Treexy::Mask<Log2DIM> mask;
+  Grid(const Grid& other) = delete;
+
+  Grid(Grid&& other)
+    : LOG2DIM(other.LOG2DIM)
+    , DIM(other.DIM)
+    , SIZE(other.SIZE)
+    , mask(std::move(other.mask))
+  {
+    std::swap(data, other.data);
+  }
+
+  ~Grid()
+  {
+    if (data)
+    {
+      delete[] data;
+    }
+  }
+
+  const int32_t LOG2DIM;
+  const int32_t DIM;
+  const int32_t SIZE;
+  DataT* data = nullptr;
+  Treexy::Mask mask;
 };
 
-template <typename DataT, int INNER_BITS = 2, int LEAF_BITS = 3>
-struct VoxelGrid
+template <typename DataT>
+class VoxelGrid
 {
-  constexpr static int32_t Log2N = INNER_BITS + LEAF_BITS;
+public:
+  const int32_t INNER_BITS;
+  const int32_t LEAF_BITS;
+  const int32_t Log2N;
+  const double resolution;
+  const double inv_resolution;
 
-  using LeafGrid = Grid<DataT, LEAF_BITS>;
-  using InnerGrid = Grid<std::shared_ptr<LeafGrid>, INNER_BITS>;
+  using LeafGrid = Grid<DataT>;
+  using InnerGrid = Grid<std::shared_ptr<LeafGrid>>;
   using RootMap = std::unordered_map<CoordT, InnerGrid>;
 
   RootMap root_map;
-
-  const double resolution;
-  const double inv_resolution;
-  const double half_resolution;
 
   /**
    * @brief VoxelGrid constructor
@@ -72,19 +97,13 @@ struct VoxelGrid
    * @param voxel_size  dimension of the voxel. Used to convert between Point3D and
    * CoordT
    */
-  VoxelGrid(double voxel_size)
-    : resolution(voxel_size)
+  VoxelGrid(double voxel_size, uint8_t inner_bits = 2, uint8_t leaf_bits = 3)
+    : INNER_BITS(inner_bits)
+    , LEAF_BITS(leaf_bits)
+    , Log2N(INNER_BITS + LEAF_BITS)
+    , resolution(voxel_size)
     , inv_resolution(1.0 / resolution)
-    , half_resolution(0.5 * resolution)
   {
-  }
-
-  VoxelGrid(VoxelGrid&& other)
-    : resolution(other.resolution)
-    , inv_resolution(1.0 / resolution)
-    , half_resolution(0.5 * resolution)
-  {
-    root_map = std::move(other.root_map);
   }
 
   /**
@@ -170,12 +189,12 @@ struct VoxelGrid
      * @param create_if_missing   if true, create the Root, Inner and Leaf, if not
      * present.
      */
-    LeafGrid*  getLeafGrid(const CoordT& coord, bool create_if_missing = false);
+    LeafGrid* getLeafGrid(const CoordT& coord, bool create_if_missing = false);
 
   private:
     VoxelGrid& grid_;
-    CoordT prev_root_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
-    CoordT prev_inner_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
+    CoordT prev_root_coord_ = { std::numeric_limits<int32_t>::max(), 0, 0 };
+    CoordT prev_inner_coord_ = { std::numeric_limits<int32_t>::max(), 0, 0 };
     InnerGrid* prev_inner_ptr_ = nullptr;
     LeafGrid* prev_leaf_ptr_ = nullptr;
   };
@@ -185,21 +204,21 @@ struct VoxelGrid
     return Accessor(*this);
   }
 
-  static inline CoordT getRootKey(const CoordT& coord)
+  inline CoordT getRootKey(const CoordT& coord)
   {
-    constexpr static int32_t MASK = ~((1 << Log2N) - 1);
+    const int32_t MASK = ~((1 << Log2N) - 1);
     return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
   }
 
-  static inline CoordT getInnerKey(const CoordT& coord)
+  inline CoordT getInnerKey(const CoordT& coord)
   {
-    constexpr static int32_t MASK = ~((1 << LEAF_BITS) - 1);
+    const int32_t MASK = ~((1 << LEAF_BITS) - 1);
     return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
   }
 
-  static inline uint32_t getInnerIndex(const CoordT& coord)
+  inline uint32_t getInnerIndex(const CoordT& coord)
   {
-    constexpr static int32_t MASK = ((1 << INNER_BITS) - 1);
+    const int32_t MASK = ((1 << INNER_BITS) - 1);
     // clang-format off
     return ((coord.x >> LEAF_BITS) & MASK) |
           (((coord.y >> LEAF_BITS) & MASK) <<  INNER_BITS) |
@@ -207,9 +226,9 @@ struct VoxelGrid
     // clang-format on
   }
 
-  static inline uint32_t getLeafIndex(const CoordT& coord)
+  inline uint32_t getLeafIndex(const CoordT& coord)
   {
-    constexpr static uint32_t MASK = ((1 << LEAF_BITS) - 1);
+    const int32_t MASK = ((1 << LEAF_BITS) - 1);
     // clang-format off
     return (coord.x & MASK) |
           ((coord.y & MASK) <<  LEAF_BITS) |

@@ -70,28 +70,90 @@ inline uint32_t CountOn(uint64_t v)
 
 /// @brief Bit-mask to encode active states and facilitate sequential iterators
 /// and a fast codec for I/O compression.
-template <uint32_t LOG2DIM>
 class Mask
 {
-  static constexpr uint32_t SIZE = 1U << (3 * LOG2DIM);  // Number of bits in mask
-  static constexpr uint32_t WORD_COUNT = SIZE >> 6;      // Number of 64 bit words
-  uint64_t mWords[WORD_COUNT];
+  uint64_t* mWords = nullptr;
+  uint64_t staticWords[8];
 
 public:
-  /// @brief Return the memory footprint in bytes of this Mask
-  static size_t memUsage()
+  const uint8_t LOG2DIM;
+  const uint32_t SIZE;        // Number of bits in mask
+  const uint32_t WORD_COUNT;  // Number of 64 bit words
+
+  /// @brief Initialize all bits to zero.
+  Mask(size_t log2dim)
+    : LOG2DIM(log2dim), SIZE(1U << (3 * LOG2DIM)), WORD_COUNT(SIZE >> 6)
   {
-    return sizeof(Mask);
+    mWords = (WORD_COUNT <= 8) ? staticWords : new uint64_t[WORD_COUNT];
+
+    for (uint32_t i = 0; i < WORD_COUNT; ++i)
+    {
+      mWords[i] = 0;
+    }
+  }
+  Mask(size_t log2dim, bool on)
+    : LOG2DIM(log2dim), SIZE(1U << (3 * LOG2DIM)), WORD_COUNT(SIZE >> 6)
+  {
+    mWords = (WORD_COUNT <= 8) ? staticWords : new uint64_t[WORD_COUNT];
+
+    const uint64_t v = on ? ~uint64_t(0) : uint64_t(0);
+    for (uint32_t i = 0; i < WORD_COUNT; ++i)
+    {
+      mWords[i] = v;
+    }
+  }
+
+  /// @brief Copy constructor
+  Mask(const Mask& other)
+    : LOG2DIM(other.LOG2DIM), SIZE(1U << (3 * LOG2DIM)), WORD_COUNT(SIZE >> 6)
+  {
+    mWords = (WORD_COUNT <= 8) ? staticWords : new uint64_t[WORD_COUNT];
+
+    for (uint32_t i = 0; i < WORD_COUNT; ++i)
+    {
+      mWords[i] = other.mWords[i];
+    }
+  }
+
+  Mask(Mask&& other)
+    : LOG2DIM(other.LOG2DIM), SIZE(1U << (3 * LOG2DIM)), WORD_COUNT(SIZE >> 6)
+  {
+    if (WORD_COUNT <= 8)
+    {
+      mWords = staticWords;
+      for (uint32_t i = 0; i < WORD_COUNT; ++i)
+      {
+        mWords[i] = other.mWords[i];
+      }
+    }
+    else
+    {
+      std::swap(mWords, other.mWords);
+    }
+  }
+
+  ~Mask()
+  {
+    if (mWords && WORD_COUNT > 8)
+    {
+      delete[] mWords;
+    }
+  }
+
+  /// @brief Return the memory footprint in bytes of this Mask
+  size_t memUsage() const
+  {
+    return sizeof(Mask);  // TODO FIXME
   }
 
   /// @brief Return the number of bits available in this Mask
-  static uint32_t bitCount()
+  uint32_t bitCount() const
   {
     return SIZE;
   }
 
   /// @brief Return the number of machine words used by this Mask
-  static uint32_t wordCount()
+  uint32_t wordCount() const
   {
     return WORD_COUNT;
   }
@@ -119,7 +181,7 @@ public:
   class Iterator
   {
   public:
-    Iterator() : mPos(Mask::SIZE), mParent(nullptr)
+    Iterator(const Mask* parent) : mPos(parent->SIZE), mParent(parent)
     {
     }
     Iterator(uint32_t pos, const Mask* parent) : mPos(pos), mParent(parent)
@@ -132,7 +194,7 @@ public:
     }
     operator bool() const
     {
-      return mPos != Mask::SIZE;
+      return mPos != mParent->SIZE;
     }
     Iterator& operator++()
     {
@@ -144,32 +206,6 @@ public:
     uint32_t mPos;
     const Mask* mParent;
   };  // Member class MaskIterator
-
-  /// @brief Initialize all bits to zero.
-  Mask()
-  {
-    for (uint32_t i = 0; i < WORD_COUNT; ++i)
-    {
-      mWords[i] = 0;
-    }
-  }
-  Mask(bool on)
-  {
-    const uint64_t v = on ? ~uint64_t(0) : uint64_t(0);
-    for (uint32_t i = 0; i < WORD_COUNT; ++i)
-    {
-      mWords[i] = v;
-    }
-  }
-
-  /// @brief Copy constructor
-  Mask(const Mask& other)
-  {
-    for (uint32_t i = 0; i < WORD_COUNT; ++i)
-    {
-      mWords[i] = other.mWords[i];
-    }
-  }
 
   /// @brief Return the <i>n</i>th word of the bit mask, for a word of arbitrary
   /// size.

@@ -106,9 +106,8 @@ int* value = accessor.value( coord );
 # Roadmap
 
 - [x] serialization to/from file.
-- [ ] full implementation of the Octomap algorithm (ray tracing + probability map).
+- [ ] full implementation of the Octomap algorithm (ray casting + probability map).
 - [ ] integration with ROS.
-- [ ] implement thread-safe, multi-threading accessors.
 - [ ] RViz/RViz2 visualization plugins.
 - [ ] integration with [FCL](https://github.com/flexible-collision-library/fcl) for collision detection (?)
 
@@ -117,8 +116,10 @@ int* value = accessor.value( coord );
 **What is the point of reimplementing OpenVDB?**
 
 - The number one reason is to have fun and to learn something new :)
-- It is not an "exact" rewrite, I modified few important aspects of the algorithm to make it faster, at least for my specific use cases.
 - I want this library to be small and easy to integrate into larger projects.
+  The core data structure is 600 lines of code, only.
+- It is not an "exact" rewrite, I modified few important aspects of the algorithm
+    to make it slightly faster, at least for my specific use cases.
 
 **How much memory does it uses, compared with Octomap?**
 

@@ -66,7 +66,7 @@ static void Treexy_IterateAllCells(benchmark::State& state)
   long count = 0;
   for (auto _ : state)
   {
-    auto visitor = [&](int&, const CoordT&) {count++;};
+    auto visitor = [&](int&, const CoordT&) { count++; };
     grid.forEachCell(visitor);
   }
 }
