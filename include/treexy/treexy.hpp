@@ -68,6 +68,12 @@ struct Grid
     }
   }
 
+  size_t memUsage() const
+  {
+    return mask.memUsage() + sizeof(int32_t) * 3 + sizeof(DataT*) +
+           sizeof(DataT) * SIZE;
+  }
+
   const int32_t LOG2DIM;
   const int32_t DIM;
   const int32_t SIZE;
@@ -109,7 +115,7 @@ public:
   /**
    * @brief getMemoryUsage returns the amount of bytes used by this data structure
    */
-  size_t getMemoryUsage() const;
+  size_t memUsage() const;
 
   /**
    * @brief posToCoord MUST be used to convert real coordinates to CoordT indexes.

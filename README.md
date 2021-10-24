@@ -117,7 +117,7 @@ int* value = accessor.value( coord );
 
 - The number one reason is to have fun and to learn something new :)
 - I want this library to be small and easy to integrate into larger projects.
-  The core data structure is 600 lines of code, only.
+  The core data structure is less than 1000 lines of code.
 - It is not an "exact" rewrite, I modified few important aspects of the algorithm
     to make it slightly faster, at least for my specific use cases.
 

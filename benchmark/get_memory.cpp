@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 
   std::cout << "Octomap: " << octree.memoryUsage() << std::endl;
   std::cout << "OpenVDB: " << vdb_grid->memUsage() << std::endl;
-  std::cout << "Treexy:  " << grid.getMemoryUsage() << std::endl;
+  std::cout << "Treexy:  " << grid.memUsage() << std::endl;
 
   return 0;
 }

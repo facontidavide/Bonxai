@@ -143,7 +143,11 @@ public:
   /// @brief Return the memory footprint in bytes of this Mask
   size_t memUsage() const
   {
-    return sizeof(Mask);  // TODO FIXME
+    if (WORD_COUNT > 8)
+    {
+      return sizeof(Mask) + sizeof(uint64_t) * WORD_COUNT;
+    }
+    return sizeof(Mask);
   }
 
   /// @brief Return the number of bits available in this Mask

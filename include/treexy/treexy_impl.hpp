@@ -144,7 +144,7 @@ VoxelGrid<DataT>::Accessor::getLeafGrid(const CoordT& coord, bool create_if_miss
 
 //----------------------------------
 template <typename DataT>
-inline size_t VoxelGrid<DataT>::getMemoryUsage() const
+inline size_t VoxelGrid<DataT>::memUsage() const
 {
   size_t total_size = 0;
 
@@ -161,12 +161,17 @@ inline size_t VoxelGrid<DataT>::getMemoryUsage() const
     }
   }
 
-  size_t entry_size = sizeof(CoordT) + sizeof(InnerGrid) + sizeof(void*);
-  total_size += root_map.size() * entry_size;
+  total_size += root_map.size() * (sizeof(CoordT) + sizeof(void*));
 
   for (const auto& [key, inner_grid] : root_map)
   {
-    total_size += inner_grid.mask.countOn() * sizeof(LeafGrid);
+    total_size += inner_grid.memUsage();
+    for (auto inner_it = inner_grid.mask.beginOn(); inner_it; ++inner_it)
+    {
+      const int32_t inner_index = *inner_it;
+      auto& leaf_grid = inner_grid.data[inner_index];
+      total_size += leaf_grid->memUsage();
+    }
   }
   return total_size;
 }

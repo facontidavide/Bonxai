@@ -33,8 +33,8 @@ int main()
   Treexy::HeaderInfo info = Treexy::GetHeaderInfo(header);
   auto new_grid = Treexy::Deserialize<int>(ifile, info);
 
-  std::cout << "Original grid memory: " << grid.getMemoryUsage() << std::endl;
-  std::cout << "New grid memory: " << new_grid.getMemoryUsage() << std::endl;
+  std::cout << "Original grid memory: " << grid.memUsage() << std::endl;
+  std::cout << "New grid memory: " << new_grid.memUsage() << std::endl;
 
   auto new_accessor = new_grid.createAccessor();
 
