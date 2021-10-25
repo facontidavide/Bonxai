@@ -4,12 +4,13 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
-const double VOXEL_RESOLUTION = 0.05;
+const double VOXEL_RESOLUTION = 0.01;
 
 inline pcl::PointCloud<pcl::PointXYZ>::Ptr
 ReadCloud(const std::string& filename = "data/rgbd.pcd")
 {
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(
+      new pcl::PointCloud<pcl::PointXYZ>);
   if (pcl::io::loadPCDFile<pcl::PointXYZ>(filename, *cloud) == -1)  //* load the
                                                                     // file
   {

@@ -51,7 +51,7 @@ inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info);
 namespace details
 {
 #ifdef __GNUG__
-std::string demangle(const char* name)
+inline std::string demangle(const char* name)
 {
   int status = -4;  // some arbitrary value to eliminate the compiler warning
 
@@ -64,7 +64,7 @@ std::string demangle(const char* name)
 #else
 
 // does nothing if not g++
-std::string demangle(const char* name)
+inline std::string demangle(const char* name)
 {
   return name;
 }

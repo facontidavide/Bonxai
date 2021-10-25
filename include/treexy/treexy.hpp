@@ -113,6 +113,8 @@ public:
    */
   size_t memUsage() const;
 
+  size_t activeCellsCount() const;
+
   /**
    * @brief posToCoord MUST be used to convert real coordinates to CoordT indexes.
    */
@@ -307,22 +309,17 @@ template <typename DataT>
 inline uint32_t VoxelGrid<DataT>::getInnerIndex(const CoordT& coord)
 {
   const uint32_t MASK = ((1 << INNER_BITS) - 1);
-  // clang-format off
   return ((coord.x >> LEAF_BITS) & MASK) |
-      (((coord.y >> LEAF_BITS) & MASK) <<  INNER_BITS) |
-      (((coord.z >> LEAF_BITS) & MASK) << (INNER_BITS * 2));
-  // clang-format on
+         (((coord.y >> LEAF_BITS) & MASK) << INNER_BITS) |
+         (((coord.z >> LEAF_BITS) & MASK) << (INNER_BITS * 2));
 }
 
 template <typename DataT>
 inline uint32_t VoxelGrid<DataT>::getLeafIndex(const CoordT& coord)
 {
   const uint32_t MASK = ((1 << LEAF_BITS) - 1);
-  // clang-format off
-  return (coord.x & MASK) |
-      ((coord.y & MASK) <<  LEAF_BITS) |
-      ((coord.z & MASK) << (LEAF_BITS * 2));
-  // clang-format on
+  return (coord.x & MASK) | ((coord.y & MASK) << LEAF_BITS) |
+         ((coord.z & MASK) << (LEAF_BITS * 2));
 }
 
 //----------------------------------
@@ -480,6 +477,23 @@ inline size_t VoxelGrid<DataT>::memUsage() const
       const int32_t inner_index = *inner_it;
       auto& leaf_grid = inner_grid.data[inner_index];
       total_size += leaf_grid->memUsage();
+    }
+  }
+  return total_size;
+}
+
+template <typename DataT>
+inline size_t VoxelGrid<DataT>::activeCellsCount() const
+{
+  size_t total_size = 0;
+
+  for (const auto& [key, inner_grid] : root_map)
+  {
+    for (auto inner_it = inner_grid.mask.beginOn(); inner_it; ++inner_it)
+    {
+      const int32_t inner_index = *inner_it;
+      auto& leaf_grid = inner_grid.data[inner_index];
+      total_size += leaf_grid->mask.countOn();
     }
   }
   return total_size;
