@@ -168,19 +168,19 @@ public:
      */
     DataT* value(const CoordT& coord);
 
-    /** @brief setCellOn is similar to setValue, but the value is changes only if the
-     * cell has been created, otherwise the previous value is used.
+    /** @brief setCellOn is similar to setValue, but the value is changed only if the
+     * cell has been created, otherwise, the previous value is used.
      *
-     * @param coord   coordinate of the cell.
+     * @param coord           coordinate of the cell.
      * @param default_value   default value of the cell. Use only if the cell did not exist before.
-     * @return        return the previous state of the cell (ON = true).
+     * @return                the previous state of the cell (ON = true).
      */
     bool setCellOn(const CoordT& coord, const DataT& default_value = DataT());
 
-    /** @brief setCellOff will disable a cell without releting its content.
+    /** @brief setCellOff will disable a cell without deleting its content.
      *
      * @param coord   coordinate of the cell.
-     * @return        return the previous state of the cell (ON = true).
+     * @return        the previous state of the cell (ON = true).
      */
     bool setCellOff(const CoordT& coord);
 
