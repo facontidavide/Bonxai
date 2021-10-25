@@ -158,8 +158,9 @@ public:
      *
      * @param coord   coordinate of the cell
      * @param value   value to set.
+     * @return        the previous state of the cell (ON = true).
      */
-    void setValue(const CoordT& coord, const DataT& value);
+    bool setValue(const CoordT& coord, const DataT& value);
 
     /** @brief value getter.
      *
@@ -172,7 +173,8 @@ public:
      * cell has been created, otherwise, the previous value is used.
      *
      * @param coord           coordinate of the cell.
-     * @param default_value   default value of the cell. Use only if the cell did not exist before.
+     * @param default_value   default value of the cell. Use only if the cell did not
+     * exist before.
      * @return                the previous state of the cell (ON = true).
      */
     bool setCellOn(const CoordT& coord, const DataT& default_value = DataT());
@@ -240,7 +242,6 @@ public:
   inline uint32_t getLeafIndex(const CoordT& coord);
 };
 
-
 }  // namespace Treexy
 
 //----------------- Implementations ------------------
@@ -260,9 +261,10 @@ struct hash<Treexy::CoordT>
 
 namespace Treexy
 {
-
-template<typename DataT> inline
-    VoxelGrid<DataT>::VoxelGrid(double voxel_size, uint8_t inner_bits, uint8_t leaf_bits)
+template <typename DataT>
+inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
+                                   uint8_t inner_bits,
+                                   uint8_t leaf_bits)
   : INNER_BITS(inner_bits)
   , LEAF_BITS(leaf_bits)
   , Log2N(INNER_BITS + LEAF_BITS)
@@ -292,17 +294,17 @@ inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z)
            static_cast<int32_t>(z * inv_resolution) - std::signbit(z) };
 }
 
-template<typename DataT> inline
-Point3D VoxelGrid<DataT>::coordToPos(const CoordT &coord)
+template <typename DataT>
+inline Point3D VoxelGrid<DataT>::coordToPos(const CoordT& coord)
 {
   const double half_resolution = 0.5 * resolution;
   return { half_resolution + static_cast<double>(coord.x * resolution),
-        half_resolution + static_cast<double>(coord.y * resolution),
-        half_resolution + static_cast<double>(coord.z * resolution) };
+           half_resolution + static_cast<double>(coord.y * resolution),
+           half_resolution + static_cast<double>(coord.z * resolution) };
 }
 
-template<typename DataT> inline
-uint32_t VoxelGrid<DataT>::getInnerIndex(const CoordT &coord)
+template <typename DataT>
+inline uint32_t VoxelGrid<DataT>::getInnerIndex(const CoordT& coord)
 {
   const uint32_t MASK = ((1 << INNER_BITS) - 1);
   // clang-format off
@@ -312,8 +314,8 @@ uint32_t VoxelGrid<DataT>::getInnerIndex(const CoordT &coord)
   // clang-format on
 }
 
-template<typename DataT> inline
-uint32_t VoxelGrid<DataT>::getLeafIndex(const CoordT &coord)
+template <typename DataT>
+inline uint32_t VoxelGrid<DataT>::getLeafIndex(const CoordT& coord)
 {
   const uint32_t MASK = ((1 << LEAF_BITS) - 1);
   // clang-format off
@@ -325,7 +327,7 @@ uint32_t VoxelGrid<DataT>::getLeafIndex(const CoordT &coord)
 
 //----------------------------------
 template <typename DataT>
-inline void VoxelGrid<DataT>::Accessor::setValue(const CoordT& coord,
+inline bool VoxelGrid<DataT>::Accessor::setValue(const CoordT& coord,
                                                  const DataT& value)
 {
   const CoordT inner_key = grid_.getInnerKey(coord);
@@ -336,8 +338,9 @@ inline void VoxelGrid<DataT>::Accessor::setValue(const CoordT& coord,
   }
 
   uint32_t index = grid_.getLeafIndex(coord);
-  prev_leaf_ptr_->mask.setOn(index);
+  bool was_on = prev_leaf_ptr_->mask.setOn(index);
   prev_leaf_ptr_->data[index] = value;
+  return was_on;
 }
 
 //----------------------------------
@@ -363,8 +366,9 @@ inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord)
 }
 
 //----------------------------------
-template<typename DataT>
-inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT &coord, const DataT& default_value)
+template <typename DataT>
+inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT& coord,
+                                                  const DataT& default_value)
 {
   const CoordT inner_key = grid_.getInnerKey(coord);
 
@@ -375,7 +379,7 @@ inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT &coord, const Dat
   }
   uint32_t index = grid_.getLeafIndex(coord);
   bool was_on = prev_leaf_ptr_->mask.setOn(index);
-  if(!was_on)
+  if (!was_on)
   {
     prev_leaf_ptr_->data[index] = default_value;
   }
@@ -383,8 +387,8 @@ inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT &coord, const Dat
 }
 
 //----------------------------------
-template<typename DataT>
-inline bool VoxelGrid<DataT>::Accessor::setCellOff(const CoordT &coord)
+template <typename DataT>
+inline bool VoxelGrid<DataT>::Accessor::setCellOff(const CoordT& coord)
 {
   const CoordT inner_key = grid_.getInnerKey(coord);
 
@@ -448,8 +452,7 @@ VoxelGrid<DataT>::Accessor::getLeafGrid(const CoordT& coord, bool create_if_miss
   return inner_data.get();
 }
 
-
-template<typename DataT>
+template <typename DataT>
 inline size_t VoxelGrid<DataT>::memUsage() const
 {
   size_t total_size = 0;
