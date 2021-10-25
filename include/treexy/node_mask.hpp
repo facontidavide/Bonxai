@@ -293,15 +293,19 @@ public:
   bool setOn(uint32_t n)
   {
     uint64_t& word = mWords[n >> 6];
-    const uint64_t bit = (uint64_t(1) << (n & 63));
-    bool was_on = word & bit;
-    word |= bit;
+    const uint64_t on_bit = (uint64_t(1) << (n & 63));
+    bool was_on = word & on_bit;
+    word |= on_bit;
     return was_on;
   }
 
-  void setOff(uint32_t n)
+  bool setOff(uint32_t n)
   {
-    mWords[n >> 6] &= ~(uint64_t(1) << (n & 63));
+    uint64_t& word = mWords[n >> 6];
+    const uint64_t on_bit = (uint64_t(1) << (n & 63));
+    bool was_on = word & on_bit;
+    word &= ~(on_bit);
+    return was_on;
   }
 
   void set(uint32_t n, bool On)
