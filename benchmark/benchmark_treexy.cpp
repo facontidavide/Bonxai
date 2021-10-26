@@ -1,6 +1,7 @@
 #include <benchmark/benchmark.h>
 #include "benchmark_utils.hpp"
 #include "treexy/treexy.hpp"
+#include "treexy/serialization.hpp"
 
 using namespace Treexy;
 
@@ -10,7 +11,7 @@ static void Treexy_Create(benchmark::State& state)
 
   for (auto _ : state)
   {
-    VoxelGrid<int> grid(VOXEL_RESOLUTION);
+    VoxelGrid<uint32_t> grid(VOXEL_RESOLUTION);
     auto accessor = grid.createAccessor();
 
     for (const auto& point : *cloud)
@@ -24,7 +25,7 @@ static void Treexy_Create(benchmark::State& state)
 static void Treexy_Update(benchmark::State& state)
 {
   auto cloud = ReadCloud();
-  VoxelGrid<int> grid(VOXEL_RESOLUTION);
+  VoxelGrid<uint32_t> grid(VOXEL_RESOLUTION);
 
   {
     auto accessor = grid.createAccessor();
@@ -52,7 +53,7 @@ static void Treexy_IterateAllCells(benchmark::State& state)
 {
   auto cloud = ReadCloud();
 
-  VoxelGrid<int> grid(VOXEL_RESOLUTION);
+  VoxelGrid<uint32_t> grid(VOXEL_RESOLUTION);
 
   {
     auto accessor = grid.createAccessor();
@@ -66,7 +67,7 @@ static void Treexy_IterateAllCells(benchmark::State& state)
   long count = 0;
   for (auto _ : state)
   {
-    auto visitor = [&](int&, const CoordT&) { count++; };
+    auto visitor = [&](uint32_t&, const CoordT&) { count++; };
     grid.forEachCell(visitor);
   }
 }
@@ -75,6 +76,7 @@ static void Treexy_IterateAllCells(benchmark::State& state)
 BENCHMARK(Treexy_Create);
 BENCHMARK(Treexy_Update);
 BENCHMARK(Treexy_IterateAllCells);
+
 
 // Run the benchmark
 BENCHMARK_MAIN();

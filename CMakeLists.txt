@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(Treexy)
 
-
+#---- Compile i nRelease by default ----
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'Release' as none was specified.")
   set(CMAKE_BUILD_TYPE "Release" CACHE
@@ -11,10 +11,16 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
+#---- Add the subdirectory cmake ----
+set(CMAKE_CONFIG_PATH ${CMAKE_MODULE_PATH}  "${CMAKE_CURRENT_LIST_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CONFIG_PATH}")
+
+#---- Use C++17 ----
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
 
+#---- Use Address sanitixer if compiled in Debug mode ----
 set (CMAKE_CXX_DEBUG_FLAGS "${CMAKE_CXX_DEBUG_FLAGS}  -fsanitize=address")
 set (CMAKE_LINKER_DEBUG_FLAGS "${CMAKE_LINKER_DEBUG_FLAGS}  -fsanitize=address")
 
@@ -22,13 +28,14 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -fno-omit-frame-pointer)
 endif()
 
+#---- Options ----
 option(BENCHMARK_OCTOMAP "Benchmark against Octomap" ON)
 option(BENCHMARK_OPENVDB "Benchmark against OpenVDB" ON)
 
-#option(BENCHMARK_OPEN3D "Benchmark against Open3D" OFF)
-
 find_package(benchmark REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common io)
+
+find_package(LZ4 QUIET)
 
 set(BENCHMARK_SRC_FILES
     benchmark/benchmark_treexy.cpp)
@@ -40,6 +47,12 @@ set(BENCHMARK_DEPENDENCIES
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
+
+if( LZ4_FOUND )
+    list(APPEND BENCHMARK_SRC_FILES benchmark/benchmark_compression.cpp)
+    include_directories(${LZ4_INCLUDE_DIRS})
+    list(APPEND BENCHMARK_DEPENDENCIES ${LZ4_LIBRARIES})
+endif()
 
 if( BENCHMARK_OCTOMAP )
     find_package(octomap REQUIRED)
@@ -71,12 +84,14 @@ include_directories( include )
 
 message(${BENCHMARK_DEPENDENCIES})
 
-add_executable(benchmark_treexy ${BENCHMARK_SRC_FILES} )
-target_link_libraries(benchmark_treexy ${BENCHMARK_DEPENDENCIES} )
+add_executable(benchmark_treexy
+    ${BENCHMARK_SRC_FILES} )
+target_link_libraries(benchmark_treexy
+    ${BENCHMARK_DEPENDENCIES})
 
 if( BENCHMARK_OCTOMAP AND BENCHMARK_OPENVDB)
     add_executable(get_memory benchmark/get_memory.cpp )
-    target_link_libraries(get_memory ${BENCHMARK_DEPENDENCIES} )
+    target_link_libraries(get_memory ${BENCHMARK_DEPENDENCIES})
 endif()
 
 add_executable(test test/test_serialization.cpp )
