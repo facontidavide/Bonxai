@@ -31,6 +31,7 @@ endif()
 #---- Options ----
 option(BENCHMARK_OCTOMAP "Benchmark against Octomap" ON)
 option(BENCHMARK_OPENVDB "Benchmark against OpenVDB" ON)
+option(BENCHMARK_LAMA "Benchmark against LaMa"   OFF)
 
 find_package(benchmark REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common io)
@@ -70,6 +71,14 @@ if( BENCHMARK_OPENVDB )
 
     list(APPEND BENCHMARK_SRC_FILES benchmark/benchmark_openvdb.cpp)
     list(APPEND BENCHMARK_DEPENDENCIES ${OpenVDB_LIBRARIES} TBB::tbb)
+endif()
+
+if( BENCHMARK_LAMA )
+    find_package(iris_lama REQUIRED)
+    include_directories(${iris_lama_INCLUDE_DIRS})
+
+    list(APPEND BENCHMARK_SRC_FILES benchmark/benchmark_lama.cpp)
+    list(APPEND BENCHMARK_DEPENDENCIES ${iris_lama_LIBRARIES})
 endif()
 
 #if( BENCHMARK_OPEN3D )
