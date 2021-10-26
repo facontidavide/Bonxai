@@ -3,13 +3,15 @@
 
 #include <lama/sdm/simple_occupancy_map.h>
 
+#define PATCH_LENGTH 8
+
 static void Lama_Create(benchmark::State& state)
 {
   auto cloud = ReadCloud();
 
   for (auto _ : state)
   {
-    lama::SimpleOccupancyMap grid(VOXEL_RESOLUTION);
+    lama::SimpleOccupancyMap grid(VOXEL_RESOLUTION, PATCH_LENGTH, true);
 
     for (const auto& point : *cloud)
     {
@@ -23,7 +25,7 @@ static void Lama_Update(benchmark::State& state)
 {
   auto cloud = ReadCloud();
 
-  lama::SimpleOccupancyMap grid(VOXEL_RESOLUTION);
+  lama::SimpleOccupancyMap grid(VOXEL_RESOLUTION, PATCH_LENGTH, true);
 
   for (const auto& point : *cloud)
   {
@@ -45,7 +47,7 @@ static void Lama_IterateAllCells(benchmark::State& state)
 {
   auto cloud = ReadCloud();
 
-  lama::SimpleOccupancyMap grid(VOXEL_RESOLUTION);
+  lama::SimpleOccupancyMap grid(VOXEL_RESOLUTION, PATCH_LENGTH, true);
 
   {
     for (const auto& point : *cloud)
