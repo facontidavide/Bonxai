@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(Treexy)
+project(Bonxai)
 
 #---- Compile i nRelease by default ----
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -39,7 +39,7 @@ find_package(PCL REQUIRED COMPONENTS common io)
 find_package(LZ4 QUIET)
 
 set(BENCHMARK_SRC_FILES
-    benchmark/benchmark_treexy.cpp)
+    benchmark/benchmark_bonxai.cpp)
 
 set(BENCHMARK_DEPENDENCIES
     benchmark::benchmark
@@ -93,9 +93,9 @@ include_directories( include )
 
 message(${BENCHMARK_DEPENDENCIES})
 
-add_executable(benchmark_treexy
+add_executable(benchmark_bonxai
     ${BENCHMARK_SRC_FILES} )
-target_link_libraries(benchmark_treexy
+target_link_libraries(benchmark_bonxai
     ${BENCHMARK_DEPENDENCIES})
 
 if( BENCHMARK_OCTOMAP AND BENCHMARK_OPENVDB)

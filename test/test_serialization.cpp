@@ -1,12 +1,12 @@
-#include "treexy/treexy.hpp"
-#include "treexy/serialization.hpp"
+#include "bonxai/bonxai.hpp"
+#include "bonxai/serialization.hpp"
 #include <sstream>
 
 int main()
 {
   const double VOXEL_RESOLUTION = 0.1;
 
-  Treexy::VoxelGrid<int> grid(VOXEL_RESOLUTION);
+  Bonxai::VoxelGrid<int> grid(VOXEL_RESOLUTION);
   auto accessor = grid.createAccessor();
 
   auto value_ptr = accessor.value({});
@@ -28,7 +28,7 @@ int main()
   }
 
   std::ostringstream ofile(std::ios::binary);
-  Treexy::Serialize(ofile, grid);
+  Bonxai::Serialize(ofile, grid);
 
   std::string msg = ofile.str();
 
@@ -36,8 +36,8 @@ int main()
 
   char header[256];
   ifile.getline(header, 256);
-  Treexy::HeaderInfo info = Treexy::GetHeaderInfo(header);
-  auto new_grid = Treexy::Deserialize<int>(ifile, info);
+  Bonxai::HeaderInfo info = Bonxai::GetHeaderInfo(header);
+  auto new_grid = Bonxai::Deserialize<int>(ifile, info);
 
   std::cout << "Original grid memory: " << grid.memUsage() << std::endl;
   std::cout << "New grid memory: " << new_grid.memUsage() << std::endl;
@@ -53,7 +53,7 @@ int main()
     {
       for (double z = -0.5; z < 0.5; z += VOXEL_RESOLUTION)
       {
-        Treexy::CoordT coord = grid.posToCoord(x, y, z);
+        Bonxai::CoordT coord = grid.posToCoord(x, y, z);
         int* value_ptr = new_accessor.value(coord);
         if (!value_ptr || *value_ptr != count)
         {

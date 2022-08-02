@@ -7,9 +7,9 @@
 #include <array>
 #include <cstdint>
 
-#define TREEXY_USE_INTRINSICS
+#define BONXAI_USE_INTRINSICS
 
-namespace Treexy
+namespace Bonxai
 {
 /// @brief Returns the index of the lowest, i.e. least significant, on bit in
 /// the specified 64 bit word
@@ -19,11 +19,11 @@ namespace Treexy
 
 static inline uint32_t FindLowestOn(uint64_t v)
 {
-#if defined(_MSC_VER) && defined(TREEXY_USE_INTRINSICS)
+#if defined(_MSC_VER) && defined(BONXAI_USE_INTRINSICS)
   unsigned long index;
   _BitScanForward64(&index, v);
   return static_cast<uint32_t>(index);
-#elif (defined(__GNUC__) || defined(__clang__)) && defined(TREEXY_USE_INTRINSICS)
+#elif (defined(__GNUC__) || defined(__clang__)) && defined(BONXAI_USE_INTRINSICS)
   return static_cast<uint32_t>(__builtin_ctzll(v));
 #else
   static const unsigned char DeBruijn[64] = {
@@ -396,6 +396,6 @@ private:
   }
 };  // Mask class
 
-}  // namespace Treexy
+}  // namespace Bonxai
 
 #endif  // NODEMASK_HPP

@@ -1,5 +1,5 @@
-#ifndef TREEXY_HPP
-#define TREEXY_HPP
+#ifndef BONXAI_HPP
+#define BONXAI_HPP
 
 #include <array>
 #include <cstdint>
@@ -12,9 +12,9 @@
 #include <mutex>
 #include <shared_mutex>
 
-#include "treexy/node_mask.hpp"
+#include "bonxai/node_mask.hpp"
 
-namespace Treexy
+namespace Bonxai
 {
 struct Point3D
 {
@@ -81,7 +81,7 @@ struct Grid
   const uint32_t DIM;
   const uint32_t SIZE;
   DataT* data = nullptr;
-  Treexy::Mask mask;
+  Bonxai::Mask mask;
 };
 
 template <typename DataT>
@@ -244,16 +244,16 @@ public:
   inline uint32_t getLeafIndex(const CoordT& coord);
 };
 
-}  // namespace Treexy
+}  // namespace Bonxai
 
 //----------------- Implementations ------------------
 
 namespace std
 {
 template <>
-struct hash<Treexy::CoordT>
+struct hash<Bonxai::CoordT>
 {
-  std::size_t operator()(const Treexy::CoordT& p) const
+  std::size_t operator()(const Bonxai::CoordT& p) const
   {
     // same a OpenVDB
     return ((1 << 20) - 1) & (p.x * 73856093 ^ p.y * 19349663 ^ p.z * 83492791);
@@ -261,7 +261,7 @@ struct hash<Treexy::CoordT>
 };
 }  // namespace std
 
-namespace Treexy
+namespace Bonxai
 {
 template <typename DataT>
 inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
@@ -540,6 +540,6 @@ inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func)
   }
 }
 
-}  // namespace Treexy
+}  // namespace Bonxai
 
-#endif  // TREEXY_HPP
+#endif  // BONXAI_HPP

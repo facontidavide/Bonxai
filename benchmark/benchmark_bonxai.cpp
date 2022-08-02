@@ -1,11 +1,11 @@
 #include <benchmark/benchmark.h>
 #include "benchmark_utils.hpp"
-#include "treexy/treexy.hpp"
-#include "treexy/serialization.hpp"
+#include "bonxai/bonxai.hpp"
+#include "bonxai/serialization.hpp"
 
-using namespace Treexy;
+using namespace Bonxai;
 
-static void Treexy_Create(benchmark::State& state)
+static void Bonxai_Create(benchmark::State& state)
 {
   auto cloud = ReadCloud();
 
@@ -22,7 +22,7 @@ static void Treexy_Create(benchmark::State& state)
   }
 }
 
-static void Treexy_Update(benchmark::State& state)
+static void Bonxai_Update(benchmark::State& state)
 {
   auto cloud = ReadCloud();
   VoxelGrid<uint32_t> grid(VOXEL_RESOLUTION);
@@ -49,7 +49,7 @@ static void Treexy_Update(benchmark::State& state)
   }
 }
 
-static void Treexy_IterateAllCells(benchmark::State& state)
+static void Bonxai_IterateAllCells(benchmark::State& state)
 {
   auto cloud = ReadCloud();
 
@@ -73,9 +73,9 @@ static void Treexy_IterateAllCells(benchmark::State& state)
 }
 
 // Register the function as a benchmark
-BENCHMARK(Treexy_Create);
-BENCHMARK(Treexy_Update);
-BENCHMARK(Treexy_IterateAllCells);
+BENCHMARK(Bonxai_Create);
+BENCHMARK(Bonxai_Update);
+BENCHMARK(Bonxai_IterateAllCells);
 
 
 // Run the benchmark

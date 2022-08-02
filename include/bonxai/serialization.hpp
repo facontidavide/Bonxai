@@ -8,7 +8,7 @@
 #include <exception>
 #include <type_traits>
 #include <fstream>
-#include "treexy/treexy.hpp"
+#include "bonxai/bonxai.hpp"
 
 #ifdef __GNUG__
 #include <cstdlib>
@@ -16,7 +16,7 @@
 #include <cxxabi.h>
 #endif
 
-namespace Treexy
+namespace Bonxai
 {
 /**
  * Serialize a grid to ostream. Easy :)
@@ -89,7 +89,7 @@ inline void Serialize(std::ostream& out, const VoxelGrid<DataT>& grid)
   std::string type_name = details::demangle(typeid(DataT).name());
 
   sprintf(header,
-          "Treexy::VoxelGrid<%s,%d,%d>(%lf)\n",
+          "Bonxai::VoxelGrid<%s,%d,%d>(%lf)\n",
           type_name.c_str(),
           grid.INNER_BITS,
           grid.LEAF_BITS,
@@ -141,7 +141,7 @@ inline T Read(std::istream& input)
 
 inline HeaderInfo GetHeaderInfo(std::string header)
 {
-  const std::string expected_prefix = "Treexy::VoxelGrid<";
+  const std::string expected_prefix = "Bonxai::VoxelGrid<";
   if (header.rfind(expected_prefix, 0) != 0)
   {
     throw std::runtime_error("Header wasn't recognized");
@@ -228,7 +228,7 @@ inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info)
   return grid;
 }
 
-}  // namespace Treexy
-// namespace Treexy
+}  // namespace Bonxai
+
 
 #endif  // SERIALIZATION_HPP

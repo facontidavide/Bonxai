@@ -2,7 +2,7 @@
 #include <octomap/octomap.h>
 #include <openvdb/openvdb.h>
 #include "benchmark_utils.hpp"
-#include "treexy/treexy.hpp"
+#include "bonxai/bonxai.hpp"
 
 int main(int argc, char** argv)
 {
@@ -51,7 +51,7 @@ int main(int argc, char** argv)
     accessor.setValue(openvdb::Coord::floor(v), 42);
   }
   //----------------------
-  Treexy::VoxelGrid<int> grid(VOXEL_RESOLUTION);
+  Bonxai::VoxelGrid<int> grid(VOXEL_RESOLUTION);
   auto t_accessor = grid.createAccessor();
 
   for (const auto& point : *cloud)
@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 
   std::cout << "Octomap: " << octree.memoryUsage() << std::endl;
   std::cout << "OpenVDB: " << vdb_grid->memUsage() << std::endl;
-  std::cout << "Treexy:  " << grid.memUsage() << std::endl;
+  std::cout << "Bonxai:  " << grid.memUsage() << std::endl;
 
   return 0;
 }

@@ -2,7 +2,7 @@
 #include <openvdb/openvdb.h>
 #include "benchmark_utils.hpp"
 
-// To make a fair comparison, use Log2DIM values similar to Treexy
+// To make a fair comparison, use Log2DIM values similar to Bonxai
 using TreeType = openvdb::tree::Tree4<int32_t, 2, 2, 3>::Type;
 using GridType = openvdb::Grid<TreeType>;
 

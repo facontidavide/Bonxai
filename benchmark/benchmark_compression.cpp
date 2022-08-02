@@ -1,16 +1,16 @@
 #include <benchmark/benchmark.h>
 #include "benchmark_utils.hpp"
-#include "treexy/treexy.hpp"
-#include "treexy/serialization.hpp"
+#include "bonxai/bonxai.hpp"
+#include "bonxai/serialization.hpp"
 #include <pcl/compression/octree_pointcloud_compression.h>
 
 #include "lz4.h"
 
-using namespace Treexy;
+using namespace Bonxai;
 
 static const double COMPRESSION_RES = 0.0025;
 
-static void Treexy_Compress(benchmark::State& state)
+static void Bonxai_Compress(benchmark::State& state)
 {
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(
       new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -37,7 +37,7 @@ static void Treexy_Compress(benchmark::State& state)
     }
 
     std::ostringstream ofile(std::ios::binary);
-    Treexy::Serialize(ofile, grid);
+    Bonxai::Serialize(ofile, grid);
     std::string serialized = ofile.str();
 
     const int src_size(serialized.size() + 1);
@@ -69,6 +69,6 @@ static void PCL_Compress(benchmark::State& state)
 
 
 // Register the function as a benchmark
-BENCHMARK(Treexy_Compress);
+BENCHMARK(Bonxai_Compress);
 BENCHMARK(PCL_Compress);
 
