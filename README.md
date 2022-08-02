@@ -47,11 +47,26 @@ Take these numbers with a grain of salt, since they are preliminary and benchmar
 influenced by the way the data is stored.
 Anyway, they gave you a fair idea of what you may expect, in terms of performance.
 
-![benchmark](doc/benchmark.png)
+```
+------------------------------------------------------------------
+Benchmark                        Time             CPU   Iterations
+------------------------------------------------------------------
+Treexy_Create              1443778 ns      1442876 ns          484
+OpenVDB_Create             1545890 ns      1534823 ns          389
+Octomap_Create            26780041 ns     26750902 ns           26
 
-On the left side, you see the time needed to create a new VoxelGrid or to update an existing one
- (less is better).
-On the right side, the time required to iterate through all the cells in a VoxelGrid.
+Treexy_Update              1318036 ns      1317068 ns          528
+OpenVDB_Update             1228747 ns      1228155 ns          570
+Octomap_Update             8162226 ns      8150508 ns           83
+
+Treexy_IterateAllCells       21371 ns        21360 ns        31614
+OpenVDB_IterateAllCells      54912 ns        54885 ns        12278
+Octomap_IterateAllCells     227799 ns       227383 ns         3088
+```
+
+- **Create** refers to creating a new VoxelGrid from scratch
+- **Update** means modyfing the value of an already allocated VoxelGrid.
+- **IterateAllCells** will get the value and the coordinates of all the existing cells.
 
 # How to use it
 
