@@ -9,6 +9,12 @@ int main()
   Treexy::VoxelGrid<int> grid(VOXEL_RESOLUTION);
   auto accessor = grid.createAccessor();
 
+  auto value_ptr = accessor.value({});
+  if(!value_ptr)
+  {
+    std::cout << "Empty as expected" << std::endl;
+  }
+
   int count = 0;
   for (double x = -0.5; x < 0.5; x += VOXEL_RESOLUTION)
   {

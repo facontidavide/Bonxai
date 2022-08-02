@@ -103,7 +103,7 @@ if( BENCHMARK_OCTOMAP AND BENCHMARK_OPENVDB)
     target_link_libraries(get_memory ${BENCHMARK_DEPENDENCIES})
 endif()
 
-add_executable(test test/test_serialization.cpp )
+add_executable(test_serialization test/test_serialization.cpp )
 
 
 

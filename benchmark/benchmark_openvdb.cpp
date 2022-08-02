@@ -3,7 +3,8 @@
 #include "benchmark_utils.hpp"
 
 // To make a fair comparison, use Log2DIM values similar to Treexy
-using GridType = openvdb::Grid<openvdb::tree::Tree4<int32_t, 2, 2, 3>::Type>;
+using TreeType = openvdb::tree::Tree4<int32_t, 2, 2, 3>::Type;
+using GridType = openvdb::Grid<TreeType>;
 
 inline openvdb::Coord GetCoord(float x, float y, float z)
 {
@@ -71,13 +72,20 @@ static void OpenVDB_IterateAllCells(benchmark::State& state)
     accessor.setValue(GetCoord(point.x, point.y, point.z), 42);
   }
 
-  for (auto _ : state)
+  openvdb::tree::LeafManager<TreeType> leafManager(grid->tree());
+
+  auto visitor = [&](const TreeType::LeafNodeType& leaf, size_t /*idx*/)
   {
-    for (auto iter = grid->cbeginValueOn(); iter.test(); ++iter)
+    for (auto iter = leaf.beginValueOn(); iter; ++iter)
     {
       benchmark::DoNotOptimize(iter.getCoord());
       benchmark::DoNotOptimize(iter.getValue());
     }
+  };
+
+  for (auto _ : state)
+  {
+    leafManager.foreach(visitor, false);
   }
 }
 
