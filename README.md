@@ -50,19 +50,19 @@ Anyway, they gave you a fair idea of what you may expect, in terms of performanc
 
 ```
 ------------------------------------------------------------------
-Benchmark                        Time             CPU   Iterations
-------------------------------------------------------------------
-Bonxai_Create              1443778 ns      1442876 ns          484
-OpenVDB_Create             1545890 ns      1534823 ns          389
-Octomap_Create            26780041 ns     26750902 ns           26
+Benchmark                        Time      
+-------------------------------------------
+Bonxai_Create              1443778 ns  
+OpenVDB_Create             1545890 ns 
+Octomap_Create            26780041 ns  
 
-Bonxai_Update              1318036 ns      1317068 ns          528
-OpenVDB_Update             1228747 ns      1228155 ns          570
-Octomap_Update             8162226 ns      8150508 ns           83
+Bonxai_Update              1318036 ns  
+OpenVDB_Update             1228747 ns  
+Octomap_Update             8162226 ns  
 
-Bonxai_IterateAllCells       21371 ns        21360 ns        31614
-OpenVDB_IterateAllCells      54912 ns        54885 ns        12278
-Octomap_IterateAllCells     227799 ns       227383 ns         3088
+Bonxai_IterateAllCells       21371 ns   
+OpenVDB_IterateAllCells      54912 ns 
+Octomap_IterateAllCells     227799 ns
 ```
 
 - **Create** refers to creating a new VoxelGrid from scratch
@@ -82,13 +82,13 @@ To create a VoxelGrid, where each cell contains an integer value and has size 0.
 
 ```c++
 double voxel_resolution = 0.05;
-bonxai::VoxelGrid<int> grid( voxel_resolution );
+Bonxai::VoxelGrid<int> grid( voxel_resolution );
 ```
 
 Nothing prevents you from having more complex cell values, for instance:
 
 ```c++
-bonxai::VoxelGrid<Eigen::Vector4d> vector_grid( voxel_resolution );
+Bonxai::VoxelGrid<Eigen::Vector4d> vector_grid( voxel_resolution );
 ```
 
 To insert values into a cell with coordinates x, y and z, use a
@@ -105,7 +105,7 @@ for( double x = 0; x < 1.0; x += voxel_resolution )
   {
     for( double z = 0; z < 1.0; z += voxel_resolution )
     {
-      bonxai::CoordT coord = grid.posToCoord( x, y, z );
+      Bonxai::CoordT coord = grid.posToCoord( x, y, z );
       accessor.setValue( coord, 42 );
     }
   }
