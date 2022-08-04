@@ -49,8 +49,8 @@ influenced by the way the data is stored.
 Anyway, they gave you a fair idea of what you may expect, in terms of performance.
 
 ```
-------------------------------------------------------------------
-Benchmark                        Time      
+-------------------------------------------
+Benchmark                     Time      
 -------------------------------------------
 Bonxai_Create              1443778 ns  
 OpenVDB_Create             1545890 ns 
