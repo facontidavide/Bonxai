@@ -7,7 +7,7 @@ grid (AKA, a "Voxel Grid").
 Bonxai data structure is:
 
 - **Sparse**: it uses only a fraction of the memory that a dense 3D voxel grid would use.
-- **Unbonded**: you don't need to define the boundary of the 3D space (*).
+- **Unbounded**: you don't need to define the boundary of the 3D space (*).
 
 If you are familiar with [Octomap](https://octomap.github.io/) and Octrees, you know
 that those data structures are also sparse and unbounded.
