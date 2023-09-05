@@ -142,6 +142,16 @@ public:
   template <class VisitorFunction>
   void forEachCell(VisitorFunction func);
 
+  /**
+   *  @brief pruneRoot apply a function of type:
+   *
+   *      void(const CoordT&)
+   *
+   * and prunes the root with that coordinate.
+   */
+  template <class VisitorFunction>
+  void pruneRoot(VisitorFunction func);
+
   /** Class to be used to set and get values of a cell of the Grid.
    *  It uses caching to speed up computation.
    *
@@ -536,6 +546,24 @@ inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func)
         // apply the visitor
         func(leaf_grid->data[leaf_index], pos);
       }
+    }
+  }
+}
+
+//----------------------------------
+template <typename DataT>
+template <class VisitorFunction>
+inline void VoxelGrid<DataT>::pruneRoot(VisitorFunction func)
+{
+  for (auto it = root_map.begin(); it != root_map.end();)
+  {
+    if (func(it->first)) // if the coordinate satisfy condition checked by `func`
+    {
+      it = root_map.erase(it);
+    }
+    else
+    {
+      ++it;
     }
   }
 }
