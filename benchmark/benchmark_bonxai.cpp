@@ -1,7 +1,6 @@
 #include <benchmark/benchmark.h>
 #include "benchmark_utils.hpp"
 #include "bonxai/bonxai.hpp"
-#include "bonxai/serialization.hpp"
 
 using namespace Bonxai;
 
@@ -67,7 +66,9 @@ static void Bonxai_IterateAllCells(benchmark::State& state)
   long count = 0;
   for (auto _ : state)
   {
-    auto visitor = [&](uint32_t&, const CoordT&) { count++; };
+    auto visitor = [&](uint32_t&, const CoordT&) {
+      benchmark::DoNotOptimize(count++);
+    };
     grid.forEachCell(visitor);
   }
 }

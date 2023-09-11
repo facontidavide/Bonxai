@@ -44,25 +44,22 @@ the maximum range of the X, Y and Z coordinates would be about **+/- 20.000 Km**
 
 # Benchmark (preliminary)
 
-Take these numbers with a grain of salt, since they are preliminary and benchmark is strongly
-influenced by the way the data is stored.
+Take these numbers with a grain of salt, since they are preliminary and benchmark is 
+strongly influenced by the way the data is stored.
 Anyway, they gave you a fair idea of what you may expect, in terms of performance.
 
 ```
 -------------------------------------------
 Benchmark                     Time      
 -------------------------------------------
-Bonxai_Create              1443778 ns  
-OpenVDB_Create             1545890 ns 
-Octomap_Create            26780041 ns  
+Bonxai_Create              9265 us  
+Octomap_Create            44953 us  
 
-Bonxai_Update              1318036 ns  
-OpenVDB_Update             1228747 ns  
-Octomap_Update             8162226 ns  
+Bonxai_Update              2658 us  
+Octomap_Update             4464 us  
 
-Bonxai_IterateAllCells       21371 ns   
-OpenVDB_IterateAllCells      54912 ns 
-Octomap_IterateAllCells     227799 ns
+Bonxai_IterateAllCells      674 us
+Octomap_IterateAllCells    3213 us
 ```
 
 - **Create** refers to creating a new VoxelGrid from scratch

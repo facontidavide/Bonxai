@@ -1,5 +1,4 @@
-#ifndef BONXAI_HPP
-#define BONXAI_HPP
+#pragma once
 
 #include <array>
 #include <cstdint>
@@ -541,5 +540,3 @@ inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func)
 }
 
 }  // namespace Bonxai
-
-#endif  // BONXAI_HPP

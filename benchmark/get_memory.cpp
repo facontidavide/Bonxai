@@ -1,6 +1,5 @@
 #include <octomap/OcTree.h>
 #include <octomap/octomap.h>
-#include <openvdb/openvdb.h>
 #include "benchmark_utils.hpp"
 #include "bonxai/bonxai.hpp"
 
@@ -34,24 +33,7 @@ int main(int argc, char** argv)
     octree.updateNode(endpoint, true);
   }
   //----------------------
-
-  openvdb::initialize();
-  double INV_RES = 1.0 / VOXEL_RESOLUTION;
-
-  using GridType = openvdb::Grid<openvdb::tree::Tree4<int32_t, 2, 2, 3>::Type>;
-
-  GridType::Ptr vdb_grid = GridType::create();
-  GridType::Accessor accessor = vdb_grid->getAccessor();
-  vdb_grid->setGridClass(openvdb::GRID_LEVEL_SET);
-
-  for (const auto& point : *cloud)
-  {
-    openvdb::math::Vec3<float> v(
-        point.x * INV_RES, point.y * INV_RES, point.z * INV_RES);
-    accessor.setValue(openvdb::Coord::floor(v), 42);
-  }
-  //----------------------
-  Bonxai::VoxelGrid<int> grid(VOXEL_RESOLUTION);
+  Bonxai::VoxelGrid<int32_t> grid(VOXEL_RESOLUTION);
   auto t_accessor = grid.createAccessor();
 
   for (const auto& point : *cloud)
@@ -62,7 +44,6 @@ int main(int argc, char** argv)
   //----------------------
 
   std::cout << "Octomap: " << octree.memoryUsage() << std::endl;
-  std::cout << "OpenVDB: " << vdb_grid->memUsage() << std::endl;
   std::cout << "Bonxai:  " << grid.memUsage() << std::endl;
 
   return 0;

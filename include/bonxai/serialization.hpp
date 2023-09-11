@@ -1,5 +1,4 @@
-#ifndef SERIALIZATION_HPP
-#define SERIALIZATION_HPP
+#pragma once
 
 #include <iostream>
 #include <stdio.h>
@@ -230,5 +229,3 @@ inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info)
 
 }  // namespace Bonxai
 
-
-#endif  // SERIALIZATION_HPP

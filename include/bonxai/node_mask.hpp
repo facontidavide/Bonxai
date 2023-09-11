@@ -1,8 +1,7 @@
 // Copyright Contributors to the OpenVDB Project
 // SPDX-License-Identifier: MPL-2.0
 
-#ifndef NODEMASK_HPP
-#define NODEMASK_HPP
+#pragma once
 
 #include <array>
 #include <cstdint>
@@ -398,4 +397,3 @@ private:
 
 }  // namespace Bonxai
 
-#endif  // NODEMASK_HPP
