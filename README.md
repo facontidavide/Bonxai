@@ -12,7 +12,7 @@ Bonxai data structure is:
 If you are familiar with [Octomap](https://octomap.github.io/) and Octrees, you know
 that those data structures are also sparse and unbounded.
 
-On the other hand, Bonxai is **brutally faster** and, in same cases, even more memory efficient
+On the other hand, Bonxai is **much faster** and, in same cases, even more memory efficient
 than an Octree.
 
 This work is strongly based on [OpenVDB](https://www.openvdb.org/) and it can be considered
@@ -52,14 +52,14 @@ Anyway, they gave you a fair idea of what you may expect, in terms of performanc
 -------------------------------------------
 Benchmark                     Time      
 -------------------------------------------
-Bonxai_Create              9265 us  
-Octomap_Create            44953 us  
+Bonxai_Create              7569 us  
+Octomap_Create            51803 us  
 
-Bonxai_Update              2658 us  
-Octomap_Update             4464 us  
+Bonxai_Update              1807 us  
+Octomap_Update             4657 us  
 
-Bonxai_IterateAllCells      674 us
-Octomap_IterateAllCells    3213 us
+Bonxai_IterateAllCells     1122 us
+Octomap_IterateAllCells    3363 us
 ```
 
 - **Create** refers to creating a new VoxelGrid from scratch

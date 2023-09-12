@@ -20,6 +20,23 @@ struct Point3D
   double x;
   double y;
   double z;
+
+  Point3D operator+(const Point3D& other)
+  {
+    return {x + other.x, y + other.y, z + other.z};
+  }
+  Point3D operator-(const Point3D& other)
+  {
+    return {x - other.x, y - other.y, z - other.z};
+  }
+  Point3D operator*(const double scalar)
+  {
+    return {x * scalar, y * scalar, z * scalar};
+  }
+  Point3D operator/(const double scalar)
+  {
+    return {x / scalar, y / scalar, z / scalar};
+  }
 };
 
 struct CoordT
@@ -27,17 +44,51 @@ struct CoordT
   int32_t x;
   int32_t y;
   int32_t z;
+
+  int32_t& operator[](int index) {
+    switch(index) {
+      case 0: return x;
+      case 1: return y;
+      case 2: return z;
+      default: throw std::runtime_error("out of bound index");
+    }
+  }
+
+  bool operator==(const CoordT& other) const
+  {
+    return x == other.x && y == other.y && z == other.z;
+  }
+  bool operator!=(const CoordT& other) const
+  {
+    return !(*this == other);
+  }
+  CoordT operator+(const CoordT& other)
+  {
+    return {x + other.x, y + other.y, z + other.z};
+  }
+  CoordT operator-(const CoordT& other)
+  {
+    return {x - other.x, y - other.y, z - other.z};
+  }
 };
 
-inline bool operator==(const CoordT& a, const CoordT& b)
+inline CoordT PosToCoord(const Point3D& point, double inv_resolution)
 {
-  return a.x == b.x && a.y == b.y && a.z == b.z;
+  return { int32_t(point.x * inv_resolution) - std::signbit(point.x),
+           int32_t(point.y * inv_resolution) - std::signbit(point.y),
+           int32_t(point.z * inv_resolution) - std::signbit(point.z) };
 }
 
-inline bool operator!=(const CoordT& a, const CoordT& b)
+inline Point3D CoordToPos(const CoordT& coord, double resolution)
 {
-  return !(a == b);
+  const double half_resolution = 0.5 * resolution;
+  return { half_resolution + double(coord.x * resolution),
+           half_resolution + double(coord.y * resolution),
+           half_resolution + double(coord.z * resolution) };
 }
+
+//--------------------------------------------
+
 
 template <typename DataT>
 struct Grid
