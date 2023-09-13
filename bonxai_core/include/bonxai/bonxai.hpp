@@ -10,32 +10,71 @@
 #include <atomic>
 #include <mutex>
 #include <shared_mutex>
+#include <type_traits>
 
 #include "bonxai/node_mask.hpp"
 
 namespace Bonxai
 {
+
+// Type traits used in Point3D::operator=
+template<class T, class = void>
+struct type_has_method_x : std::false_type { };
+template<class T>
+struct type_has_method_x<T, std::void_t<decltype(T().x())>> : std::true_type { };
+
+template<class T, class = void>
+struct type_has_member_x : std::false_type { };
+template<class T>
+struct type_has_member_x<T, std::void_t<decltype(T::x)>> : std::true_type { };
+
+template<class T, class = void>
+struct type_has_operator : std::false_type { };
+template<class T>
+struct type_has_operator<T, std::void_t<decltype(T().operator[])>> : std::true_type { };
+
+
 struct Point3D
 {
   double x;
   double y;
   double z;
 
-  Point3D operator+(const Point3D& other)
-  {
-    return {x + other.x, y + other.y, z + other.z};
+  Point3D() {}
+
+  Point3D(double _x, double _y, double _z): x(_x), y(_y), z(_z) {}
+
+  // This copy operator accepts types like
+  // Eigen::Vector3d, std::array<double,3>, std::vector<double>, pcl::PointXYZ
+  // of Point3D itself
+  template <typename T>
+  Point3D& operator =(const T& v) {
+
+    static_assert(type_has_method_x<T>::value ||
+                  type_has_member_x<T>::value ||
+                  type_has_operator<T>::value,
+                  "Can't assign values automatically to Point3D");
+
+    if constexpr(type_has_method_x<T>::value) {
+      x = v.x();
+      y = v.y();
+      z = v.z();
+    }
+    if constexpr(type_has_member_x<T>::value) {
+      x = v.x;
+      y = v.y;
+      z = v.z;
+    }
+    if constexpr(type_has_operator<T>::value){
+      x = v[0];
+      y = v[1];
+      z = v[2];
+    }
+    return *this;
   }
-  Point3D operator-(const Point3D& other)
-  {
-    return {x - other.x, y - other.y, z - other.z};
-  }
-  Point3D operator*(const double scalar)
-  {
-    return {x * scalar, y * scalar, z * scalar};
-  }
-  Point3D operator/(const double scalar)
-  {
-    return {x / scalar, y / scalar, z / scalar};
+
+  template <typename T> Point3D(const T& v) {
+    *this = v;
   }
 };
 
@@ -89,10 +128,23 @@ inline Point3D CoordToPos(const CoordT& coord, double resolution)
 
 //--------------------------------------------
 
-
+/**
+ * @brief The Grid class is used to store data in a
+ * cube. the size (DIM) of the cube can only be a power of 2
+ *
+ * For instance, given Grid(3),
+ * DIM will be 8 and SIZE 520 (8³)
+ */
 template <typename DataT>
 struct Grid
 {
+  // number of bits used to represent DIM
+  const uint32_t LOG2DIM;
+  // dimension of the grid (side of the cube)
+  const uint32_t DIM;
+  // total number of elements in the cube
+  const uint32_t SIZE;
+
   Grid(size_t log2dim)
     : LOG2DIM(log2dim)
     , DIM(1 << LOG2DIM)
@@ -127,9 +179,6 @@ struct Grid
            sizeof(DataT) * SIZE;
   }
 
-  const uint32_t LOG2DIM;
-  const uint32_t DIM;
-  const uint32_t SIZE;
   DataT* data = nullptr;
   Bonxai::Mask mask;
 };
@@ -255,8 +304,8 @@ public:
     }
 
     /**
-     * @brief getCell gets the point to the LeafGrid containing the cell
-     *        and its index. It is the basic class used by setValue() and value().
+     * @brief getLeafGrid gets the pointer to the LeafGrid containing the cell.
+     * It is the basic class used by setValue() and value().
      *
      * @param coord               Coordinate of the cell.
      * @param create_if_missing   if true, create the Root, Inner and Leaf, if not
@@ -296,7 +345,9 @@ public:
 
 }  // namespace Bonxai
 
+//----------------------------------------------------
 //----------------- Implementations ------------------
+//----------------------------------------------------
 
 namespace std
 {

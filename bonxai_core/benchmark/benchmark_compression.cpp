@@ -12,13 +12,7 @@ static const double COMPRESSION_RES = 0.0025;
 
 static void Bonxai_Compress(benchmark::State& state)
 {
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(
-      new pcl::PointCloud<pcl::PointXYZRGB>());
-  if (pcl::io::loadPCDFile<pcl::PointXYZRGB>("data/color_scene.pcd", *cloud) == -1)
-  {
-    PCL_ERROR("Couldn't read file test_pcd.pcd \n");
-    exit(-1);
-  }
+  auto cloud = ReadCloud<pcl::PointXYZRGB>("table_scene_mug_rgb.pcd");
 
   std::vector<char> compressed_data;
 
@@ -49,13 +43,7 @@ static void Bonxai_Compress(benchmark::State& state)
 
 static void PCL_Compress(benchmark::State& state)
 {
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(
-      new pcl::PointCloud<pcl::PointXYZRGB>());
-  if (pcl::io::loadPCDFile<pcl::PointXYZRGB>("data/color_scene.pcd", *cloud) == -1)
-  {
-    PCL_ERROR("Couldn't read file test_pcd.pcd \n");
-    exit(-1);
-  }
+  auto cloud = ReadCloud<pcl::PointXYZRGB>("table_scene_mug_rgb.pcd");
 
   for (auto _ : state)
   {
@@ -72,3 +60,5 @@ static void PCL_Compress(benchmark::State& state)
 BENCHMARK(Bonxai_Compress);
 BENCHMARK(PCL_Compress);
 
+// Run the benchmark
+BENCHMARK_MAIN();
