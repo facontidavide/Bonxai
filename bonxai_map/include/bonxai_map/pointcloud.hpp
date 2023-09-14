@@ -18,7 +18,7 @@ inline Eigen::Vector3d FromPoint3D(const Bonxai::Point3D& p)
 
 bool ComputeRay(const Eigen::Vector3d &origin,
                 const Eigen::Vector3d &end,
-                const double resoulution,
+                const double resolution,
                 std::vector<CoordT>& ray);
 
 class ProbabilisticMap
@@ -35,8 +35,8 @@ public:
     return std::log(prob / (1.0 - prob));
   }
 
-  // same default values as OctoMap
-  struct Thresholds {
+  // The default values are the same as OctoMap
+  struct Options {
     float miss_decrement = logods(0.4f);
     float hit_increment = logods(0.7f);
 
@@ -44,6 +44,8 @@ public:
     float clamp_max = logods(0.97f);
 
     float occupancy_threshold = logods(0.5);
+
+    uint16_t min_hits_per_voxel = 1;
   };
 
   static const float UnknownProbability;
@@ -51,6 +53,7 @@ public:
   struct CellT {
     float probability;
     uint8_t update_count = 0;
+    uint16_t latest_hits = 0;
   };
 
   ProbabilisticMap(double resolution): _grid(resolution) {}
@@ -59,12 +62,14 @@ public:
 
   const VoxelGrid<CellT>& grid() const;
 
-  const Thresholds& thresholds() const;
+  const Options& options() const;
 
-  void setThresholds(const Thresholds& options);
+  void setOptions(const Options& options);
 
   void insertPointCloud(const std::vector<Eigen::Vector3d> &points,
-                        const Eigen::Vector3d &origin);
+                        const Eigen::Vector3d &origin,
+                        double max_range,
+                        bool discretize);
 
   bool isOccupied(const Bonxai::CoordT& coord) const;
 
@@ -76,7 +81,7 @@ public:
 
 private:
   VoxelGrid<CellT> _grid;
-  Thresholds _options;
+  Options _options;
   uint8_t _update_count = 1;
 };
 

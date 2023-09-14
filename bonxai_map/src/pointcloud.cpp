@@ -7,15 +7,10 @@ namespace Bonxai
 const float ProbabilisticMap::UnknownProbability = ProbabilisticMap::logods(0.5);
 
 
-bool ComputeRay(const Eigen::Vector3d &origin,
-                const Eigen::Vector3d &end,
-                const double resolution,
+bool ComputeRay(const CoordT &key_origin,
+                const CoordT &key_end,
                 std::vector<CoordT> &ray)
 {
-  const double inv_resolution = 1.0/resolution;
-  CoordT key_origin = PosToCoord(ToPoint3D(origin), inv_resolution);
-  CoordT key_end = PosToCoord(ToPoint3D(end), inv_resolution);
-
   ray.clear();
   if (key_origin == key_end)
   {
@@ -63,18 +58,20 @@ const VoxelGrid<ProbabilisticMap::CellT> &ProbabilisticMap::grid() const
   return _grid;
 }
 
-const ProbabilisticMap::Thresholds &ProbabilisticMap::thresholds() const
+const ProbabilisticMap::Options &ProbabilisticMap::options() const
 {
   return _options;
 }
 
-void ProbabilisticMap::setThresholds(const Thresholds &options)
+void ProbabilisticMap::setOptions(const Options &options)
 {
   _options = options;
 }
 
 void ProbabilisticMap::insertPointCloud(const std::vector<Eigen::Vector3d> &points,
-                                        const Eigen::Vector3d& origin)
+                                        const Eigen::Vector3d& origin,
+                                        double max_range,
+                                        bool discretize)
 {
   auto accessor = _grid.createAccessor();
 
