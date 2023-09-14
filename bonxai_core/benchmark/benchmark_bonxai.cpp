@@ -74,9 +74,9 @@ static void Bonxai_IterateAllCells(benchmark::State& state)
 }
 
 // Register the function as a benchmark
-BENCHMARK(Bonxai_Create);
-BENCHMARK(Bonxai_Update);
-BENCHMARK(Bonxai_IterateAllCells);
+BENCHMARK(Bonxai_Create)->MinTime(2);
+BENCHMARK(Bonxai_Update)->MinTime(2);
+BENCHMARK(Bonxai_IterateAllCells)->MinTime(2);
 
 
 // Run the benchmark
