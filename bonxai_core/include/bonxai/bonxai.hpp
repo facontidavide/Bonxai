@@ -139,11 +139,11 @@ template <typename DataT>
 struct Grid
 {
   // number of bits used to represent DIM
-  const uint32_t LOG2DIM;
+  uint32_t LOG2DIM;
   // dimension of the grid (side of the cube)
-  const uint32_t DIM;
+  uint32_t DIM;
   // total number of elements in the cube
-  const uint32_t SIZE;
+  uint32_t SIZE;
 
   Grid(size_t log2dim)
     : LOG2DIM(log2dim)
@@ -155,6 +155,7 @@ struct Grid
   }
 
   Grid(const Grid& other) = delete;
+  Grid& operator=(const Grid& other) = delete;
 
   Grid(Grid&& other)
     : LOG2DIM(other.LOG2DIM)
@@ -163,6 +164,15 @@ struct Grid
     , mask(std::move(other.mask))
   {
     std::swap(data, other.data);
+  }
+
+  Grid& operator=(Grid&& other)
+  {
+    LOG2DIM = other.LOG2DIM;
+    DIM = other.DIM;
+    SIZE = other.SIZE;
+    std::swap(data, other.data);
+    return *this;
   }
 
   ~Grid()
@@ -192,6 +202,9 @@ public:
   const uint32_t Log2N;
   const double resolution;
   const double inv_resolution;
+  const double half_resolution;
+  const uint32_t INNER_MASK;
+  const uint32_t LEAF_MASK;
 
   using LeafGrid = Grid<DataT>;
   using InnerGrid = Grid<std::shared_ptr<LeafGrid>>;
@@ -373,6 +386,9 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
   , Log2N(INNER_BITS + LEAF_BITS)
   , resolution(voxel_size)
   , inv_resolution(1.0 / resolution)
+  , half_resolution(0.5 * resolution)
+  , INNER_MASK((1 << INNER_BITS) - 1)
+  , LEAF_MASK((1 << LEAF_BITS) - 1)
 {
   if (LEAF_BITS < 1 || INNER_BITS < 1)
   {
@@ -384,23 +400,22 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
 template <typename DataT>
 inline CoordT VoxelGrid<DataT>::posToCoord(float x, float y, float z)
 {
-  return { static_cast<int32_t>(x * inv_resolution) - std::signbit(x),
-           static_cast<int32_t>(y * inv_resolution) - std::signbit(y),
-           static_cast<int32_t>(z * inv_resolution) - std::signbit(z) };
+  return { static_cast<int32_t>(x * inv_resolution),
+           static_cast<int32_t>(y * inv_resolution),
+           static_cast<int32_t>(z * inv_resolution) };
 }
 
 template <typename DataT>
 inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z)
 {
-  return { static_cast<int32_t>(x * inv_resolution) - std::signbit(x),
-           static_cast<int32_t>(y * inv_resolution) - std::signbit(y),
-           static_cast<int32_t>(z * inv_resolution) - std::signbit(z) };
+  return { static_cast<int32_t>(x * inv_resolution),
+           static_cast<int32_t>(y * inv_resolution),
+           static_cast<int32_t>(z * inv_resolution) };
 }
 
 template <typename DataT>
 inline Point3D VoxelGrid<DataT>::coordToPos(const CoordT& coord)
 {
-  const double half_resolution = 0.5 * resolution;
   return { half_resolution + static_cast<double>(coord.x * resolution),
            half_resolution + static_cast<double>(coord.y * resolution),
            half_resolution + static_cast<double>(coord.z * resolution) };
@@ -409,18 +424,17 @@ inline Point3D VoxelGrid<DataT>::coordToPos(const CoordT& coord)
 template <typename DataT>
 inline uint32_t VoxelGrid<DataT>::getInnerIndex(const CoordT& coord)
 {
-  const uint32_t MASK = ((1 << INNER_BITS) - 1);
-  return ((coord.x >> LEAF_BITS) & MASK) |
-         (((coord.y >> LEAF_BITS) & MASK) << INNER_BITS) |
-         (((coord.z >> LEAF_BITS) & MASK) << (INNER_BITS * 2));
+  return ((coord.x >> LEAF_BITS) & INNER_MASK) |
+         (((coord.y >> LEAF_BITS) & INNER_MASK) << INNER_BITS) |
+         (((coord.z >> LEAF_BITS) & INNER_MASK) << (INNER_BITS * 2));
 }
 
 template <typename DataT>
 inline uint32_t VoxelGrid<DataT>::getLeafIndex(const CoordT& coord)
 {
-  const uint32_t MASK = ((1 << LEAF_BITS) - 1);
-  return (coord.x & MASK) | ((coord.y & MASK) << LEAF_BITS) |
-         ((coord.z & MASK) << (LEAF_BITS * 2));
+  return (coord.x & LEAF_MASK) |
+         ((coord.y & LEAF_MASK) << LEAF_BITS) |
+         ((coord.z & LEAF_MASK) << (LEAF_BITS * 2));
 }
 
 //----------------------------------
