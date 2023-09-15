@@ -6,11 +6,12 @@ using namespace Bonxai;
 
 static void Bonxai_Create(benchmark::State& state)
 {
-  auto cloud = ReadCloud();
+  const auto& params = TestParameters[state.range(0)];
+  auto cloud = ReadCloud(params.filename);
 
   for (auto _ : state)
   {
-    VoxelGrid<uint32_t> grid(VOXEL_RESOLUTION);
+    VoxelGrid<uint32_t> grid(params.voxel_size);
     auto accessor = grid.createAccessor();
 
     for (const auto& point : *cloud)
@@ -23,8 +24,9 @@ static void Bonxai_Create(benchmark::State& state)
 
 static void Bonxai_Update(benchmark::State& state)
 {
-  auto cloud = ReadCloud();
-  VoxelGrid<uint32_t> grid(VOXEL_RESOLUTION);
+  const auto& params = TestParameters[state.range(0)];
+  auto cloud = ReadCloud(params.filename);
+  VoxelGrid<uint32_t> grid(params.voxel_size);
 
   {
     auto accessor = grid.createAccessor();
@@ -50,9 +52,10 @@ static void Bonxai_Update(benchmark::State& state)
 
 static void Bonxai_IterateAllCells(benchmark::State& state)
 {
-  auto cloud = ReadCloud();
+  const auto& params = TestParameters[state.range(0)];
+  auto cloud = ReadCloud(params.filename);
 
-  VoxelGrid<uint32_t> grid(VOXEL_RESOLUTION);
+  VoxelGrid<uint32_t> grid(params.voxel_size);
 
   {
     auto accessor = grid.createAccessor();
@@ -74,9 +77,9 @@ static void Bonxai_IterateAllCells(benchmark::State& state)
 }
 
 // Register the function as a benchmark
-BENCHMARK(Bonxai_Create)->MinTime(2);
-BENCHMARK(Bonxai_Update)->MinTime(2);
-BENCHMARK(Bonxai_IterateAllCells)->MinTime(2);
+BENCHMARK(Bonxai_Create)->Arg(0)->Arg(1)->MinTime(1);
+BENCHMARK(Bonxai_Update)->Arg(0)->Arg(1)->MinTime(1);
+BENCHMARK(Bonxai_IterateAllCells)->Arg(0)->Arg(1)->MinTime(1);
 
 
 // Run the benchmark

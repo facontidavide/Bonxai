@@ -6,7 +6,7 @@
 #include "octomap/OcTree.h"
 
 using namespace Bonxai;
-
+/*
 static void Bonxai_ComputeRay(benchmark::State& state)
 {
   auto filepath = std::filesystem::path(DATA_PATH) / "room_scan.pcd";
@@ -24,7 +24,7 @@ static void Bonxai_ComputeRay(benchmark::State& state)
     }
   }
 }
-
+*/
 static void OctoMap_ComputeRay(benchmark::State& state)
 {
   auto filepath = std::filesystem::path(DATA_PATH) / "room_scan.pcd";
@@ -46,7 +46,7 @@ static void OctoMap_ComputeRay(benchmark::State& state)
 }
 
 // Register the function as a benchmark
-BENCHMARK(Bonxai_ComputeRay);
+//BENCHMARK(Bonxai_ComputeRay);
 BENCHMARK(OctoMap_ComputeRay);
 
 // Run the benchmark

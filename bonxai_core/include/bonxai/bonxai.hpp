@@ -400,17 +400,17 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
 template <typename DataT>
 inline CoordT VoxelGrid<DataT>::posToCoord(float x, float y, float z)
 {
-  return { static_cast<int32_t>(x * inv_resolution),
-           static_cast<int32_t>(y * inv_resolution),
-           static_cast<int32_t>(z * inv_resolution) };
+  return { static_cast<int32_t>(x * inv_resolution - std::signbit(x)),
+           static_cast<int32_t>(y * inv_resolution - std::signbit(y)),
+           static_cast<int32_t>(z * inv_resolution - std::signbit(z)) };
 }
 
 template <typename DataT>
 inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z)
 {
-  return { static_cast<int32_t>(x * inv_resolution),
-           static_cast<int32_t>(y * inv_resolution),
-           static_cast<int32_t>(z * inv_resolution) };
+  return { static_cast<int32_t>(x * inv_resolution) - std::signbit(x),
+           static_cast<int32_t>(y * inv_resolution) - std::signbit(y),
+           static_cast<int32_t>(z * inv_resolution) - std::signbit(z) };
 }
 
 template <typename DataT>

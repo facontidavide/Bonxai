@@ -5,6 +5,8 @@
 
 int main(int argc, char** argv)
 {
+  const double VOXEL_RESOLUTION = 0.02;
+
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
   if (argc == 2)
   {
