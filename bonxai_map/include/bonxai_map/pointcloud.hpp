@@ -16,44 +16,43 @@ inline Eigen::Vector3d FromPoint3D(const Bonxai::Point3D& p)
   return {p.x, p.y, p.z};
 }
 
-bool ComputeRay(const Eigen::Vector3d &origin,
-                const Eigen::Vector3d &end,
-                const double resolution,
-                std::vector<CoordT>& ray);
+bool ComputeRay(const CoordT &key_origin,
+                const CoordT &key_end,
+                std::vector<CoordT> &ray);
+
 
 class ProbabilisticMap
 {
 public:
 
-  static constexpr float prob(float logods)
+  [[nodiscard]] static constexpr float prob(int32_t logods_fixed)
   {
-    return 1.0 - 1.0 / (1.0 + std::exp(logods));
+    float logods = float(logods_fixed) * 1e-3;
+    return (1.0 - 1.0 / (1.0 + std::exp(logods)));
   }
 
-  static constexpr float logods(float prob)
+  [[nodiscard]] static constexpr int32_t logods(float prob)
   {
-    return std::log(prob / (1.0 - prob));
+    return int32_t(1e3 * std::log(prob / (1.0 - prob)));
   }
 
   // The default values are the same as OctoMap
   struct Options {
-    float miss_decrement = logods(0.4f);
-    float hit_increment = logods(0.7f);
+    int32_t prob_miss_log = logods(0.4f);
+    int32_t prob_hit_log = logods(0.7f);
 
-    float clamp_min = logods(0.12f);
-    float clamp_max = logods(0.97f);
+    int32_t clamp_min = logods(0.12f);
+    int32_t clamp_max = logods(0.97f);
 
     float occupancy_threshold = logods(0.5);
-
-    uint16_t min_hits_per_voxel = 1;
   };
 
-  static const float UnknownProbability;
+  static const int32_t UnknownProbability;
 
   struct CellT {
-    float probability;
-    uint8_t update_count = 0;
-    uint16_t latest_hits = 0;
+    int32_t update_count : 8;
+    int32_t probability : 24;
+    CellT(): update_count(0), probability(UnknownProbability) {};
   };
 
   ProbabilisticMap(double resolution): _grid(resolution) {}
@@ -66,10 +65,9 @@ public:
 
   void setOptions(const Options& options);
 
-  void insertPointCloud(const std::vector<Eigen::Vector3d> &points,
-                        const Eigen::Vector3d &origin,
-                        double max_range,
-                        bool discretize);
+  void insertPointCloud(const std::vector<Eigen::Vector3f> &points,
+                        const Eigen::Vector3f &origin,
+                        double max_range);
 
   bool isOccupied(const Bonxai::CoordT& coord) const;
 
@@ -78,6 +76,21 @@ public:
   bool isFree(const Bonxai::CoordT& coord) const;
 
   void getOccupiedVoxels(std::vector<Bonxai::CoordT>& coords);
+
+  void getFreeVoxels(std::vector<Bonxai::CoordT>& coords);
+
+  template <typename PointT>
+  void getOccupiedVoxels(std::vector<PointT>& points)
+  {
+    thread_local std::vector<Bonxai::CoordT> coords;
+    coords.clear();
+    getOccupiedVoxels(coords);
+    for(const auto& coord: coords)
+    {
+      const auto p = _grid.coordToPos(coord);
+      points.emplace_back( p.x, p.y, p.z );
+    }
+  }
 
 private:
   VoxelGrid<CellT> _grid;

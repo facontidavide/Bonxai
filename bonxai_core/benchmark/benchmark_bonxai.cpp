@@ -46,7 +46,6 @@ static void Bonxai_Update(benchmark::State& state)
       auto coord = grid.posToCoord(point.x, point.y, point.z);
       accessor.setValue(coord, 42);
     }
-    // std::cout <<"Update misses: " << accessor.cache_misses << std::endl;
   }
 }
 

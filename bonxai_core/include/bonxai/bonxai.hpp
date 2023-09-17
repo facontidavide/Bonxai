@@ -76,6 +76,15 @@ struct Point3D
   template <typename T> Point3D(const T& v) {
     *this = v;
   }
+
+  double& operator[](int index) {
+    switch(index) {
+      case 0: return x;
+      case 1: return y;
+      case 2: return z;
+      default: throw std::runtime_error("out of bound index");
+    }
+  }
 };
 
 struct CoordT
@@ -101,11 +110,11 @@ struct CoordT
   {
     return !(*this == other);
   }
-  CoordT operator+(const CoordT& other)
+  CoordT operator+(const CoordT& other) const
   {
     return {x + other.x, y + other.y, z + other.z};
   }
-  CoordT operator-(const CoordT& other)
+  CoordT operator-(const CoordT& other) const
   {
     return {x - other.x, y - other.y, z - other.z};
   }
@@ -126,8 +135,7 @@ inline Point3D CoordToPos(const CoordT& coord, double resolution)
            half_resolution + double(coord.z * resolution) };
 }
 
-//--------------------------------------------
-
+//----------------------------------------------------------
 /**
  * @brief The Grid class is used to store data in a
  * cube. the size (DIM) of the cube can only be a power of 2
@@ -193,6 +201,7 @@ struct Grid
   Bonxai::Mask mask;
 };
 
+//----------------------------------------------------------
 template <typename DataT>
 class VoxelGrid
 {
@@ -281,7 +290,7 @@ public:
      * @param coord   coordinate of the cell.
      * @return        return the pointer to the value or nullptr if not set.
      */
-    DataT* value(const CoordT& coord);
+    DataT* value(const CoordT& coord, bool create_if_missing = false);
 
     /** @brief setCellOn is similar to setValue, but the value is changed only if the
      * cell has been created, otherwise, the previous value is used.
@@ -449,28 +458,35 @@ inline bool VoxelGrid<DataT>::Accessor::setValue(const CoordT& coord,
     prev_inner_coord_ = inner_key;
   }
 
-  uint32_t index = grid_.getLeafIndex(coord);
-  bool was_on = prev_leaf_ptr_->mask.setOn(index);
+  const uint32_t index = grid_.getLeafIndex(coord);
+  const bool was_on = prev_leaf_ptr_->mask.setOn(index);
   prev_leaf_ptr_->data[index] = value;
   return was_on;
 }
 
 //----------------------------------
 template <typename DataT>
-inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord)
+inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord, bool create_if_missing)
 {
   const CoordT inner_key = grid_.getInnerKey(coord);
 
   if (inner_key != prev_inner_coord_)
   {
-    prev_leaf_ptr_ = getLeafGrid(coord, false);
+    prev_leaf_ptr_ = getLeafGrid(coord, create_if_missing);
     prev_inner_coord_ = inner_key;
   }
+
   if (prev_leaf_ptr_)
   {
-    uint32_t index = grid_.getLeafIndex(coord);
+    const uint32_t index = grid_.getLeafIndex(coord);
     if (prev_leaf_ptr_->mask.isOn(index))
     {
+      return &(prev_leaf_ptr_->data[index]);
+    }
+    else if(create_if_missing)
+    {
+      prev_leaf_ptr_->mask.setOn(index);
+      prev_leaf_ptr_->data[index] = {};
       return &(prev_leaf_ptr_->data[index]);
     }
   }
