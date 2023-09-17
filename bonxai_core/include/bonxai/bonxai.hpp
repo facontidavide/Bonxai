@@ -36,13 +36,13 @@ struct type_has_operator<T, std::void_t<decltype(T().operator[])>> : std::true_t
 
 struct Point3D
 {
-  float x;
-  float y;
-  float z;
+  double x;
+  double y;
+  double z;
 
   Point3D() {}
 
-  Point3D(float _x, float _y, float _z): x(_x), y(_y), z(_z) {}
+  Point3D(double _x, double _y, double _z): x(_x), y(_y), z(_z) {}
 
   // This copy operator accepts types like
   // Eigen::Vector3d, std::array<double,3>, std::vector<double>, pcl::PointXYZ
@@ -77,7 +77,7 @@ struct Point3D
     *this = v;
   }
 
-  [[nodiscard]] float& operator[](int index) {
+  [[nodiscard]] double& operator[](int index) {
     switch(index) {
       case 0: return x;
       case 1: return y;
@@ -120,19 +120,19 @@ struct CoordT
   }
 };
 
-[[nodiscard]] inline CoordT PosToCoord(const Point3D& point, float inv_resolution)
+[[nodiscard]] inline CoordT PosToCoord(const Point3D& point, double inv_resolution)
 {
   return { int32_t(point.x * inv_resolution) - std::signbit(point.x),
            int32_t(point.y * inv_resolution) - std::signbit(point.y),
            int32_t(point.z * inv_resolution) - std::signbit(point.z) };
 }
 
-[[nodiscard]] inline Point3D CoordToPos(const CoordT& coord, float resolution)
+[[nodiscard]] inline Point3D CoordToPos(const CoordT& coord, double resolution)
 {
-  const float half_resolution = 0.5f * resolution;
-  return { half_resolution + float(coord.x * resolution),
-           half_resolution + float(coord.y * resolution),
-           half_resolution + float(coord.z * resolution) };
+  const double half_resolution = 0.5f * resolution;
+  return { half_resolution + double(coord.x * resolution),
+           half_resolution + double(coord.y * resolution),
+           half_resolution + double(coord.z * resolution) };
 }
 
 //----------------------------------------------------------
@@ -209,9 +209,9 @@ public:
   const uint32_t INNER_BITS;
   const uint32_t LEAF_BITS;
   const uint32_t Log2N;
-  const float resolution;
-  const float inv_resolution;
-  const float half_resolution;
+  const double resolution;
+  const double inv_resolution;
+  const double half_resolution;
   const uint32_t INNER_MASK;
   const uint32_t LEAF_MASK;
 
@@ -239,7 +239,7 @@ public:
   /**
    * @brief posToCoord MUST be used to convert real coordinates to CoordT indexes.
    */
-  [[nodiscard]] CoordT posToCoord(float x, float y, float z);
+  [[nodiscard]] CoordT posToCoord(double x, double y, double z);
 
   [[nodiscard]] CoordT posToCoord(const Point3D& pos)
   {
@@ -405,7 +405,7 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
 }
 
 template <typename DataT>
-inline CoordT VoxelGrid<DataT>::posToCoord(float x, float y, float z)
+inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z)
 {
   return { static_cast<int32_t>(x * inv_resolution - std::signbit(x)),
            static_cast<int32_t>(y * inv_resolution - std::signbit(y)),
@@ -415,9 +415,9 @@ inline CoordT VoxelGrid<DataT>::posToCoord(float x, float y, float z)
 template <typename DataT>
 inline Point3D VoxelGrid<DataT>::coordToPos(const CoordT& coord)
 {
-  return { half_resolution + static_cast<float>(coord.x * resolution),
-           half_resolution + static_cast<float>(coord.y * resolution),
-           half_resolution + static_cast<float>(coord.z * resolution) };
+  return { half_resolution + static_cast<double>(coord.x * resolution),
+           half_resolution + static_cast<double>(coord.y * resolution),
+           half_resolution + static_cast<double>(coord.z * resolution) };
 }
 
 template <typename DataT>

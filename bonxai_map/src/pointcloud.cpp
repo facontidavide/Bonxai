@@ -10,7 +10,7 @@ const int32_t ProbabilisticMap::UnknownProbability = ProbabilisticMap::logods(0.
 bool ComputeRay(const CoordT &key_origin,
                 const CoordT &key_end,
                 std::vector<CoordT> &ray)
-{
+{  
   ray.clear();
   if (key_origin == key_end)
   {
@@ -53,6 +53,7 @@ bool ComputeRay(const CoordT &key_origin,
     }
     ray.push_back( coord );
   }
+
   return true;
 }
 
@@ -93,13 +94,14 @@ void ProbabilisticMap::insertPointCloud(const std::vector<Eigen::Vector3f> &poin
   // first: mark the hits
   for(const auto& p: points)
   {
-    const Eigen::Vector3f vect(p - origin);
+    Eigen::Vector3f vect(p - origin);
     const double squared_norm = vect.squaredNorm();
     if( squared_norm >= max_range_sqr)
     {
       // this will be considered a "miss".
       // Compute the end point to cast a cleaning ray
-      const Eigen::Vector3f new_point = (vect / std::sqrt(squared_norm)) * max_range;
+      vect /= std::sqrt(squared_norm);
+      const Eigen::Vector3f new_point = origin + (vect * max_range);
       const auto end_coord = _grid.posToCoord( new_point );
 
       if(end_coord != prev_coord)
@@ -115,11 +117,8 @@ void ProbabilisticMap::insertPointCloud(const std::vector<Eigen::Vector3f> &poin
 
     if(cell->update_id != _update_count)
     {
-      if(cell->update_id != 0)
-      {
-        cell->probability_log = std::min(cell->probability_log + _options.prob_hit_log,
+      cell->probability_log = std::min(cell->probability_log + _options.prob_hit_log,
                                          _options.clamp_max_log);
-      }
 
       cell->update_id = _update_count;
       hit_coords.push_back(coord);
@@ -129,12 +128,12 @@ void ProbabilisticMap::insertPointCloud(const std::vector<Eigen::Vector3f> &poin
   //---------------------------------------
   const auto coord_origin = _grid.posToCoord( origin );
 
-  for(const auto& coord_end: miss_coords)
+  for(const auto& coord_end: hit_coords)
   {
     clearRay(coord_origin, coord_end);
   }
 
-  for(const auto& coord_end: hit_coords)
+  for(const auto& coord_end: miss_coords)
   {
     clearRay(coord_origin, coord_end);
   }
@@ -178,7 +177,7 @@ void ProbabilisticMap::clearRay(const CoordT &from, const CoordT &to)
 
   for(const auto& coord: ray)
   {
-    CellT* cell = accessor.value(coord, false);
+    CellT* cell = accessor.value(coord, true);
     if(cell && cell->update_id != _update_count)
     {
       cell->probability_log = std::max(cell->probability_log + _options.prob_miss_log,
