@@ -36,13 +36,13 @@ struct type_has_operator<T, std::void_t<decltype(T().operator[])>> : std::true_t
 
 struct Point3D
 {
-  double x;
-  double y;
-  double z;
+  float x;
+  float y;
+  float z;
 
   Point3D() {}
 
-  Point3D(double _x, double _y, double _z): x(_x), y(_y), z(_z) {}
+  Point3D(float _x, float _y, float _z): x(_x), y(_y), z(_z) {}
 
   // This copy operator accepts types like
   // Eigen::Vector3d, std::array<double,3>, std::vector<double>, pcl::PointXYZ
@@ -77,7 +77,7 @@ struct Point3D
     *this = v;
   }
 
-  double& operator[](int index) {
+  [[nodiscard]] float& operator[](int index) {
     switch(index) {
       case 0: return x;
       case 1: return y;
@@ -93,7 +93,7 @@ struct CoordT
   int32_t y;
   int32_t z;
 
-  int32_t& operator[](int index) {
+  [[nodiscard]] int32_t& operator[](int index) {
     switch(index) {
       case 0: return x;
       case 1: return y;
@@ -102,11 +102,11 @@ struct CoordT
     }
   }
 
-  bool operator==(const CoordT& other) const
+  [[nodiscard]] bool operator==(const CoordT& other) const
   {
     return x == other.x && y == other.y && z == other.z;
   }
-  bool operator!=(const CoordT& other) const
+  [[nodiscard]] bool operator!=(const CoordT& other) const
   {
     return !(*this == other);
   }
@@ -120,19 +120,19 @@ struct CoordT
   }
 };
 
-inline CoordT PosToCoord(const Point3D& point, double inv_resolution)
+[[nodiscard]] inline CoordT PosToCoord(const Point3D& point, float inv_resolution)
 {
   return { int32_t(point.x * inv_resolution) - std::signbit(point.x),
            int32_t(point.y * inv_resolution) - std::signbit(point.y),
            int32_t(point.z * inv_resolution) - std::signbit(point.z) };
 }
 
-inline Point3D CoordToPos(const CoordT& coord, double resolution)
+[[nodiscard]] inline Point3D CoordToPos(const CoordT& coord, float resolution)
 {
-  const double half_resolution = 0.5 * resolution;
-  return { half_resolution + double(coord.x * resolution),
-           half_resolution + double(coord.y * resolution),
-           half_resolution + double(coord.z * resolution) };
+  const float half_resolution = 0.5f * resolution;
+  return { half_resolution + float(coord.x * resolution),
+           half_resolution + float(coord.y * resolution),
+           half_resolution + float(coord.z * resolution) };
 }
 
 //----------------------------------------------------------
@@ -191,7 +191,7 @@ struct Grid
     }
   }
 
-  size_t memUsage() const
+  [[nodiscard]] size_t memUsage() const
   {
     return mask.memUsage() + sizeof(int32_t) * 3 + sizeof(DataT*) +
            sizeof(DataT) * SIZE;
@@ -209,9 +209,9 @@ public:
   const uint32_t INNER_BITS;
   const uint32_t LEAF_BITS;
   const uint32_t Log2N;
-  const double resolution;
-  const double inv_resolution;
-  const double half_resolution;
+  const float resolution;
+  const float inv_resolution;
+  const float half_resolution;
   const uint32_t INNER_MASK;
   const uint32_t LEAF_MASK;
 
@@ -232,18 +232,16 @@ public:
   /**
    * @brief getMemoryUsage returns the amount of bytes used by this data structure
    */
-  size_t memUsage() const;
+  [[nodiscard]] size_t memUsage() const;
 
-  size_t activeCellsCount() const;
+  [[nodiscard]] size_t activeCellsCount() const;
 
   /**
    * @brief posToCoord MUST be used to convert real coordinates to CoordT indexes.
    */
-  inline CoordT posToCoord(float x, float y, float z);
+  [[nodiscard]] CoordT posToCoord(float x, float y, float z);
 
-  inline CoordT posToCoord(double x, double y, double z);
-
-  inline CoordT posToCoord(const Point3D& pos)
+  [[nodiscard]] CoordT posToCoord(const Point3D& pos)
   {
     return posToCoord(pos.x, pos.y, pos.z);
   }
@@ -251,7 +249,7 @@ public:
   /**
    * @brief coordToPos converts CoordT indexes to Point3D.
    */
-  Point3D coordToPos(const CoordT& coord);
+  [[nodiscard]] Point3D coordToPos(const CoordT& coord);
 
   /**
    *  @brief forEachCell apply a function of type:
@@ -290,7 +288,7 @@ public:
      * @param coord   coordinate of the cell.
      * @return        return the pointer to the value or nullptr if not set.
      */
-    DataT* value(const CoordT& coord, bool create_if_missing = false);
+    [[nodiscard]] DataT* value(const CoordT& coord, bool create_if_missing = false);
 
     /** @brief setCellOn is similar to setValue, but the value is changed only if the
      * cell has been created, otherwise, the previous value is used.
@@ -312,7 +310,7 @@ public:
     /**
      * @brief lastInnerdGrid returns the pointer to the InnerGrid in the cache.
      */
-    const InnerGrid* lastInnerdGrid() const
+    [[nodiscard]] const InnerGrid* lastInnerdGrid() const
     {
       return prev_inner_ptr_;
     }
@@ -320,7 +318,7 @@ public:
     /**
      * @brief lastLeafGrid returns the pointer to the LeafGrid in the cache.
      */
-    const LeafGrid* lastLeafGrid() const
+    [[nodiscard]] const LeafGrid* lastLeafGrid() const
     {
       return prev_leaf_ptr_;
     }
@@ -333,7 +331,7 @@ public:
      * @param create_if_missing   if true, create the Root, Inner and Leaf, if not
      * present.
      */
-    LeafGrid* getLeafGrid(const CoordT& coord, bool create_if_missing = false);
+    [[nodiscard]] LeafGrid* getLeafGrid(const CoordT& coord, bool create_if_missing = false);
 
   private:
     VoxelGrid& grid_;
@@ -348,21 +346,21 @@ public:
     return Accessor(*this);
   }
 
-  inline CoordT getRootKey(const CoordT& coord)
+  [[nodiscard]] CoordT getRootKey(const CoordT& coord)
   {
     const int32_t MASK = ~((1 << Log2N) - 1);
     return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
   }
 
-  inline CoordT getInnerKey(const CoordT& coord)
+  [[nodiscard]] CoordT getInnerKey(const CoordT& coord)
   {
     const int32_t MASK = ~((1 << LEAF_BITS) - 1);
     return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
   }
 
-  inline uint32_t getInnerIndex(const CoordT& coord);
+  [[nodiscard]] uint32_t getInnerIndex(const CoordT& coord);
 
-  inline uint32_t getLeafIndex(const CoordT& coord);
+  [[nodiscard]] uint32_t getLeafIndex(const CoordT& coord);
 };
 
 }  // namespace Bonxai
@@ -394,8 +392,8 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
   , LEAF_BITS(leaf_bits)
   , Log2N(INNER_BITS + LEAF_BITS)
   , resolution(voxel_size)
-  , inv_resolution(1.0 / resolution)
-  , half_resolution(0.5 * resolution)
+  , inv_resolution(1.0f / resolution)
+  , half_resolution(0.5f * resolution)
   , INNER_MASK((1 << INNER_BITS) - 1)
   , LEAF_MASK((1 << LEAF_BITS) - 1)
 {
@@ -415,19 +413,11 @@ inline CoordT VoxelGrid<DataT>::posToCoord(float x, float y, float z)
 }
 
 template <typename DataT>
-inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z)
-{
-  return { static_cast<int32_t>(x * inv_resolution) - std::signbit(x),
-           static_cast<int32_t>(y * inv_resolution) - std::signbit(y),
-           static_cast<int32_t>(z * inv_resolution) - std::signbit(z) };
-}
-
-template <typename DataT>
 inline Point3D VoxelGrid<DataT>::coordToPos(const CoordT& coord)
 {
-  return { half_resolution + static_cast<double>(coord.x * resolution),
-           half_resolution + static_cast<double>(coord.y * resolution),
-           half_resolution + static_cast<double>(coord.z * resolution) };
+  return { half_resolution + static_cast<float>(coord.x * resolution),
+           half_resolution + static_cast<float>(coord.y * resolution),
+           half_resolution + static_cast<float>(coord.z * resolution) };
 }
 
 template <typename DataT>

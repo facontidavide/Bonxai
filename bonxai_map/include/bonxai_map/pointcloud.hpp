@@ -6,62 +6,64 @@
 namespace Bonxai
 {
 
-inline Bonxai::Point3D ToPoint3D(const Eigen::Vector3d& v)
-{
-  return {v.x(), v.y(), v.z()};
-}
-
-inline Eigen::Vector3d FromPoint3D(const Bonxai::Point3D& p)
-{
-  return {p.x, p.y, p.z};
-}
-
 bool ComputeRay(const CoordT &key_origin,
                 const CoordT &key_end,
                 std::vector<CoordT> &ray);
 
-
+/**
+ * @brief The ProbabilisticMap class is meant to behave as much as possible as
+ * octomap::Octree, given the same voxel size.
+ *
+ * Insert a point cloud to update the current probability
+ */
 class ProbabilisticMap
 {
 public:
 
+  /// Compute the logds, but return the result as an integer,
+  /// The real number is represented as a fixed precision
+  /// integer (6 decimals after the comma)
+  [[nodiscard]] static constexpr int32_t logods(float prob)
+  {
+    return int32_t(1e6 * std::log(prob / (1.0 - prob)));
+  }
+
+  /// Expect the fixed comma value returned by logods()
   [[nodiscard]] static constexpr float prob(int32_t logods_fixed)
   {
-    float logods = float(logods_fixed) * 1e-3;
+    float logods = float(logods_fixed) * 1e-6;
     return (1.0 - 1.0 / (1.0 + std::exp(logods)));
   }
 
-  [[nodiscard]] static constexpr int32_t logods(float prob)
-  {
-    return int32_t(1e3 * std::log(prob / (1.0 - prob)));
-  }
+  struct CellT {
+    // variable used to check if a cell was already updated in this loop
+    int32_t update_id : 4;
+    // the probability of the cell to be occupied
+    int32_t probability_log : 28;
 
-  // The default values are the same as OctoMap
+    CellT(): update_id(0), probability_log(UnknownProbability) {};
+  };
+
+  /// These default values are the same as OctoMap
   struct Options {
     int32_t prob_miss_log = logods(0.4f);
     int32_t prob_hit_log = logods(0.7f);
 
-    int32_t clamp_min = logods(0.12f);
-    int32_t clamp_max = logods(0.97f);
+    int32_t clamp_min_log = logods(0.12f);
+    int32_t clamp_max_log = logods(0.97f);
 
-    float occupancy_threshold = logods(0.5);
+    int32_t occupancy_threshold_log = logods(0.5);
   };
 
   static const int32_t UnknownProbability;
 
-  struct CellT {
-    int32_t update_count : 8;
-    int32_t probability : 24;
-    CellT(): update_count(0), probability(UnknownProbability) {};
-  };
-
   ProbabilisticMap(double resolution): _grid(resolution) {}
 
-  VoxelGrid<CellT>& grid();
+  [[nodiscard]] VoxelGrid<CellT>& grid();
 
-  const VoxelGrid<CellT>& grid() const;
+  [[nodiscard]] const VoxelGrid<CellT>& grid() const;
 
-  const Options& options() const;
+  [[nodiscard]] const Options& options() const;
 
   void setOptions(const Options& options);
 
@@ -69,11 +71,11 @@ public:
                         const Eigen::Vector3f &origin,
                         double max_range);
 
-  bool isOccupied(const Bonxai::CoordT& coord) const;
+  [[nodiscard]] bool isOccupied(const Bonxai::CoordT& coord) const;
 
-  bool isUnknown(const Bonxai::CoordT& coord) const;
+  [[nodiscard]] bool isUnknown(const Bonxai::CoordT& coord) const;
 
-  bool isFree(const Bonxai::CoordT& coord) const;
+  [[nodiscard]] bool isFree(const Bonxai::CoordT& coord) const;
 
   void getOccupiedVoxels(std::vector<Bonxai::CoordT>& coords);
 
@@ -96,6 +98,9 @@ private:
   VoxelGrid<CellT> _grid;
   Options _options;
   uint8_t _update_count = 1;
+
+
+  void clearRay(const Bonxai::CoordT& from, const Bonxai::CoordT& to);
 };
 
 }

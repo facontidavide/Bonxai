@@ -112,7 +112,7 @@ int main(int argc, char** argv)
       ("clouds", "Pointcloud folder path", cxxopts::value<std::string>())
       ("calib", "Calibration file path", cxxopts::value<std::string>())
       ("poses", "Poses file path", cxxopts::value<std::string>())
-      ("max_files", "Max files to process", cxxopts::value<size_t>()->default_value("100"))
+      ("max_files", "Max files to process", cxxopts::value<size_t>()->default_value("1000"))
       ("max_dist", "Max distance in meters", cxxopts::value<double>()->default_value("25.0"))
       ("voxel_size", "Voxel size in meters", cxxopts::value<double>()->default_value("0.2"))
       ;
@@ -134,6 +134,9 @@ int main(int argc, char** argv)
 
   const auto calibration_transform = ReadCalibration(calibration_file);
   const auto poses = ReadPoses(poses_file);
+
+  long total_time_octree = 0;
+  long total_time_bonxai = 0;
 
   std::vector<std::string> cloud_filenames;
   for (const auto& entry : fs::directory_iterator(velodyne_path))
@@ -170,9 +173,11 @@ int main(int argc, char** argv)
       const auto t1 = std::chrono::system_clock::now();
 
       octree.insertPointCloud(pointcloud, origin, max_distance, false, true);
-      const auto t2 = std::chrono::system_clock::now();
-      std::cout << "octomap insert: " << ToMsec(t2-t1) << " ms" << std::endl;
-      speed_up_ratio = ToMsec(t2-t1);
+
+      const auto diff = ToMsec(std::chrono::system_clock::now() - t1);
+      std::cout << "octomap insert: " << diff << " ms" << std::endl;
+      speed_up_ratio = double(diff);
+      total_time_octree += diff;
     }
     //------- bonxai -------
     {
@@ -182,9 +187,11 @@ int main(int argc, char** argv)
 
       const auto t1 = std::chrono::system_clock::now();
       bonxai_map.insertPointCloud(pointcloud, origin, max_distance);
-      const auto t2 = std::chrono::system_clock::now();
-      std::cout << "bonxai insert: " << ToMsec(t2-t1) << " ms" << std::endl;
-      speed_up_ratio /= ToMsec(t2-t1);
+
+      const auto diff = ToMsec(std::chrono::system_clock::now() - t1);
+      std::cout << "octomap insert: " << diff << " ms" << std::endl;
+      speed_up_ratio /= double(diff);
+      total_time_bonxai += diff;
     }
     printf("speed up: %.1f X\n", speed_up_ratio);
   }
@@ -232,6 +239,8 @@ int main(int argc, char** argv)
   std::cout << "\nMemory used. octree: " << int(octree.memoryUsage() / 1000)
             << " Kb / bonxai: " << int(bonxai_map.grid().memUsage() / 1000)
             << " Kb" << std::endl;
+
+  printf("speed up: %.1f X\n", double(total_time_octree) / double(total_time_bonxai));
 
   return 0;
 }

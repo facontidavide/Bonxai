@@ -35,7 +35,7 @@ bool ComputeRay(const CoordT &key_origin,
   for (int i = 0; i < max-1; ++i){
     // update errors
     error = error + delta;
-
+    // manual loop unrolling
     if ((error.x << 1) >= max)
     {
       coord.x += step.x;
@@ -84,67 +84,62 @@ void ProbabilisticMap::insertPointCloud(const std::vector<Eigen::Vector3f> &poin
 
   const double max_range_sqr = max_range*max_range;
 
-  thread_local std::vector<CoordT> ray_endpoints;
-  CoordT prev_coord ={0,0,0};
-  ray_endpoints.clear();
+  thread_local std::vector<CoordT> miss_coords;
+  thread_local std::vector<CoordT> hit_coords;
+  CoordT prev_coord ={0, 0, 0};
+  miss_coords.clear();
+  hit_coords.clear();
 
   // first: mark the hits
   for(const auto& p: points)
   {
-    if(max_range > 0)
+    const Eigen::Vector3f vect(p - origin);
+    const double squared_norm = vect.squaredNorm();
+    if( squared_norm >= max_range_sqr)
     {
-      const Eigen::Vector3f vect(p - origin);
-      const double squared_norm = vect.squaredNorm();
-      if( squared_norm >= max_range_sqr)
+      // this will be considered a "miss".
+      // Compute the end point to cast a cleaning ray
+      const Eigen::Vector3f new_point = (vect / std::sqrt(squared_norm)) * max_range;
+      const auto end_coord = _grid.posToCoord( new_point );
+
+      if(end_coord != prev_coord)
       {
-        // this will be considered a "miss".
-        // Compute the end point to cast a cleaning ray
-        const Eigen::Vector3f new_point = (vect / std::sqrt(squared_norm)) * max_range;
-        const auto end_coord = _grid.posToCoord( new_point );
-        if(end_coord != prev_coord)
-        {
-          ray_endpoints.push_back(end_coord);
-          prev_coord = end_coord;
-        }
-        continue;
+        miss_coords.push_back(end_coord);
+        prev_coord = end_coord;
       }
+      continue;
     }
+
     const auto coord = _grid.posToCoord( {p.x(), p.y(), p.z()} );
-
     CellT* cell = accessor.value(coord, true);
-    if(cell->update_count != _update_count)
-    {
-      cell->probability = std::min(cell->probability + _options.prob_hit_log,
-                                   _options.clamp_max);
 
-      // don't visit twice the same cell
-      cell->update_count = _update_count;
-      ray_endpoints.push_back(coord);
+    if(cell->update_id != _update_count)
+    {
+      if(cell->update_id != 0)
+      {
+        cell->probability_log = std::min(cell->probability_log + _options.prob_hit_log,
+                                         _options.clamp_max_log);
+      }
+
+      cell->update_id = _update_count;
+      hit_coords.push_back(coord);
     }
   }
 
+  //---------------------------------------
   const auto coord_origin = _grid.posToCoord( origin );
 
-  for(const auto& coord_end: ray_endpoints)
+  for(const auto& coord_end: miss_coords)
   {
-    // clean space with ray casting
-    thread_local std::vector<Bonxai::CoordT> ray;
-    ComputeRay(coord_origin, coord_end, ray);
-
-    for(const auto& coord: ray)
-    {
-      CellT* cell = accessor.value(coord, true);
-      if(cell->update_count != _update_count)
-      {
-        cell->probability = std::max(cell->probability + _options.prob_miss_log,
-                                     _options.clamp_min);
-
-        // don't visit twice the same cell
-        cell->update_count = _update_count;
-      }
-    }
+    clearRay(coord_origin, coord_end);
   }
-  if(++_update_count == 255)
+
+  for(const auto& coord_end: hit_coords)
+  {
+    clearRay(coord_origin, coord_end);
+  }
+
+  if(++_update_count == 4)
   {
     _update_count = 1;
   }
@@ -154,7 +149,7 @@ void ProbabilisticMap::getOccupiedVoxels(std::vector<CoordT> &coords)
 {
   coords.clear();
   auto visitor = [&](CellT& cell, const CoordT& coord) {
-    if(cell.probability > _options.occupancy_threshold)
+    if(cell.probability_log > _options.occupancy_threshold_log)
     {
       coords.push_back(coord);
     }
@@ -166,12 +161,31 @@ void ProbabilisticMap::getFreeVoxels(std::vector<CoordT> &coords)
 {
   coords.clear();
   auto visitor = [&](CellT& cell, const CoordT& coord) {
-    if(cell.probability < _options.occupancy_threshold)
+    if(cell.probability_log < _options.occupancy_threshold_log)
     {
       coords.push_back(coord);
     }
   };
   _grid.forEachCell(visitor);
+}
+
+void ProbabilisticMap::clearRay(const CoordT &from, const CoordT &to)
+{
+  auto accessor = _grid.createAccessor();
+  // clean space with ray casting
+  thread_local std::vector<Bonxai::CoordT> ray;
+  ComputeRay(from, to, ray);
+
+  for(const auto& coord: ray)
+  {
+    CellT* cell = accessor.value(coord, false);
+    if(cell && cell->update_id != _update_count)
+    {
+      cell->probability_log = std::max(cell->probability_log + _options.prob_miss_log,
+                                       _options.clamp_min_log);
+      cell->update_id = _update_count;
+    }
+  }
 }
 
 }
