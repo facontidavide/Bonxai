@@ -98,9 +98,6 @@ private:
   VoxelGrid<CellT> _grid;
   Options _options;
   uint8_t _update_count = 1;
-
-
-  void clearRay(const Bonxai::CoordT& from, const Bonxai::CoordT& to);
 };
 
 }
