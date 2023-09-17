@@ -129,6 +129,25 @@ void ProbabilisticMap::insertPointCloud(const std::vector<Eigen::Vector3f> &poin
   }
 
   //---------------------------------------
+  auto clearRay = [this](const CoordT &from, const CoordT &to)
+  {
+    auto accessor = _grid.createAccessor();
+    // clean space with ray casting
+    thread_local std::vector<Bonxai::CoordT> ray;
+    ComputeRay(from, to, ray);
+
+    for(const auto& coord: ray)
+    {
+      CellT* cell = accessor.value(coord, true);
+      if(cell->update_id != _update_count)
+      {
+        cell->probability_log = std::max(cell->probability_log + _options.prob_miss_log,
+                                         _options.clamp_min_log);
+        cell->update_id = _update_count;
+      }
+    }
+  };
+
   const auto coord_origin = _grid.posToCoord( origin );
 
   for(const auto& coord_end: hit_coords)
@@ -171,24 +190,7 @@ void ProbabilisticMap::getFreeVoxels(std::vector<CoordT> &coords)
   _grid.forEachCell(visitor);
 }
 
-void ProbabilisticMap::clearRay(const CoordT &from, const CoordT &to)
-{
-  auto accessor = _grid.createAccessor();
-  // clean space with ray casting
-  thread_local std::vector<Bonxai::CoordT> ray;
-  ComputeRay(from, to, ray);
 
-  for(const auto& coord: ray)
-  {
-    CellT* cell = accessor.value(coord, true);
-    if(cell && cell->update_id != _update_count)
-    {
-      cell->probability_log = std::max(cell->probability_log + _options.prob_miss_log,
-                                       _options.clamp_min_log);
-      cell->update_id = _update_count;
-    }
-  }
-}
 
 }
 

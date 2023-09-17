@@ -115,6 +115,7 @@ int main(int argc, char** argv)
       ("max_files", "Max files to process", cxxopts::value<size_t>()->default_value("1000"))
       ("max_dist", "Max distance in meters", cxxopts::value<double>()->default_value("25.0"))
       ("voxel_size", "Voxel size in meters", cxxopts::value<double>()->default_value("0.2"))
+      ("skip_octree", "Do not compute the octree", cxxopts::value<bool>()->default_value("false"))
       ;
   const auto options_res = options.parse(argc, argv);
 
@@ -124,6 +125,7 @@ int main(int argc, char** argv)
   const auto max_distance = options_res["max_dist"].as<double>();
   auto voxel_size = options_res["voxel_size"].as<double>();
   auto max_pointclouds = options_res["max_files"].as<size_t>();
+  const auto skip_octree = options_res["skip_octree"].as<bool>();
 
   if (options_res.count("pc") || velodyne_path.empty() ||
       poses_file.empty() || calibration_file.empty())
@@ -162,7 +164,7 @@ int main(int argc, char** argv)
 
     double speed_up_ratio = 1;
     //------- octomap -------
-    if(true)
+    if(!skip_octree)
     {
       const octomap::point3d origin(transform.translation().x(),
                                     transform.translation().y(),
@@ -193,13 +195,17 @@ int main(int argc, char** argv)
       speed_up_ratio /= double(diff);
       total_time_bonxai += diff;
     }
-    printf("speed up: %.1f X\n", speed_up_ratio);
+    if(!skip_octree)
+    {
+      printf("speed up: %.1f X\n", speed_up_ratio);
+    }
   }
 
   //-----------------------------------------------------
   // now, traverse all leafs in the tree:
   std::cout << "\n  ----- Saving results: ------" << std::endl;
 
+  if(!skip_octree)
   {
     std::vector<Eigen::Vector3d> octree_result;
     int free_cell_count = 0;
@@ -236,11 +242,18 @@ int main(int argc, char** argv)
     }
   }
 
-  std::cout << "\nMemory used. octree: " << int(octree.memoryUsage() / 1000)
-            << " Kb / bonxai: " << int(bonxai_map.grid().memUsage() / 1000)
-            << " Kb" << std::endl;
-
-  printf("speed up: %.1f X\n", double(total_time_octree) / double(total_time_bonxai));
+  if(!skip_octree)
+  {
+    std::cout << "\nMemory used. octree: " << int(octree.memoryUsage() / 1000)
+              << " Kb / bonxai: " << int(bonxai_map.grid().memUsage() / 1000)
+              << " Kb" << std::endl;
+    printf("speed up: %.1f X\n", double(total_time_octree) / double(total_time_bonxai));
+  }
+  else {
+    std::cout << "\nMemory used: " << int(bonxai_map.grid().memUsage() / 1000)
+              << " Kb" << std::endl;
+    printf("average time: %.1f ms\n", double(total_time_bonxai) / double(max_pointclouds));
+  }
 
   return 0;
 }
