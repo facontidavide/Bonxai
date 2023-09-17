@@ -175,7 +175,7 @@ int main(int argc, char** argv)
       octree.insertPointCloud(pointcloud, origin, max_distance, false, true);
 
       const auto diff = ToMsec(std::chrono::system_clock::now() - t1);
-      std::cout << "octomap insert: " << diff << " ms" << std::endl;
+      std::cout << "octomap update: " << diff << " ms" << std::endl;
       speed_up_ratio = double(diff);
       total_time_octree += diff;
     }
@@ -189,7 +189,7 @@ int main(int argc, char** argv)
       bonxai_map.insertPointCloud(pointcloud, origin, max_distance);
 
       const auto diff = ToMsec(std::chrono::system_clock::now() - t1);
-      std::cout << "octomap insert: " << diff << " ms" << std::endl;
+      std::cout << "bonxai update: " << diff << " ms" << std::endl;
       speed_up_ratio /= double(diff);
       total_time_bonxai += diff;
     }

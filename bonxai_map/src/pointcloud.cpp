@@ -85,8 +85,9 @@ void ProbabilisticMap::insertPointCloud(const std::vector<Eigen::Vector3f> &poin
 
   const double max_range_sqr = max_range*max_range;
 
-  thread_local std::vector<CoordT> miss_coords;
+  thread_local std::unordered_set<CoordT> miss_coords;
   thread_local std::vector<CoordT> hit_coords;
+
   CoordT prev_coord ={0, 0, 0};
   miss_coords.clear();
   hit_coords.clear();
@@ -104,9 +105,11 @@ void ProbabilisticMap::insertPointCloud(const std::vector<Eigen::Vector3f> &poin
       const Eigen::Vector3f new_point = origin + (vect * max_range);
       const auto end_coord = _grid.posToCoord( new_point );
 
+      // for very dense pointclouds, this MIGHT be true.
+      // worth checking, to avoid calling unordered_set::insert
       if(end_coord != prev_coord)
       {
-        miss_coords.push_back(end_coord);
+        miss_coords.insert(end_coord);
         prev_coord = end_coord;
       }
       continue;
