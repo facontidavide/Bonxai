@@ -12,7 +12,7 @@ Bonxai data structure is:
 >(*) The dimension of the 3D space is virtually "infinite":
 since **32-bits indexes** are used, given a voxel size of **1 cm**,
 the maximum range of the X, Y and Z coordinates would be about **40.000 Km**.
-As a reference **the diameter of planet hearth is 12.000 Km**.
+As a reference **the diameter of planet Earth is 12.000 Km**.
 
 If you are familiar with [Octomap](https://octomap.github.io/) and Octrees, you know
 that those data structures are also sparse and unbounded.
