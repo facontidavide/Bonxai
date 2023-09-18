@@ -2,6 +2,7 @@
 
 #include "bonxai/bonxai.hpp"
 #include <eigen3/Eigen/Geometry>
+#include <unordered_set>
 
 namespace Bonxai
 {
@@ -57,7 +58,7 @@ public:
 
   static const int32_t UnknownProbability;
 
-  ProbabilisticMap(double resolution): _grid(resolution) {}
+  ProbabilisticMap(double resolution);
 
   [[nodiscard]] VoxelGrid<CellT>& grid();
 
@@ -67,8 +68,22 @@ public:
 
   void setOptions(const Options& options);
 
-  void insertPointCloud(const std::vector<Eigen::Vector3f> &points,
-                        const Eigen::Vector3f &origin,
+  /**
+   * @brief insertPointCloud will update the probability map
+   * with a new set of detections.
+   * The template function can accept points of different types,
+   * such as pcl:Point, Eigen::Vector or Bonxai::Point3d
+   *
+   * Both origin and points must be in word coordinates
+   *
+   * @param points   a vector of points which represent detected obstacles
+   * @param origin   origin of the point cloud
+   * @param max_range  max range of the ray, if exceeded, we will use that
+   * to compute a free space
+   */
+  template <typename PointT>
+  void insertPointCloud(const std::vector<PointT>& points,
+                        const PointT& origin,
                         double max_range);
 
   [[nodiscard]] bool isOccupied(const Bonxai::CoordT& coord) const;
@@ -98,6 +113,51 @@ private:
   VoxelGrid<CellT> _grid;
   Options _options;
   uint8_t _update_count = 1;
+
+  std::unordered_set<CoordT> _miss_coords;
+  std::vector<CoordT> _hit_coords;
+
+  Bonxai::VoxelGrid<CellT>::Accessor _accessor;
+
+  void addPoint(const Eigen::Vector3f &origin, const Eigen::Vector3f &point, const float &max_range,
+                const float &max_sqr);
+  void updateFreeCells(const Eigen::Vector3f& origin);
 };
+
+//--------------------------------------------------
+template <typename T> inline
+    Eigen::Vector3f ToEigenVector3f(const T& v)
+{
+  static_assert(type_has_method_x<T>::value ||
+                    type_has_member_x<T>::value ||
+                    type_has_operator<T>::value,
+                "Can't assign to Eigen::Vector3f");
+
+  if constexpr(type_has_method_x<T>::value) {
+    return {v.x(), v.y(), v.z()};
+  }
+  if constexpr(type_has_member_x<T>::value) {
+    return {v.x, v.y, v.z};
+  }
+  if constexpr(type_has_operator<T>::value){
+    return {v[0], v[1], v[2]};
+  }
+}
+
+
+template<typename PointT> inline
+void ProbabilisticMap::insertPointCloud(const std::vector<PointT> &points,
+                                        const PointT &origin,
+                                        double max_range)
+{
+  const auto from = ToEigenVector3f(origin);
+  const double max_range_sqr = max_range*max_range;
+  for(const auto& point: points)
+  {
+    const auto to = ToEigenVector3f(point);
+    addPoint(from, to, max_range, max_range_sqr);
+  }
+  updateFreeCells(origin);
+}
 
 }

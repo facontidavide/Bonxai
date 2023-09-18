@@ -62,6 +62,10 @@ VoxelGrid<ProbabilisticMap::CellT> &ProbabilisticMap::grid()
   return _grid;
 }
 
+ProbabilisticMap::ProbabilisticMap(double resolution):
+  _grid(resolution), _accessor(_grid.createAccessor()) {
+}
+
 const VoxelGrid<ProbabilisticMap::CellT> &ProbabilisticMap::grid() const
 {
   return _grid;
@@ -77,58 +81,42 @@ void ProbabilisticMap::setOptions(const Options &options)
   _options = options;
 }
 
-void ProbabilisticMap::insertPointCloud(const std::vector<Eigen::Vector3f> &points,
-                                        const Eigen::Vector3f& origin,
-                                        double max_range)
+void ProbabilisticMap::addPoint(const Eigen::Vector3f& origin,
+                                const Eigen::Vector3f& point,
+                                const float& max_range,
+                                const float& max_range_sqr)
 {
-  auto accessor = _grid.createAccessor();
-
-  const double max_range_sqr = max_range*max_range;
-
-  thread_local std::unordered_set<CoordT> miss_coords;
-  thread_local std::vector<CoordT> hit_coords;
-
-  CoordT prev_coord ={0, 0, 0};
-  miss_coords.clear();
-  hit_coords.clear();
-
-  // first: mark the hits
-  for(const auto& p: points)
+  Eigen::Vector3f vect(point - origin);
+  const double squared_norm = vect.squaredNorm();
+  if( squared_norm >= max_range_sqr)
   {
-    Eigen::Vector3f vect(p - origin);
-    const double squared_norm = vect.squaredNorm();
-    if( squared_norm >= max_range_sqr)
-    {
-      // this will be considered a "miss".
-      // Compute the end point to cast a cleaning ray
-      vect /= std::sqrt(squared_norm);
-      const Eigen::Vector3f new_point = origin + (vect * max_range);
-      const auto end_coord = _grid.posToCoord( new_point );
+    // this will be considered a "miss".
+    // Compute the end point to cast a cleaning ray
+    vect /= std::sqrt(squared_norm);
+    const Eigen::Vector3f new_point = origin + (vect * max_range);
+    const auto coord = _grid.posToCoord( new_point );
 
-      // for very dense pointclouds, this MIGHT be true.
-      // worth checking, to avoid calling unordered_set::insert
-      if(end_coord != prev_coord)
-      {
-        miss_coords.insert(end_coord);
-        prev_coord = end_coord;
-      }
-      continue;
-    }
-
-    const auto coord = _grid.posToCoord( {p.x(), p.y(), p.z()} );
-    CellT* cell = accessor.value(coord, true);
-
-    if(cell->update_id != _update_count)
-    {
-      cell->probability_log = std::min(cell->probability_log + _options.prob_hit_log,
-                                         _options.clamp_max_log);
-
-      cell->update_id = _update_count;
-      hit_coords.push_back(coord);
-    }
+    // for very dense pointclouds, this MIGHT be true.
+    // worth checking, to avoid calling unordered_set::insert
+    _miss_coords.insert(coord);
+    return;
   }
 
-  //---------------------------------------
+  const auto coord = _grid.posToCoord( point );
+  CellT* cell = _accessor.value(coord, true);
+
+  if(cell->update_id != _update_count)
+  {
+    cell->probability_log = std::min(cell->probability_log + _options.prob_hit_log,
+                                     _options.clamp_max_log);
+
+    cell->update_id = _update_count;
+    _hit_coords.push_back(coord);
+  }
+}
+
+void Bonxai::ProbabilisticMap::updateFreeCells(const Eigen::Vector3f& origin)
+{
   auto clearRay = [this](const CoordT &from, const CoordT &to)
   {
     auto accessor = _grid.createAccessor();
@@ -150,15 +138,17 @@ void ProbabilisticMap::insertPointCloud(const std::vector<Eigen::Vector3f> &poin
 
   const auto coord_origin = _grid.posToCoord( origin );
 
-  for(const auto& coord_end: hit_coords)
+  for(const auto& coord_end: _hit_coords)
   {
     clearRay(coord_origin, coord_end);
   }
+  _hit_coords.clear();
 
-  for(const auto& coord_end: miss_coords)
+  for(const auto& coord_end: _miss_coords)
   {
     clearRay(coord_origin, coord_end);
   }
+  _miss_coords.clear();
 
   if(++_update_count == 4)
   {
