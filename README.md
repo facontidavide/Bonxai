@@ -39,8 +39,9 @@ If you think that a data structure like this could be useful for your project,
 for the time being you should probably considered using OpenVDB itself.
 
 >(*) The dimension of the 3D space is virtually "infinite":
-since **32-bits indexes** are used, given a voxel size as small as **1 cm**,
-the maximum range of the X, Y and Z coordinates would be about **+/- 20.000 Km** (yes, Kilometers).
+since **32-bits indexes** are used, given a voxel size of **1 cm**,
+the maximum range of the X, Y and Z coordinates would be about **40.000 Km**.
+As a reference **the diameter of planet hearth is 12.000 Km**.
 
 # Benchmark (preliminary)
 
@@ -52,14 +53,14 @@ Anyway, they gave you a fair idea of what you may expect, in terms of performanc
 -------------------------------------------
 Benchmark                     Time      
 -------------------------------------------
-Bonxai_Create              7569 us  
-Octomap_Create            51803 us  
+Bonxai_Create              1165 us  
+Octomap_Create            25522 us  
 
-Bonxai_Update              1807 us  
-Octomap_Update             4657 us  
+Bonxai_Update               851 us  
+Octomap_Update             3824 us  
 
-Bonxai_IterateAllCells     1122 us
-Octomap_IterateAllCells    3363 us
+Bonxai_IterateAllCells      124 us
+Octomap_IterateAllCells     698 us
 ```
 
 - **Create** refers to creating a new VoxelGrid from scratch
@@ -119,7 +120,7 @@ int* value = accessor.value( coord );
 # Roadmap
 
 - [x] serialization to/from file.
-- [ ] full implementation of the Octomap algorithm (ray casting + probability map).
+- [x] full implementation of the Octomap algorithm (ray casting + probability map).
 - [ ] integration with ROS.
 - [ ] RViz/RViz2 visualization plugins.
 - [ ] integration with [FCL](https://github.com/flexible-collision-library/fcl) for collision detection (?)
