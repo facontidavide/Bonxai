@@ -9,10 +9,15 @@ Bonxai data structure is:
 - **Sparse**: it uses only a fraction of the memory that a dense 3D voxel grid would use.
 - **Unbounded**: you don't need to define the boundary of the 3D space (*).
 
+>(*) The dimension of the 3D space is virtually "infinite":
+since **32-bits indexes** are used, given a voxel size of **1 cm**,
+the maximum range of the X, Y and Z coordinates would be about **40.000 Km**.
+As a reference **the diameter of planet hearth is 12.000 Km**.
+
 If you are familiar with [Octomap](https://octomap.github.io/) and Octrees, you know
 that those data structures are also sparse and unbounded.
 
-On the other hand, Bonxai is **much faster** and, in same cases, even more memory efficient
+On the other hand, Bonxai is **much faster** and, in some cases, even more memory efficient
 than an Octree.
 
 This work is strongly based on [OpenVDB](https://www.openvdb.org/) and it can be considered
@@ -24,7 +29,7 @@ an implementation of the original paper, with a couple of non-trivial changes:
     
 You can read the previous paper [here](http://www.museth.org/Ken/Publications_files/Museth_TOG13.pdf).
 
-There is also some overlap with this other paper, but their implementations is **much** simpler,
+There is also some overlap with this other paper, but their implementation is much** simpler,
 even if conceptually similar:
 
      Eurico Pedrosa, Artur Pereira, Nuno Lau 
@@ -35,17 +40,9 @@ even if conceptually similar:
 **Bonxai** is currently under development and I am building this mostly for fun and for
 educational purposes. Don't expect any API stability for the time being.
 
-If you think that a data structure like this could be useful for your project,
-for the time being you should probably considered using OpenVDB itself.
-
->(*) The dimension of the 3D space is virtually "infinite":
-since **32-bits indexes** are used, given a voxel size of **1 cm**,
-the maximum range of the X, Y and Z coordinates would be about **40.000 Km**.
-As a reference **the diameter of planet hearth is 12.000 Km**.
-
 # Benchmark (preliminary)
 
-Take these numbers with a grain of salt, since they are preliminary and benchmark is 
+Take these numbers with a grain of salt, since they are preliminary and the benchmark is 
 strongly influenced by the way the data is stored.
 Anyway, they gave you a fair idea of what you may expect, in terms of performance.
 
@@ -64,7 +61,7 @@ Octomap_IterateAllCells     698 us
 ```
 
 - **Create** refers to creating a new VoxelGrid from scratch
-- **Update** means modyfing the value of an already allocated VoxelGrid.
+- **Update** means modifying the value of an already allocated VoxelGrid.
 - **IterateAllCells** will get the value and the coordinates of all the existing cells.
 
 # How to use it
@@ -132,10 +129,10 @@ int* value = accessor.value( coord );
 - The number one reason is to have fun and to learn something new :)
 - I want this library to be small and easy to integrate into larger projects.
   The core data structure is less than 1000 lines of code.
-- It is not an "exact" rewrite, I modified few important aspects of the algorithm
+- It is not an "exact" rewrite, I modified a few important aspects of the algorithm
     to make it slightly faster, at least for my specific use cases.
 
-**How much memory does it uses, compared with Octomap?**
+**How much memory does it use, compared with Octomap?**
 
 It is... complicated.
 
