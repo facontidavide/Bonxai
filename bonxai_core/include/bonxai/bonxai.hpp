@@ -403,22 +403,12 @@ public:
      */
     bool setValue(const CoordT& coord, const DataT& value);
 
-    bool setValue(const Point3D& position, const DataT& value)
-    {
-      return setValue(grid_.posToCoord(position), value);
-    }
-
     /** @brief value getter.
      *
      * @param coord   coordinate of the cell.
      * @return        return the pointer to the value or nullptr if not set.
      */
     [[nodiscard]] DataT* value(const CoordT& coord, bool create_if_missing = false);
-
-    [[nodiscard]] DataT* value(const Point3D& position, bool create_if_missing = false)
-    {
-      return value(grid_.posToCoord(position), create_if_missing);
-    }
 
     /** @brief setCellOn is similar to setValue, but the value is changed only if the
      * cell has been created, otherwise, the previous value is used.
