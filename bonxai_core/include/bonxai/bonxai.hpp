@@ -38,9 +38,9 @@ struct Point3D
     , z(_z)
   {}
 
-  // This copy operator accepts types like
-  // Eigen::Vector3d, std::array<double,3>, std::vector<double>, pcl::PointXYZ
-  // of Point3D itself
+  // This copy operator accepts types such as:
+  // Eigen::Vector3d, std::array<double,3>, std::vector<double>,
+  // pcl::PointXYZ and Point3D itself
   template <typename T>
   Point3D& operator=(const T& v);
 
@@ -243,36 +243,12 @@ public:
   Grid(const Grid& other) = delete;
   Grid& operator=(const Grid& other) = delete;
 
-  Grid(Grid&& other)
-    : dim_(other.dim_)
-    , size_(other.size_)
-    , mask_(std::move(other.mask_))
-  {
-    std::swap(data_, other.data_);
-  }
+  Grid(Grid&& other);
+  Grid& operator=(Grid&& other);
 
-  Grid& operator=(Grid&& other)
-  {
-    dim_ = other.dim_;
-    size_ = other.size_;
-    mask_ = std::move(other.mask_);
-    std::swap(data_, other.data_);
-    return *this;
-  }
+  ~Grid();
 
-  ~Grid()
-  {
-    if (data_)
-    {
-      delete[] data_;
-    }
-  }
-
-  [[nodiscard]] size_t memUsage() const
-  {
-    return mask_.memUsage() + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(DataT*) +
-           sizeof(DataT) * size_;
-  }
+  [[nodiscard]] size_t memUsage() const;
 
   [[nodiscard]] size_t size() const { return size_; }
 
@@ -438,27 +414,9 @@ public:
   [[nodiscard]] uint32_t getLeafIndex(const CoordT& coord);
 };
 
-}  // namespace Bonxai
-
 //----------------------------------------------------
 //----------------- Implementations ------------------
 //----------------------------------------------------
-
-namespace std
-{
-template <>
-struct hash<Bonxai::CoordT>
-{
-  std::size_t operator()(const Bonxai::CoordT& p) const
-  {
-    // same a OpenVDB
-    return ((1 << 20) - 1) & (p.x * 73856093 ^ p.y * 19349663 ^ p.z * 83492791);
-  }
-};
-}  // namespace std
-
-namespace Bonxai
-{
 
 inline double& Point3D::operator[](int index)
 {
@@ -531,6 +489,41 @@ inline Point3D& Point3D::operator=(const T& v)
 }
 
 template <typename DataT>
+inline Grid<DataT>::Grid(Grid&& other)
+  : dim_(other.dim_)
+  , size_(other.size_)
+  , mask_(std::move(other.mask_))
+{
+  std::swap(data_, other.data_);
+}
+
+template <typename DataT>
+inline Grid<DataT>& Grid<DataT>::operator=(Grid&& other)
+{
+  dim_ = other.dim_;
+  size_ = other.size_;
+  mask_ = std::move(other.mask_);
+  std::swap(data_, other.data_);
+  return *this;
+}
+
+template <typename DataT>
+inline Grid<DataT>::~Grid()
+{
+  if (data_)
+  {
+    delete[] data_;
+  }
+}
+
+template<typename DataT>
+inline size_t Grid<DataT>::memUsage() const
+{
+  return mask_.memUsage() + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(DataT*) +
+         sizeof(DataT) * size_;
+}
+
+template <typename DataT>
 inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
                                    uint8_t inner_bits,
                                    uint8_t leaf_bits)
@@ -581,7 +574,6 @@ inline uint32_t VoxelGrid<DataT>::getLeafIndex(const CoordT& coord)
          ((coord.z & LEAF_MASK) << (LEAF_BITS * 2));
 }
 
-//----------------------------------
 template <typename DataT>
 inline bool VoxelGrid<DataT>::Accessor::setValue(const CoordT& coord,
                                                  const DataT& value)
@@ -1090,3 +1082,16 @@ inline void Mask::set(uint32_t n, bool On)
 }
 
 }  // namespace Bonxai
+
+namespace std
+{
+template <>
+struct hash<Bonxai::CoordT>
+{
+  std::size_t operator()(const Bonxai::CoordT& p) const
+  {
+    // same a OpenVDB
+    return ((1 << 20) - 1) & (p.x * 73856093 ^ p.y * 19349663 ^ p.z * 83492791);
+  }
+};
+}  // namespace std

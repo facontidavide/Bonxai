@@ -158,14 +158,47 @@ int main(int argc, char** argv)
   for (size_t count = 0; count < cloud_filenames.size(); count++)
   {
     const auto& filename = cloud_filenames[count];
-    std::cout << "\nParsing: " << filename << std::endl;
-
     const Eigen::Isometry3f transform = poses[count] * calibration_transform;
 
-    double speed_up_ratio = 1;
-    //------- octomap -------
-    if(!skip_octree)
+    const Eigen::Vector3f origin(transform.translation());
+    std::vector<Eigen::Vector3f> pointcloud;
+    ReadPointcloud(filename, transform, pointcloud);
+
+    const auto t1 = std::chrono::system_clock::now();
+
+    bonxai_map.insertPointCloud(pointcloud, origin, max_distance);
+
+    const auto diff = ToMsec(std::chrono::system_clock::now() - t1);
+    std::cout << "[" << filename << "] bonxai time: " << diff << " ms" << std::endl;
+    total_time_bonxai += diff;
+  }
+
+  printf("average time bonxai: %.1f ms\n",
+         double(total_time_bonxai) / double(max_pointclouds));
+
+  std::vector<Eigen::Vector3d> bonxai_result;
+  bonxai_map.getOccupiedVoxels(bonxai_result);
+  std::vector<Bonxai::CoordT> free_coords;
+  bonxai_map.getFreeVoxels(free_coords);
+  std::cout << "free cells: " << free_coords.size() << std::endl;
+  std::cout << "bonxai_result.pcd contains " << bonxai_result.size()
+            << " points\n" << std::endl;
+
+  if(!bonxai_result.empty())
+  {
+    Bonxai::WritePointsFromPCD("bonxai_result.pcd", bonxai_result);
+  }
+
+  std::cout << "//-----------------------------------------\n";
+  //----------------------------------------------------
+
+  if(!skip_octree)
+  {
+    for (size_t count = 0; count < cloud_filenames.size(); count++)
     {
+      const auto& filename = cloud_filenames[count];
+      const Eigen::Isometry3f transform = poses[count] * calibration_transform;
+
       const octomap::point3d origin(transform.translation().x(),
                                     transform.translation().y(),
                                     transform.translation().z());
@@ -177,36 +210,13 @@ int main(int argc, char** argv)
       octree.insertPointCloud(pointcloud, origin, max_distance, false, true);
 
       const auto diff = ToMsec(std::chrono::system_clock::now() - t1);
-      std::cout << "octomap update: " << diff << " ms" << std::endl;
-      speed_up_ratio = double(diff);
+      std::cout << "[" << filename << "] octree time: " << diff << " ms" << std::endl;
       total_time_octree += diff;
     }
-    //------- bonxai -------
-    {
-      const Eigen::Vector3f origin(transform.translation());
-      std::vector<Eigen::Vector3f> pointcloud;
-      ReadPointcloud(filename, transform, pointcloud);
 
-      const auto t1 = std::chrono::system_clock::now();
-      bonxai_map.insertPointCloud(pointcloud, origin, max_distance);
+    printf("average time octree: %.1f ms\n",
+           double(total_time_octree) / double(max_pointclouds));
 
-      const auto diff = ToMsec(std::chrono::system_clock::now() - t1);
-      std::cout << "bonxai update: " << diff << " ms" << std::endl;
-      speed_up_ratio /= double(diff);
-      total_time_bonxai += diff;
-    }
-    if(!skip_octree)
-    {
-      printf("speed up: %.1f X\n", speed_up_ratio);
-    }
-  }
-
-  //-----------------------------------------------------
-  // now, traverse all leafs in the tree:
-  std::cout << "\n  ----- Saving results: ------" << std::endl;
-
-  if(!skip_octree)
-  {
     std::vector<Eigen::Vector3d> octree_result;
     int free_cell_count = 0;
     for (auto it = octree.begin(), end = octree.end(); it != end; ++it)
@@ -225,34 +235,11 @@ int main(int argc, char** argv)
     {
       Bonxai::WritePointsFromPCD("octomap_result.pcd", octree_result);
     }
-  }
 
-  {
-    std::vector<Eigen::Vector3d> bonxai_result;
-    bonxai_map.getOccupiedVoxels(bonxai_result);
-    std::vector<Bonxai::CoordT> free_coords;
-    bonxai_map.getFreeVoxels(free_coords);
-    std::cout << "free cells: " << free_coords.size() << std::endl;
-    std::cout << "bonxai_result.pcd contains " << bonxai_result.size()
-              << " points\n" << std::endl;
-
-    if(!bonxai_result.empty())
-    {
-      Bonxai::WritePointsFromPCD("bonxai_result.pcd", bonxai_result);
-    }
-  }
-
-  if(!skip_octree)
-  {
     std::cout << "\nMemory used. octree: " << int(octree.memoryUsage() / 1000)
               << " Kb / bonxai: " << int(bonxai_map.grid().memUsage() / 1000)
               << " Kb" << std::endl;
     printf("speed up: %.1f X\n", double(total_time_octree) / double(total_time_bonxai));
-  }
-  else {
-    std::cout << "\nMemory used: " << int(bonxai_map.grid().memUsage() / 1000)
-              << " Kb" << std::endl;
-    printf("average time: %.1f ms\n", double(total_time_bonxai) / double(max_pointclouds));
   }
 
   return 0;
