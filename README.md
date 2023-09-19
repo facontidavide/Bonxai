@@ -97,6 +97,7 @@ To insert values into a cell with coordinates x, y and z, use a
 In the next code sample, we will create a dense cube of cells with value 42:
 
 ```c++
+Bonxai::VoxelGrid<float> grid( voxel_resolution );
 // create the accessor ONCE and reuse it as much as possible
 auto accessor = grid.createAccessor();
 
@@ -107,7 +108,7 @@ for( double x = 0; x < 1.0; x += voxel_resolution )
     for( double z = 0; z < 1.0; z += voxel_resolution )
     {
       Bonxai::Point3d pos( x, y, z );
-      accessor.setValue( pos, 42 );
+      accessor.setValue( pos, 42.0 );
     }
   }
 }
