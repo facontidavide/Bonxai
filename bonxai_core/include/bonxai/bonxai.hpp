@@ -78,10 +78,9 @@ struct CoordT
 
 [[nodiscard]] inline Point3D CoordToPos(const CoordT& coord, double resolution)
 {
-  const double half_resolution = 0.5f * resolution;
-  return { half_resolution + double(coord.x * resolution),
-           half_resolution + double(coord.y * resolution),
-           half_resolution + double(coord.z * resolution) };
+  return { (double(coord.x) + 0.5) * resolution,
+           (double(coord.y) + 0.5) * resolution,
+           (double(coord.z) + 0.5) * resolution };
 }
 
 //----------------------------------------------------------
@@ -250,7 +249,6 @@ public:
   const uint32_t Log2N;
   const double resolution;
   const double inv_resolution;
-  const double half_resolution;
   const uint32_t INNER_MASK;
   const uint32_t LEAF_MASK;
 
@@ -551,8 +549,7 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
   , LEAF_BITS(leaf_bits)
   , Log2N(INNER_BITS + LEAF_BITS)
   , resolution(voxel_size)
-  , inv_resolution(1.0f / resolution)
-  , half_resolution(0.5f * resolution)
+  , inv_resolution(1.0 / resolution)
   , INNER_MASK((1 << INNER_BITS) - 1)
   , LEAF_MASK((1 << LEAF_BITS) - 1)
 {
@@ -574,9 +571,9 @@ inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z)
 template <typename DataT>
 inline Point3D VoxelGrid<DataT>::coordToPos(const CoordT& coord)
 {
-  return { half_resolution + static_cast<double>(coord.x * resolution),
-           half_resolution + static_cast<double>(coord.y * resolution),
-           half_resolution + static_cast<double>(coord.z * resolution) };
+  return { (double(coord.x) + 0.5) * resolution,
+           (double(coord.y) + 0.5) * resolution,
+           (double(coord.z) + 0.5) * resolution };
 }
 
 template <typename DataT>
