@@ -84,6 +84,12 @@ Nothing prevents you from having more complex cell values, for instance:
 
 ```c++
 Bonxai::VoxelGrid<Eigen::Vector4d> vector_grid( voxel_resolution );
+// or
+struct Foo {
+ int a;
+ double b;
+};
+Bonxai::VoxelGrid<Foo> foo_grid( voxel_resolution );
 ```
 
 To insert values into a cell with coordinates x, y and z, use a
