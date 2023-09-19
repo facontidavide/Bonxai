@@ -1,4 +1,4 @@
-#include "bonxai_map/pointcloud.hpp"
+#include "bonxai_map/probabilistic_map.hpp"
 #include <eigen3/Eigen/Geometry>
 #include <unordered_set>
 

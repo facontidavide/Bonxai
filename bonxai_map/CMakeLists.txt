@@ -1,9 +1,9 @@
 
 add_library(bonxai_map
     include/bonxai_map/pcl_utils.hpp
-    include/bonxai_map/pointcloud.hpp
+    include/bonxai_map/probabilistic_map.hpp
     src/pcl_utils.cpp
-    src/pointcloud.cpp)
+    src/probabilistic_map.cpp)
 
 target_compile_definitions(bonxai_map PRIVATE
     ${PCL_DEFINITIONS})
