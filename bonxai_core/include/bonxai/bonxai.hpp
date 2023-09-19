@@ -30,13 +30,9 @@ struct Point3D
   double y;
   double z;
 
-  Point3D() {}
+  Point3D() = default;
 
-  Point3D(double _x, double _y, double _z)
-    : x(_x)
-    , y(_y)
-    , z(_z)
-  {}
+  Point3D(double x, double y, double z);
 
   // This copy operator accepts types such as:
   // Eigen::Vector3d, std::array<double,3>, std::vector<double>,
@@ -50,7 +46,8 @@ struct Point3D
     *this = v;
   }
 
-  [[nodiscard]] double& operator[](int index);
+  // Access to x, y, z, using index 0, 1, 2
+  [[nodiscard]] double& operator[](size_t index);
 };
 
 struct CoordT
@@ -59,37 +56,17 @@ struct CoordT
   int32_t y;
   int32_t z;
 
-  [[nodiscard]] int32_t& operator[](int index)
-  {
-    switch (index)
-    {
-      case 0:
-        return x;
-      case 1:
-        return y;
-      case 2:
-        return z;
-      default:
-        throw std::runtime_error("out of bound index");
-    }
-  }
+  // Access to x, y, z, using index 0, 1, 2
+  [[nodiscard]] int32_t& operator[](size_t index);
 
-  [[nodiscard]] bool operator==(const CoordT& other) const
-  {
-    return x == other.x && y == other.y && z == other.z;
-  }
-  [[nodiscard]] bool operator!=(const CoordT& other) const
-  {
-    return !(*this == other);
-  }
-  CoordT operator+(const CoordT& other) const
-  {
-    return { x + other.x, y + other.y, z + other.z };
-  }
-  CoordT operator-(const CoordT& other) const
-  {
-    return { x - other.x, y - other.y, z - other.z };
-  }
+  [[nodiscard]] bool operator==(const CoordT& other) const;
+  [[nodiscard]] bool operator!=(const CoordT& other) const;
+
+  [[nodiscard]] CoordT operator+(const CoordT& other) const;
+  [[nodiscard]] CoordT operator-(const CoordT& other) const;
+
+  CoordT& operator+=(const CoordT& other);
+  CoordT& operator-=(const CoordT& other);
 };
 
 [[nodiscard]] inline CoordT PosToCoord(const Point3D& point, double inv_resolution)
@@ -109,7 +86,7 @@ struct CoordT
 
 //----------------------------------------------------------
 
-/// @brief Bit-mask to encode active states and facilitate sequential iterators.
+/// Bit-mask to encode active states and facilitate sequential iterators.
 class Mask
 {
   uint64_t* words_ = nullptr;
@@ -118,12 +95,14 @@ class Mask
   uint64_t static_words_[8];
 
 public:
-  const uint32_t SIZE;        // Number of bits in mask
-  const uint32_t WORD_COUNT;  // Number of 64 bit words
+  // Number of bits in mask
+  const uint32_t SIZE;
+  // Number of 64 bit words
+  const uint32_t WORD_COUNT;
 
-  /// @brief Initialize all bits to zero.
+  /// Initialize all bits to zero.
   Mask(size_t log2dim);
-  /// @brief Initialize all bits to a given value.
+  /// Initialize all bits to a given value.
   Mask(size_t log2dim, bool on);
 
   Mask(const Mask& other);
@@ -131,13 +110,13 @@ public:
 
   ~Mask();
 
-  /// @brief Return the memory footprint in bytes of this Mask
+  /// Return the memory footprint in bytes of this Mask
   size_t memUsage() const;
 
-  /// @brief Return the number of bits available in this Mask
+  /// Return the number of bits available in this Mask
   uint32_t bitCount() const { return SIZE; }
 
-  /// @brief Return the number of machine words used by this Mask
+  /// Return the number of machine words used by this Mask
   uint32_t wordCount() const { return WORD_COUNT; }
 
   uint64_t getWord(size_t n) const { return words_[n]; }
@@ -180,9 +159,9 @@ public:
 
   Iterator beginOn() const { return Iterator(this->findFirstOn(), this); }
 
-  /// @brief Return true if the given bit is set.
+  /// Return true if the given bit is set.
   bool isOn(uint32_t n) const;
-  /// @brief Return true if any bit is set.
+  /// Return true if any bit is set.
   bool isOn() const;
 
   bool isOff() const;
@@ -193,18 +172,18 @@ public:
 
   void set(uint32_t n, bool On);
 
-  /// @brief Set all bits on
+  /// Set all bits on
   void setOn();
 
-  /// @brief Set all bits off
+  /// Set all bits off
   void setOff();
 
-  /// @brief Set all bits too the value "on"
+  /// Set all bits too the value "on"
   void set(bool on);
 
-  /// @brief Toggle the state of all bits in the mask
+  /// Toggle the state of all bits in the mask
   void toggle();
-  /// @brief Toggle the state of one bit in the mask
+  /// Toggle the state of one bit in the mask
   void toggle(uint32_t n);
 
 private:
@@ -289,26 +268,22 @@ public:
    */
   VoxelGrid(double voxel_size, uint8_t inner_bits = 2, uint8_t leaf_bits = 3);
 
-  /**
-   * @brief getMemoryUsage returns the amount of bytes used by this data structure
-   */
+  /// @brief getMemoryUsage returns the amount of bytes used by this data structure
   [[nodiscard]] size_t memUsage() const;
 
+  /// @brief Return the total number of active cells
   [[nodiscard]] size_t activeCellsCount() const;
 
-  /**
-   * @brief posToCoord MUST be used to convert real coordinates to CoordT indexes.
-   */
+  /// @brief posToCoord is used to convert real coordinates to CoordT indexes.
   [[nodiscard]] CoordT posToCoord(double x, double y, double z);
 
+  /// @brief posToCoord is used to convert real coordinates to CoordT indexes.
   [[nodiscard]] CoordT posToCoord(const Point3D& pos)
   {
     return posToCoord(pos.x, pos.y, pos.z);
   }
 
-  /**
-   * @brief coordToPos converts CoordT indexes to Point3D.
-   */
+  /// @brief coordToPos converts CoordT indexes to Point3D.
   [[nodiscard]] Point3D coordToPos(const CoordT& coord);
 
   /**
@@ -366,14 +341,10 @@ public:
      */
     bool setCellOff(const CoordT& coord);
 
-    /**
-     * @brief lastInnerdGrid returns the pointer to the InnerGrid in the cache.
-     */
+    /// @brief lastInnerdGrid returns the pointer to the InnerGrid in the cache.
     [[nodiscard]] const InnerGrid* lastInnerdGrid() const { return prev_inner_ptr_; }
 
-    /**
-     * @brief lastLeafGrid returns the pointer to the LeafGrid in the cache.
-     */
+    /// @brief lastLeafGrid returns the pointer to the LeafGrid in the cache.
     [[nodiscard]] const LeafGrid* lastLeafGrid() const { return prev_leaf_ptr_; }
 
     /**
@@ -397,17 +368,9 @@ public:
 
   Accessor createAccessor() { return Accessor(*this); }
 
-  [[nodiscard]] CoordT getRootKey(const CoordT& coord)
-  {
-    const int32_t MASK = ~((1 << Log2N) - 1);
-    return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
-  }
+  [[nodiscard]] CoordT getRootKey(const CoordT& coord);
 
-  [[nodiscard]] CoordT getInnerKey(const CoordT& coord)
-  {
-    const int32_t MASK = ~((1 << LEAF_BITS) - 1);
-    return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
-  }
+  [[nodiscard]] CoordT getInnerKey(const CoordT& coord);
 
   [[nodiscard]] uint32_t getInnerIndex(const CoordT& coord);
 
@@ -418,7 +381,13 @@ public:
 //----------------- Implementations ------------------
 //----------------------------------------------------
 
-inline double& Point3D::operator[](int index)
+inline Point3D::Point3D(double _x, double _y, double _z)
+  : x(_x)
+  , y(_y)
+  , z(_z)
+{}
+
+inline double& Point3D::operator[](size_t index)
 {
   switch (index)
   {
@@ -488,6 +457,57 @@ inline Point3D& Point3D::operator=(const T& v)
   return *this;
 }
 
+inline int32_t& CoordT::operator[](size_t index)
+{
+  switch (index)
+  {
+    case 0:
+      return x;
+    case 1:
+      return y;
+    case 2:
+      return z;
+    default:
+      throw std::runtime_error("out of bound index");
+  }
+}
+
+inline bool CoordT::operator==(const CoordT& other) const
+{
+  return x == other.x && y == other.y && z == other.z;
+}
+
+inline bool CoordT::operator!=(const CoordT& other) const
+{
+  return !(*this == other);
+}
+
+inline CoordT CoordT::operator+(const CoordT& other) const
+{
+  return { x + other.x, y + other.y, z + other.z };
+}
+
+inline CoordT CoordT::operator-(const CoordT& other) const
+{
+  return { x - other.x, y - other.y, z - other.z };
+}
+
+inline CoordT& CoordT::operator+=(const CoordT& other)
+{
+  x += other.x;
+  y += other.y;
+  z += other.z;
+  return *this;
+}
+
+inline CoordT& CoordT::operator-=(const CoordT& other)
+{
+  x -= other.x;
+  y -= other.y;
+  z -= other.z;
+  return *this;
+}
+
 template <typename DataT>
 inline Grid<DataT>::Grid(Grid&& other)
   : dim_(other.dim_)
@@ -516,7 +536,7 @@ inline Grid<DataT>::~Grid()
   }
 }
 
-template<typename DataT>
+template <typename DataT>
 inline size_t Grid<DataT>::memUsage() const
 {
   return mask_.memUsage() + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(DataT*) +
@@ -557,6 +577,20 @@ inline Point3D VoxelGrid<DataT>::coordToPos(const CoordT& coord)
   return { half_resolution + static_cast<double>(coord.x * resolution),
            half_resolution + static_cast<double>(coord.y * resolution),
            half_resolution + static_cast<double>(coord.z * resolution) };
+}
+
+template <typename DataT>
+inline CoordT VoxelGrid<DataT>::getRootKey(const CoordT& coord)
+{
+  const int32_t MASK = ~((1 << Log2N) - 1);
+  return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
+}
+
+template <typename DataT>
+inline CoordT VoxelGrid<DataT>::getInnerKey(const CoordT& coord)
+{
+  const int32_t MASK = ~((1 << LEAF_BITS) - 1);
+  return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
 }
 
 template <typename DataT>
@@ -803,7 +837,7 @@ inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func)
 
 #define BONXAI_USE_INTRINSICS
 
-/// @brief Returns the index of the lowest, i.e. least significant, on bit in
+/// Returns the index of the lowest, i.e. least significant, on bit in
 /// the specified 64 bit word
 ///
 /// @warning Assumes that at least one bit is set in the word, i.e. @a v !=
