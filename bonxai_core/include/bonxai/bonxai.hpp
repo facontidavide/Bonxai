@@ -144,61 +144,68 @@ struct CoordT
  * DIM will be 8 and SIZE 520 (8³)
  */
 template <typename DataT>
-struct Grid
+class Grid
 {
-  // number of bits used to represent DIM
-  uint32_t LOG2DIM;
-  // dimension of the grid (side of the cube)
-  uint32_t DIM;
+private:
+  uint8_t _dim;
   // total number of elements in the cube
-  uint32_t SIZE;
+  uint32_t _size;
 
+  DataT* _data = nullptr;
+  Bonxai::Mask _mask;
+
+public:
   Grid(size_t log2dim)
-    : LOG2DIM(log2dim)
-    , DIM(1 << LOG2DIM)
-    , SIZE(DIM * DIM * DIM)
-    , mask(LOG2DIM)
+    : _dim(1 << log2dim)
+    , _size(_dim * _dim * _dim)
+    , _mask(log2dim)
   {
-    data = new DataT[SIZE];
+    _data = new DataT[_size];
   }
 
   Grid(const Grid& other) = delete;
   Grid& operator=(const Grid& other) = delete;
 
   Grid(Grid&& other)
-    : LOG2DIM(other.LOG2DIM)
-    , DIM(other.DIM)
-    , SIZE(other.SIZE)
-    , mask(std::move(other.mask))
+    : _dim(other._dim)
+    , _size(other._size)
+    , _mask(std::move(other._mask))
   {
-    std::swap(data, other.data);
+    std::swap(_data, other._data);
   }
 
   Grid& operator=(Grid&& other)
   {
-    LOG2DIM = other.LOG2DIM;
-    DIM = other.DIM;
-    SIZE = other.SIZE;
-    std::swap(data, other.data);
+    _dim = other._dim;
+    _size = other._size;
+    _mask = std::move(other._mask);
+    std::swap(_data, other._data);
     return *this;
   }
 
   ~Grid()
   {
-    if (data)
+    if (_data)
     {
-      delete[] data;
+      delete[] _data;
     }
   }
 
   [[nodiscard]] size_t memUsage() const
   {
-    return mask.memUsage() + sizeof(int32_t) * 3 + sizeof(DataT*) +
-           sizeof(DataT) * SIZE;
+    return _mask.memUsage() + sizeof(uint8_t) + sizeof(uint32_t) +
+           sizeof(DataT*) + sizeof(DataT) * _size;
   }
 
-  DataT* data = nullptr;
-  Bonxai::Mask mask;
+  [[nodiscard]] size_t size() const { return _size; }
+
+  [[nodiscard]] Bonxai::Mask& mask() { return _mask; };
+
+  [[nodiscard]] const Bonxai::Mask& mask() const { return _mask; };
+
+  [[nodiscard]] DataT& cell(size_t index) { return _data[index]; };
+
+  [[nodiscard]] const DataT& cell(size_t index) const { return _data[index]; };
 };
 
 //----------------------------------------------------------
@@ -449,8 +456,8 @@ inline bool VoxelGrid<DataT>::Accessor::setValue(const CoordT& coord,
   }
 
   const uint32_t index = grid_.getLeafIndex(coord);
-  const bool was_on = prev_leaf_ptr_->mask.setOn(index);
-  prev_leaf_ptr_->data[index] = value;
+  const bool was_on = prev_leaf_ptr_->mask().setOn(index);
+  prev_leaf_ptr_->cell(index) = value;
   return was_on;
 }
 
@@ -469,15 +476,15 @@ inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord, bool create
   if (prev_leaf_ptr_)
   {
     const uint32_t index = grid_.getLeafIndex(coord);
-    if (prev_leaf_ptr_->mask.isOn(index))
+    if (prev_leaf_ptr_->mask().isOn(index))
     {
-      return &(prev_leaf_ptr_->data[index]);
+      return &(prev_leaf_ptr_->cell(index));
     }
     else if(create_if_missing)
     {
-      prev_leaf_ptr_->mask.setOn(index);
-      prev_leaf_ptr_->data[index] = {};
-      return &(prev_leaf_ptr_->data[index]);
+      prev_leaf_ptr_->mask().setOn(index);
+      prev_leaf_ptr_->cell(index) = {};
+      return &(prev_leaf_ptr_->cell(index));
     }
   }
   return nullptr;
@@ -499,7 +506,7 @@ inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT& coord,
   bool was_on = prev_leaf_ptr_->mask.setOn(index);
   if (!was_on)
   {
-    prev_leaf_ptr_->data[index] = default_value;
+    prev_leaf_ptr_->cell(index) = default_value;
   }
   return was_on;
 }
@@ -550,18 +557,18 @@ VoxelGrid<DataT>::Accessor::getLeafGrid(const CoordT& coord, bool create_if_miss
   }
 
   const uint32_t inner_index = grid_.getInnerIndex(coord);
-  auto& inner_data = inner_ptr->data[inner_index];
+  auto& inner_data = inner_ptr->cell(inner_index);
 
   if (create_if_missing)
   {
-    if (!inner_ptr->mask.setOn(inner_index))
+    if (!inner_ptr->mask().setOn(inner_index))
     {
       inner_data = std::make_shared<LeafGrid>(grid_.LEAF_BITS);
     }
   }
   else
   {
-    if (!inner_ptr->mask.isOn(inner_index))
+    if (!inner_ptr->mask().isOn(inner_index))
     {
       return nullptr;
     }
@@ -593,10 +600,10 @@ inline size_t VoxelGrid<DataT>::memUsage() const
   for (const auto& [key, inner_grid] : root_map)
   {
     total_size += inner_grid.memUsage();
-    for (auto inner_it = inner_grid.mask.beginOn(); inner_it; ++inner_it)
+    for (auto inner_it = inner_grid.mask().beginOn(); inner_it; ++inner_it)
     {
       const int32_t inner_index = *inner_it;
-      auto& leaf_grid = inner_grid.data[inner_index];
+      auto& leaf_grid = inner_grid.cell(inner_index);
       total_size += leaf_grid->memUsage();
     }
   }
@@ -610,10 +617,10 @@ inline size_t VoxelGrid<DataT>::activeCellsCount() const
 
   for (const auto& [key, inner_grid] : root_map)
   {
-    for (auto inner_it = inner_grid.mask.beginOn(); inner_it; ++inner_it)
+    for (auto inner_it = inner_grid.mask().beginOn(); inner_it; ++inner_it)
     {
       const int32_t inner_index = *inner_it;
-      auto& leaf_grid = inner_grid.data[inner_index];
+      auto& leaf_grid = inner_grid.cell(inner_index);
       total_size += leaf_grid->mask.countOn();
     }
   }
@@ -632,7 +639,7 @@ inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func)
   {
     const auto& [xA, yA, zA] = (map_it.first);
     InnerGrid& inner_grid = map_it.second;
-    auto& mask2 = inner_grid.mask;
+    auto& mask2 = inner_grid.mask();
 
     for (auto inner_it = mask2.beginOn(); inner_it; ++inner_it)
     {
@@ -644,8 +651,8 @@ inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func)
       int32_t zB = zA | (((inner_index >> (INNER_BITS_2)) & MASK_INNER) << LEAF_BITS);
       // clang-format on
 
-      auto& leaf_grid = inner_grid.data[inner_index];
-      auto& mask1 = leaf_grid->mask;
+      auto& leaf_grid = inner_grid.cell(inner_index);
+      auto& mask1 = leaf_grid->mask();
 
       for (auto leaf_it = mask1.beginOn(); leaf_it; ++leaf_it)
       {
@@ -655,7 +662,7 @@ inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func)
                        yB | ((leaf_index >> LEAF_BITS) & MASK_LEAF),
                        zB | ((leaf_index >> (LEAF_BITS_2)) & MASK_LEAF) };
         // apply the visitor
-        func(leaf_grid->data[leaf_index], pos);
+        func(leaf_grid->cell(leaf_index), pos);
       }
     }
   }

@@ -107,23 +107,23 @@ inline void Serialize(std::ostream& out, const VoxelGrid<DataT>& grid)
     Write(out, root_coord.z);
 
     const auto& inner_grid = it.second;
-    for (size_t w = 0; w < inner_grid.mask.wordCount(); w++)
+    for (size_t w = 0; w < inner_grid.mask().wordCount(); w++)
     {
-      Write(out, inner_grid.mask.getWord(w));
+      Write(out, inner_grid.mask().getWord(w));
     }
-    for (auto inner = inner_grid.mask.beginOn(); inner; ++inner)
+    for (auto inner = inner_grid.mask().beginOn(); inner; ++inner)
     {
       const uint32_t inner_index = *inner;
-      const auto& leaf_grid = *(inner_grid.data[inner_index]);
+      const auto& leaf_grid = *(inner_grid.cell(inner_index));
 
-      for (size_t w = 0; w < leaf_grid.mask.wordCount(); w++)
+      for (size_t w = 0; w < leaf_grid.mask().wordCount(); w++)
       {
-        Write(out, leaf_grid.mask.getWord(w));
+        Write(out, leaf_grid.mask().getWord(w));
       }
-      for (auto leaf = leaf_grid.mask.beginOn(); leaf; ++leaf)
+      for (auto leaf = leaf_grid.mask().beginOn(); leaf; ++leaf)
       {
         const uint32_t leaf_index = *leaf;
-        Write(out, leaf_grid.data[leaf_index]);
+        Write(out, leaf_grid.cell(leaf_index));
       }
     }
   }
@@ -200,12 +200,12 @@ inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info)
     }
     auto& inner_grid = inner_it->second;
 
-    for (size_t w = 0; w < inner_grid.mask.wordCount(); w++)
+    for (size_t w = 0; w < inner_grid.mask().wordCount(); w++)
     {
       uint64_t word = Read<uint64_t>(input);
-      inner_grid.mask.setWord(w, word);
+      inner_grid.mask().setWord(w, word);
     }
-    for (auto inner = inner_grid.mask.beginOn(); inner; ++inner)
+    for (auto inner = inner_grid.mask().beginOn(); inner; ++inner)
     {
       const uint32_t inner_index = *inner;
       using LeafGridT = typename VoxelGrid<DataT>::LeafGrid;
