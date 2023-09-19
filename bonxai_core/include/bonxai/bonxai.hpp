@@ -24,23 +24,6 @@
 namespace Bonxai
 {
 
-// Type traits used in Point3D::operator=
-template<class T, class = void>
-struct type_has_method_x : std::false_type { };
-template<class T>
-struct type_has_method_x<T, std::void_t<decltype(T().x())>> : std::true_type { };
-
-template<class T, class = void>
-struct type_has_member_x : std::false_type { };
-template<class T>
-struct type_has_member_x<T, std::void_t<decltype(T::x)>> : std::true_type { };
-
-template<class T, class = void>
-struct type_has_operator : std::false_type { };
-template<class T>
-struct type_has_operator<T, std::void_t<decltype(T().operator[])>> : std::true_type { };
-
-
 struct Point3D
 {
   double x;
@@ -49,49 +32,25 @@ struct Point3D
 
   Point3D() {}
 
-  Point3D(double _x, double _y, double _z): x(_x), y(_y), z(_z) {}
+  Point3D(double _x, double _y, double _z)
+    : x(_x)
+    , y(_y)
+    , z(_z)
+  {}
 
   // This copy operator accepts types like
   // Eigen::Vector3d, std::array<double,3>, std::vector<double>, pcl::PointXYZ
   // of Point3D itself
   template <typename T>
-  Point3D& operator =(const T& v) {
+  Point3D& operator=(const T& v);
 
-    static_assert(type_has_method_x<T>::value ||
-                  type_has_member_x<T>::value ||
-                  type_has_operator<T>::value,
-                  "Can't assign values automatically to Point3D");
-
-    if constexpr(type_has_method_x<T>::value) {
-      x = v.x();
-      y = v.y();
-      z = v.z();
-    }
-    if constexpr(type_has_member_x<T>::value) {
-      x = v.x;
-      y = v.y;
-      z = v.z;
-    }
-    if constexpr(type_has_operator<T>::value){
-      x = v[0];
-      y = v[1];
-      z = v[2];
-    }
-    return *this;
-  }
-
-  template <typename T> Point3D(const T& v) {
+  template <typename T>
+  Point3D(const T& v)
+  {
     *this = v;
   }
 
-  [[nodiscard]] double& operator[](int index) {
-    switch(index) {
-      case 0: return x;
-      case 1: return y;
-      case 2: return z;
-      default: throw std::runtime_error("out of bound index");
-    }
-  }
+  [[nodiscard]] double& operator[](int index);
 };
 
 struct CoordT
@@ -100,12 +59,18 @@ struct CoordT
   int32_t y;
   int32_t z;
 
-  [[nodiscard]] int32_t& operator[](int index) {
-    switch(index) {
-      case 0: return x;
-      case 1: return y;
-      case 2: return z;
-      default: throw std::runtime_error("out of bound index");
+  [[nodiscard]] int32_t& operator[](int index)
+  {
+    switch (index)
+    {
+      case 0:
+        return x;
+      case 1:
+        return y;
+      case 2:
+        return z;
+      default:
+        throw std::runtime_error("out of bound index");
     }
   }
 
@@ -119,11 +84,11 @@ struct CoordT
   }
   CoordT operator+(const CoordT& other) const
   {
-    return {x + other.x, y + other.y, z + other.z};
+    return { x + other.x, y + other.y, z + other.z };
   }
   CoordT operator-(const CoordT& other) const
   {
-    return {x - other.x, y - other.y, z - other.z};
+    return { x - other.x, y - other.y, z - other.z };
   }
 };
 
@@ -142,7 +107,6 @@ struct CoordT
            half_resolution + double(coord.z * resolution) };
 }
 
-
 //----------------------------------------------------------
 
 /// @brief Bit-mask to encode active states and facilitate sequential iterators.
@@ -157,7 +121,7 @@ public:
   const uint32_t SIZE;        // Number of bits in mask
   const uint32_t WORD_COUNT;  // Number of 64 bit words
 
-          /// @brief Initialize all bits to zero.
+  /// @brief Initialize all bits to zero.
   Mask(size_t log2dim);
   /// @brief Initialize all bits to a given value.
   Mask(size_t log2dim, bool on);
@@ -188,7 +152,7 @@ public:
     Iterator(const Mask* parent)
       : pos_(parent->SIZE)
       , parent_(parent)
-    { }
+    {}
     Iterator(uint32_t pos, const Mask* parent)
       : pos_(pos)
       , parent_(parent)
@@ -306,8 +270,8 @@ public:
 
   [[nodiscard]] size_t memUsage() const
   {
-    return mask_.memUsage() + sizeof(uint8_t) + sizeof(uint32_t) +
-           sizeof(DataT*) + sizeof(DataT) * size_;
+    return mask_.memUsage() + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(DataT*) +
+           sizeof(DataT) * size_;
   }
 
   [[nodiscard]] size_t size() const { return size_; }
@@ -391,8 +355,7 @@ public:
   public:
     Accessor(VoxelGrid& grid)
       : grid_(grid)
-    {
-    }
+    {}
 
     /**
      * @brief setValue of a cell. If the cell did not exist, it is created.
@@ -430,18 +393,12 @@ public:
     /**
      * @brief lastInnerdGrid returns the pointer to the InnerGrid in the cache.
      */
-    [[nodiscard]] const InnerGrid* lastInnerdGrid() const
-    {
-      return prev_inner_ptr_;
-    }
+    [[nodiscard]] const InnerGrid* lastInnerdGrid() const { return prev_inner_ptr_; }
 
     /**
      * @brief lastLeafGrid returns the pointer to the LeafGrid in the cache.
      */
-    [[nodiscard]] const LeafGrid* lastLeafGrid() const
-    {
-      return prev_leaf_ptr_;
-    }
+    [[nodiscard]] const LeafGrid* lastLeafGrid() const { return prev_leaf_ptr_; }
 
     /**
      * @brief getLeafGrid gets the pointer to the LeafGrid containing the cell.
@@ -451,7 +408,8 @@ public:
      * @param create_if_missing   if true, create the Root, Inner and Leaf, if not
      * present.
      */
-    [[nodiscard]] LeafGrid* getLeafGrid(const CoordT& coord, bool create_if_missing = false);
+    [[nodiscard]] LeafGrid* getLeafGrid(const CoordT& coord,
+                                        bool create_if_missing = false);
 
   private:
     VoxelGrid& grid_;
@@ -461,10 +419,7 @@ public:
     LeafGrid* prev_leaf_ptr_ = nullptr;
   };
 
-  Accessor createAccessor()
-  {
-    return Accessor(*this);
-  }
+  Accessor createAccessor() { return Accessor(*this); }
 
   [[nodiscard]] CoordT getRootKey(const CoordT& coord)
   {
@@ -504,6 +459,76 @@ struct hash<Bonxai::CoordT>
 
 namespace Bonxai
 {
+
+inline double& Point3D::operator[](int index)
+{
+  switch (index)
+  {
+    case 0:
+      return x;
+    case 1:
+      return y;
+    case 2:
+      return z;
+    default:
+      throw std::runtime_error("out of bound index");
+  }
+}
+
+// Type traits used in Point3D::operator=
+template <class T, class = void>
+struct type_has_method_x : std::false_type
+{
+};
+template <class T>
+struct type_has_method_x<T, std::void_t<decltype(T().x())>> : std::true_type
+{
+};
+
+template <class T, class = void>
+struct type_has_member_x : std::false_type
+{
+};
+template <class T>
+struct type_has_member_x<T, std::void_t<decltype(T::x)>> : std::true_type
+{
+};
+
+template <class T, class = void>
+struct type_has_operator : std::false_type
+{
+};
+template <class T>
+struct type_has_operator<T, std::void_t<decltype(T().operator[])>>
+  : std::true_type{};
+
+template <typename T>
+inline Point3D& Point3D::operator=(const T& v)
+{
+  static_assert(type_has_method_x<T>::value || type_has_member_x<T>::value ||
+                    type_has_operator<T>::value,
+                "Can't assign values automatically to Point3D");
+
+  if constexpr (type_has_method_x<T>::value)
+  {
+    x = v.x();
+    y = v.y();
+    z = v.z();
+  }
+  if constexpr (type_has_member_x<T>::value)
+  {
+    x = v.x;
+    y = v.y;
+    z = v.z;
+  }
+  if constexpr (type_has_operator<T>::value)
+  {
+    x = v[0];
+    y = v[1];
+    z = v[2];
+  }
+  return *this;
+}
 
 template <typename DataT>
 inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
@@ -552,8 +577,7 @@ inline uint32_t VoxelGrid<DataT>::getInnerIndex(const CoordT& coord)
 template <typename DataT>
 inline uint32_t VoxelGrid<DataT>::getLeafIndex(const CoordT& coord)
 {
-  return (coord.x & LEAF_MASK) |
-         ((coord.y & LEAF_MASK) << LEAF_BITS) |
+  return (coord.x & LEAF_MASK) | ((coord.y & LEAF_MASK) << LEAF_BITS) |
          ((coord.z & LEAF_MASK) << (LEAF_BITS * 2));
 }
 
@@ -577,7 +601,8 @@ inline bool VoxelGrid<DataT>::Accessor::setValue(const CoordT& coord,
 
 //----------------------------------
 template <typename DataT>
-inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord, bool create_if_missing)
+inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord,
+                                                bool create_if_missing)
 {
   const CoordT inner_key = grid_.getInnerKey(coord);
 
@@ -594,7 +619,7 @@ inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord, bool create
     {
       return &(prev_leaf_ptr_->cell(index));
     }
-    else if(create_if_missing)
+    else if (create_if_missing)
     {
       prev_leaf_ptr_->mask().setOn(index);
       prev_leaf_ptr_->cell(index) = {};
@@ -784,7 +809,6 @@ inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func)
 
 //----------------------------------------------------------
 
-
 #define BONXAI_USE_INTRINSICS
 
 /// @brief Returns the index of the lowest, i.e. least significant, on bit in
@@ -830,7 +854,7 @@ inline uint32_t CountOn(uint64_t v)
 #elif (defined(__GNUC__) || defined(__clang__))
   v = __builtin_popcountll(v);
 #else
-   // Software Implementation
+  // Software Implementation
   v = v - ((v >> 1) & uint64_t(0x5555555555555555));
   v = (v & uint64_t(0x3333333333333333)) + ((v >> 2) & uint64_t(0x3333333333333333));
   v = (((v + (v >> 4)) & uint64_t(0xF0F0F0F0F0F0F0F)) *
@@ -937,7 +961,7 @@ inline Mask::Mask(size_t log2dim, bool on)
   }
 }
 
-inline Mask::Mask(const Mask &other)
+inline Mask::Mask(const Mask& other)
   : SIZE(other.SIZE)
   , WORD_COUNT(other.WORD_COUNT)
 {
@@ -949,7 +973,7 @@ inline Mask::Mask(const Mask &other)
   }
 }
 
-inline Mask::Mask(Mask &&other)
+inline Mask::Mask(Mask&& other)
   : SIZE(other.SIZE)
   , WORD_COUNT(other.WORD_COUNT)
 {
@@ -994,7 +1018,7 @@ inline uint32_t Mask::countOn() const
   return sum;
 }
 
-inline bool Mask::operator==(const Mask &other) const
+inline bool Mask::operator==(const Mask& other) const
 {
   for (uint32_t i = 0; i < WORD_COUNT; ++i)
   {
@@ -1064,6 +1088,5 @@ inline void Mask::set(uint32_t n, bool On)
   On ? this->setOn(n) : this->setOff(n);
 #endif
 }
-
 
 }  // namespace Bonxai
