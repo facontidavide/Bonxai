@@ -1,7 +1,6 @@
 
 add_library(bonxai_core
     include/bonxai/bonxai.hpp
-    include/bonxai/node_mask.hpp
     include/bonxai/serialization.hpp
 )
 set_target_properties(bonxai_core PROPERTIES LINKER_LANGUAGE CXX)

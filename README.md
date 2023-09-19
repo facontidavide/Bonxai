@@ -106,8 +106,8 @@ for( double x = 0; x < 1.0; x += voxel_resolution )
   {
     for( double z = 0; z < 1.0; z += voxel_resolution )
     {
-      Bonxai::CoordT coord = grid.posToCoord( x, y, z );
-      accessor.setValue( coord, 42 );
+      Bonxai::Point3d pos( x, y, z );
+      accessor.setValue( pos, 42 );
     }
   }
 }
