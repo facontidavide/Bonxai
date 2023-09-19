@@ -138,10 +138,10 @@ struct CoordT
 //----------------------------------------------------------
 /**
  * @brief The Grid class is used to store data in a
- * cube. the size (DIM) of the cube can only be a power of 2
+ * cube. The size (DIM) of the cube can only be a power of 2
  *
  * For instance, given Grid(3),
- * DIM will be 8 and SIZE 520 (8³)
+ * DIM will be 8 and SIZE 512 (8³)
  */
 template <typename DataT>
 class Grid
