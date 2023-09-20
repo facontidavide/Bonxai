@@ -117,7 +117,8 @@ void ProbabilisticMap::addPoint(const Eigen::Vector3f& origin,
   }
 }
 
-void Bonxai::ProbabilisticMap::updateFreeCells(const Eigen::Vector3f& origin)
+template <typename PointT>
+void Bonxai::ProbabilisticMap::updateFreeCells(const PointT& origin)
 {
   auto clearRay = [this](const CoordT& from, const CoordT& to) {
     auto accessor = _grid.createAccessor();

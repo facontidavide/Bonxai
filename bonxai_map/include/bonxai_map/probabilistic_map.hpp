@@ -111,6 +111,18 @@ public:
       points.emplace_back(p.x, p.y, p.z);
     }
   }
+  template <typename PointT>
+  void getFreeVoxels(std::vector<PointT>& points)
+  {
+    thread_local std::vector<Bonxai::CoordT> coords;
+    coords.clear();
+    getFreeVoxels(coords);
+    for (const auto& coord : coords)
+    {
+      const auto p = _grid.coordToPos(coord);
+      points.emplace_back(p.x, p.y, p.z);
+    }
+  }
 
 private:
   VoxelGrid<CellT> _grid;
@@ -126,7 +138,8 @@ private:
                 const Eigen::Vector3f& point,
                 const float& max_range,
                 const float& max_sqr);
-  void updateFreeCells(const Eigen::Vector3f& origin);
+  template <typename PointT>
+  void updateFreeCells(const PointT& origin);
 };
 
 //--------------------------------------------------
