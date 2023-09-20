@@ -20,6 +20,8 @@ bool ComputeRay(const CoordT& key_origin,
 class ProbabilisticMap
 {
 public:
+  using Vector3D = Eigen::Vector3d;
+
   /// Compute the logds, but return the result as an integer,
   /// The real number is represented as a fixed precision
   /// integer (6 decimals after the comma)
@@ -122,12 +124,12 @@ private:
 
   Bonxai::VoxelGrid<CellT>::Accessor _accessor;
 
-  void addPoint(const Eigen::Vector3d& origin,
-                const Eigen::Vector3d& point,
+  void addPoint(const Vector3D& origin,
+                const Vector3D& point,
                 float max_range,
                 float max_sqr);
 
-  void updateFreeCells(const Eigen::Vector3d& origin);
+  void updateFreeCells(const Vector3D& origin);
 };
 
 //--------------------------------------------------
@@ -137,11 +139,11 @@ inline void ProbabilisticMap::insertPointCloud(const std::vector<PointT>& points
                                                const PointT& origin,
                                                double max_range)
 {
-  const auto from = ConvertTo<Eigen::Vector3d>(origin);
+  const auto from = ConvertTo<Vector3D>(origin);
   const double max_range_sqr = max_range * max_range;
   for (const auto& point : points)
   {
-    const auto to = ConvertTo<Eigen::Vector3d>(point);
+    const auto to = ConvertTo<Vector3D>(point);
     addPoint(from, to, max_range, max_range_sqr);
   }
   updateFreeCells(from);

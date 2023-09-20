@@ -89,7 +89,7 @@ void ReadPointcloud(const std::string& cloud_file,
   points.clear();
   while (input.good() && !input.eof())
   {
-    Eigen::Vector3f point;
+    Eigen::Vector3f point; // must be float
     float intensity;
     input.read((char *) &point.x(), sizeof(float));
     input.read((char *) &point.y(), sizeof(float));
