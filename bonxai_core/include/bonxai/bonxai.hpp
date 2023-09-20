@@ -42,6 +42,12 @@ struct Point3D
 
   Point3D() = default;
 
+  Point3D(const Point3D& v) = default;
+  Point3D(Point3D&& v) = default;
+
+  Point3D& operator=(const Point3D& v) = default;
+  Point3D& operator=(Point3D&& v) = default;
+
   Point3D(double x, double y, double z);
 
   template <typename T>
@@ -441,12 +447,13 @@ struct type_has_operator<T, std::void_t<decltype(T().operator[])>>
 template <typename PointOut, typename PointIn>
 inline PointOut ConvertTo(const PointIn& v)
 {
+  // clang-format off
   static_assert(std::is_same_v<PointIn, PointOut> ||
-                    type_has_method_x<PointIn>::value ||
-                    type_has_member_x<PointIn>::value ||
-                    type_has_operator<PointIn>::value,
+                type_has_method_x<PointIn>::value ||
+                type_has_member_x<PointIn>::value ||
+                type_has_operator<PointIn>::value,
                 "Can't convert to the specified type");
-
+  // clang-format on
   if constexpr (std::is_same_v<PointIn, PointOut>)
   {
     return v;
