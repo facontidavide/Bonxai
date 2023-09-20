@@ -130,37 +130,17 @@ private:
 };
 
 //--------------------------------------------------
-template <typename T>
-inline Eigen::Vector3f ToEigenVector3f(const T& v)
-{
-  static_assert(type_has_method_x<T>::value || type_has_member_x<T>::value ||
-                    type_has_operator<T>::value,
-                "Can't assign to Eigen::Vector3f");
-
-  if constexpr (type_has_method_x<T>::value)
-  {
-    return { v.x(), v.y(), v.z() };
-  }
-  if constexpr (type_has_member_x<T>::value)
-  {
-    return { v.x, v.y, v.z };
-  }
-  if constexpr (type_has_operator<T>::value)
-  {
-    return { v[0], v[1], v[2] };
-  }
-}
 
 template <typename PointT>
 inline void ProbabilisticMap::insertPointCloud(const std::vector<PointT>& points,
                                                const PointT& origin,
                                                double max_range)
 {
-  const auto from = ToEigenVector3f(origin);
+  const auto from = ConvertTo<Eigen::Vector3f>(origin);
   const double max_range_sqr = max_range * max_range;
   for (const auto& point : points)
   {
-    const auto to = ToEigenVector3f(point);
+    const auto to = ConvertTo<Eigen::Vector3f>(point);
     addPoint(from, to, max_range, max_range_sqr);
   }
   updateFreeCells(origin);

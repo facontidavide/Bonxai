@@ -24,6 +24,16 @@
 namespace Bonxai
 {
 
+// Magically converts any Point3D to another. Works with:
+//
+// - pcl::PointXYZ, pcl::PointXYZI, pcl::PointXYZRGB, etc
+// - Eigen::Vector3d, Eigen::Vector3f
+// - custom type with x,y,z types
+// - arrays or vectors with 3 elements.
+
+template <typename PointOut, typename PointIn>
+PointOut ConvertTo(const PointIn& v);
+
 struct Point3D
 {
   double x;
@@ -34,16 +44,17 @@ struct Point3D
 
   Point3D(double x, double y, double z);
 
-  // This copy operator accepts types such as:
-  // Eigen::Vector3d, std::array<double,3>, std::vector<double>,
-  // pcl::PointXYZ and Point3D itself
-  template <typename T>
-  Point3D& operator=(const T& v);
-
   template <typename T>
   Point3D(const T& v)
   {
-    *this = v;
+    *this = ConvertTo<Point3D>(v);
+  }
+
+  template <typename T>
+  Point3D& operator=(const T& v)
+  {
+    *this = ConvertTo<Point3D>(v);
+    return *this;
   }
 
   // Access to x, y, z, using index 0, 1, 2
@@ -427,32 +438,31 @@ template <class T>
 struct type_has_operator<T, std::void_t<decltype(T().operator[])>>
   : std::true_type{};
 
-template <typename T>
-inline Point3D& Point3D::operator=(const T& v)
+template <typename PointOut, typename PointIn>
+inline PointOut ConvertTo(const PointIn& v)
 {
-  static_assert(type_has_method_x<T>::value || type_has_member_x<T>::value ||
-                    type_has_operator<T>::value,
-                "Can't assign values automatically to Point3D");
+  static_assert(std::is_same_v<PointIn, PointOut> ||
+                    type_has_method_x<PointIn>::value ||
+                    type_has_member_x<PointIn>::value ||
+                    type_has_operator<PointIn>::value,
+                "Can't convert to the specified type");
 
-  if constexpr (type_has_method_x<T>::value)
+  if constexpr (std::is_same_v<PointIn, PointOut>)
   {
-    x = v.x();
-    y = v.y();
-    z = v.z();
+    return v;
   }
-  if constexpr (type_has_member_x<T>::value)
+  if constexpr (type_has_method_x<PointIn>::value)
   {
-    x = v.x;
-    y = v.y;
-    z = v.z;
+    return { v.x(), v.y(), v.z() };
   }
-  if constexpr (type_has_operator<T>::value)
+  if constexpr (type_has_member_x<PointIn>::value)
   {
-    x = v[0];
-    y = v[1];
-    z = v[2];
+    return { v.x, v.y, v.z };
   }
-  return *this;
+  if constexpr (type_has_operator<PointIn>::value)
+  {
+    return { v[0], v[1], v[2] };
+  }
 }
 
 inline int32_t& CoordT::operator[](size_t index)
