@@ -3,13 +3,13 @@
 #include <eigen3/Eigen/Core>
 #include "bonxai/bonxai.hpp"
 
-namespace Bonxai {
+namespace Bonxai
+{
 
 bool ReadPointsFromPCD(const std::string& filepath,
-                 std::vector<Eigen::Vector3d>& points);
+                       std::vector<Eigen::Vector3d>& points);
 
-bool ReadPointsFromPCD(const std::string& filepath,
-                       std::vector<Point3D>& points);
+bool ReadPointsFromPCD(const std::string& filepath, std::vector<Point3D>& points);
 
 void WritePointsFromPCD(const std::string& filepath,
                         const std::vector<Eigen::Vector3d>& points);
@@ -20,4 +20,4 @@ void WritePointsFromPCD(const std::string& filepath,
 void WritePointsFromPCD(const std::string& filepath,
                         const std::vector<Bonxai::CoordT>& points);
 
-}
+}  // namespace Bonxai

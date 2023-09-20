@@ -7,9 +7,9 @@
 namespace Bonxai
 {
 
-bool ComputeRay(const CoordT &key_origin,
-                const CoordT &key_end,
-                std::vector<CoordT> &ray);
+bool ComputeRay(const CoordT& key_origin,
+                const CoordT& key_end,
+                std::vector<CoordT>& ray);
 
 /**
  * @brief The ProbabilisticMap class is meant to behave as much as possible as
@@ -20,7 +20,6 @@ bool ComputeRay(const CoordT &key_origin,
 class ProbabilisticMap
 {
 public:
-
   /// Compute the logds, but return the result as an integer,
   /// The real number is represented as a fixed precision
   /// integer (6 decimals after the comma)
@@ -36,17 +35,21 @@ public:
     return (1.0 - 1.0 / (1.0 + std::exp(logods)));
   }
 
-  struct CellT {
+  struct CellT
+  {
     // variable used to check if a cell was already updated in this loop
     int32_t update_id : 4;
     // the probability of the cell to be occupied
     int32_t probability_log : 28;
 
-    CellT(): update_id(0), probability_log(UnknownProbability) {};
+    CellT()
+      : update_id(0)
+      , probability_log(UnknownProbability){};
   };
 
   /// These default values are the same as OctoMap
-  struct Options {
+  struct Options
+  {
     int32_t prob_miss_log = logods(0.4f);
     int32_t prob_hit_log = logods(0.7f);
 
@@ -102,10 +105,10 @@ public:
     thread_local std::vector<Bonxai::CoordT> coords;
     coords.clear();
     getOccupiedVoxels(coords);
-    for(const auto& coord: coords)
+    for (const auto& coord : coords)
     {
       const auto p = _grid.coordToPos(coord);
-      points.emplace_back( p.x, p.y, p.z );
+      points.emplace_back(p.x, p.y, p.z);
     }
   }
 
@@ -119,40 +122,43 @@ private:
 
   Bonxai::VoxelGrid<CellT>::Accessor _accessor;
 
-  void addPoint(const Eigen::Vector3f &origin, const Eigen::Vector3f &point, const float &max_range,
-                const float &max_sqr);
+  void addPoint(const Eigen::Vector3f& origin,
+                const Eigen::Vector3f& point,
+                const float& max_range,
+                const float& max_sqr);
   void updateFreeCells(const Eigen::Vector3f& origin);
 };
 
 //--------------------------------------------------
-template <typename T> inline
-    Eigen::Vector3f ToEigenVector3f(const T& v)
+template <typename T>
+inline Eigen::Vector3f ToEigenVector3f(const T& v)
 {
-  static_assert(type_has_method_x<T>::value ||
-                    type_has_member_x<T>::value ||
+  static_assert(type_has_method_x<T>::value || type_has_member_x<T>::value ||
                     type_has_operator<T>::value,
                 "Can't assign to Eigen::Vector3f");
 
-  if constexpr(type_has_method_x<T>::value) {
-    return {v.x(), v.y(), v.z()};
+  if constexpr (type_has_method_x<T>::value)
+  {
+    return { v.x(), v.y(), v.z() };
   }
-  if constexpr(type_has_member_x<T>::value) {
-    return {v.x, v.y, v.z};
+  if constexpr (type_has_member_x<T>::value)
+  {
+    return { v.x, v.y, v.z };
   }
-  if constexpr(type_has_operator<T>::value){
-    return {v[0], v[1], v[2]};
+  if constexpr (type_has_operator<T>::value)
+  {
+    return { v[0], v[1], v[2] };
   }
 }
 
-
-template<typename PointT> inline
-void ProbabilisticMap::insertPointCloud(const std::vector<PointT> &points,
-                                        const PointT &origin,
-                                        double max_range)
+template <typename PointT>
+inline void ProbabilisticMap::insertPointCloud(const std::vector<PointT>& points,
+                                               const PointT& origin,
+                                               double max_range)
 {
   const auto from = ToEigenVector3f(origin);
-  const double max_range_sqr = max_range*max_range;
-  for(const auto& point: points)
+  const double max_range_sqr = max_range * max_range;
+  for (const auto& point : points)
   {
     const auto to = ToEigenVector3f(point);
     addPoint(from, to, max_range, max_range_sqr);
@@ -160,4 +166,4 @@ void ProbabilisticMap::insertPointCloud(const std::vector<PointT> &points,
   updateFreeCells(origin);
 }
 
-}
+}  // namespace Bonxai
