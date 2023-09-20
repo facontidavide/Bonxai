@@ -24,11 +24,12 @@
 namespace Bonxai
 {
 
-// Magically converts any Point3D to another. Works with:
+// Magically converts any representation of a point in 3D
+// (type with x, y and z) to another one. Works with:
 //
 // - pcl::PointXYZ, pcl::PointXYZI, pcl::PointXYZRGB, etc
 // - Eigen::Vector3d, Eigen::Vector3f
-// - custom type with x,y,z types
+// - custom type with x,y,z fields. In this case Bonxai::Point3D
 // - arrays or vectors with 3 elements.
 
 template <typename PointOut, typename PointIn>
@@ -417,32 +418,25 @@ inline double& Point3D::operator[](size_t index)
   }
 }
 
-// Type traits used in Point3D::operator=
+// clang-format off
 template <class T, class = void>
-struct type_has_method_x : std::false_type
-{
-};
+struct type_has_method_x : std::false_type {};
 template <class T>
-struct type_has_method_x<T, std::void_t<decltype(T().x())>> : std::true_type
-{
-};
+struct type_has_method_x<T, std::void_t<decltype(T().x())>> : std::true_type {};
 
 template <class T, class = void>
-struct type_has_member_x : std::false_type
-{
-};
+struct type_has_member_x : std::false_type {};
 template <class T>
-struct type_has_member_x<T, std::void_t<decltype(T::x)>> : std::true_type
-{
-};
+struct type_has_member_x<T, std::void_t<decltype(T::x)>> : std::true_type {};
 
-template <class T, class = void>
-struct type_has_operator : std::false_type
-{
-};
-template <class T>
-struct type_has_operator<T, std::void_t<decltype(T().operator[])>>
-  : std::true_type{};
+template<typename>
+struct type_is_vector : std::false_type {};
+template<typename T, typename A>
+struct type_is_vector<std::vector<T,A>> : std::true_type {};
+template<typename T>
+struct type_is_vector<std::array<T,3>> : std::true_type {};
+// clang-format on
+
 
 template <typename PointOut, typename PointIn>
 inline PointOut ConvertTo(const PointIn& v)
@@ -451,8 +445,8 @@ inline PointOut ConvertTo(const PointIn& v)
   static_assert(std::is_same_v<PointIn, PointOut> ||
                 type_has_method_x<PointIn>::value ||
                 type_has_member_x<PointIn>::value ||
-                type_has_operator<PointIn>::value,
-                "Can't convert to the specified type");
+                type_is_vector<PointIn>::value,
+                "Can't convert from the specified type");
   // clang-format on
   if constexpr (std::is_same_v<PointIn, PointOut>)
   {
@@ -466,7 +460,7 @@ inline PointOut ConvertTo(const PointIn& v)
   {
     return { v.x, v.y, v.z };
   }
-  if constexpr (type_has_operator<PointIn>::value)
+  if constexpr (type_is_vector<PointIn>::value)
   {
     return { v[0], v[1], v[2] };
   }

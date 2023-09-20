@@ -124,8 +124,9 @@ private:
 
   void addPoint(const Eigen::Vector3f& origin,
                 const Eigen::Vector3f& point,
-                const float& max_range,
-                const float& max_sqr);
+                float max_range,
+                float max_sqr);
+
   void updateFreeCells(const Eigen::Vector3f& origin);
 };
 
@@ -143,7 +144,7 @@ inline void ProbabilisticMap::insertPointCloud(const std::vector<PointT>& points
     const auto to = ConvertTo<Eigen::Vector3f>(point);
     addPoint(from, to, max_range, max_range_sqr);
   }
-  updateFreeCells(origin);
+  updateFreeCells(from);
 }
 
 }  // namespace Bonxai

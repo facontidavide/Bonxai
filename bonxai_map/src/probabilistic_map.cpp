@@ -85,8 +85,8 @@ void ProbabilisticMap::setOptions(const Options& options)
 
 void ProbabilisticMap::addPoint(const Eigen::Vector3f& origin,
                                 const Eigen::Vector3f& point,
-                                const float& max_range,
-                                const float& max_range_sqr)
+                                float max_range,
+                                float max_range_sqr)
 {
   Eigen::Vector3f vect(point - origin);
   const double squared_norm = vect.squaredNorm();
