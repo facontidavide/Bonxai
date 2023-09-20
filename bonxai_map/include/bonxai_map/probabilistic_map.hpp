@@ -122,12 +122,12 @@ private:
 
   Bonxai::VoxelGrid<CellT>::Accessor _accessor;
 
-  void addPoint(const Eigen::Vector3f& origin,
-                const Eigen::Vector3f& point,
+  void addPoint(const Eigen::Vector3d& origin,
+                const Eigen::Vector3d& point,
                 float max_range,
                 float max_sqr);
 
-  void updateFreeCells(const Eigen::Vector3f& origin);
+  void updateFreeCells(const Eigen::Vector3d& origin);
 };
 
 //--------------------------------------------------
@@ -137,11 +137,11 @@ inline void ProbabilisticMap::insertPointCloud(const std::vector<PointT>& points
                                                const PointT& origin,
                                                double max_range)
 {
-  const auto from = ConvertTo<Eigen::Vector3f>(origin);
+  const auto from = ConvertTo<Eigen::Vector3d>(origin);
   const double max_range_sqr = max_range * max_range;
   for (const auto& point : points)
   {
-    const auto to = ConvertTo<Eigen::Vector3f>(point);
+    const auto to = ConvertTo<Eigen::Vector3d>(point);
     addPoint(from, to, max_range, max_range_sqr);
   }
   updateFreeCells(from);

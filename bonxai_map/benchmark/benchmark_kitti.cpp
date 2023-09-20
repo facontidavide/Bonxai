@@ -17,7 +17,7 @@ long ToMsec(std::chrono::system_clock::duration const& dur)
   return std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
 }
 
-Eigen::Isometry3f ReadCalibration(const std::string& calibration_file)
+Eigen::Isometry3d ReadCalibration(const std::string& calibration_file)
 {
   if(!std::filesystem::exists(calibration_file))
   {
@@ -29,12 +29,12 @@ Eigen::Isometry3f ReadCalibration(const std::string& calibration_file)
 
   std::string header;
 
-  Eigen::Isometry3f calib;
+  Eigen::Isometry3d calib;
 
   while(std::getline(input, line))
   {
-    Eigen::Matrix3f rot;
-    Eigen::Vector3f pos;
+    Eigen::Matrix3d rot;
+    Eigen::Vector3d pos;
 
     std::istringstream ss(line);
     ss  >> header
@@ -44,7 +44,7 @@ Eigen::Isometry3f ReadCalibration(const std::string& calibration_file)
 
     if(header == "Tr:")
     {
-      calib = Eigen::Translation3f(pos) * Eigen::Quaternionf(rot);
+      calib = Eigen::Translation3d(pos) * Eigen::Quaterniond(rot);
       return calib;
     }
   }
@@ -52,7 +52,7 @@ Eigen::Isometry3f ReadCalibration(const std::string& calibration_file)
   throw std::runtime_error("Calibration value not found");
 }
 
-std::vector<Eigen::Isometry3f> ReadPoses(const std::string& poses_file)
+std::vector<Eigen::Isometry3d> ReadPoses(const std::string& poses_file)
 {
   if(!std::filesystem::exists(poses_file))
   {
@@ -62,26 +62,26 @@ std::vector<Eigen::Isometry3f> ReadPoses(const std::string& poses_file)
   std::ifstream input(poses_file);
   std::string line;
 
-  std::vector<Eigen::Isometry3f> poses;
+  std::vector<Eigen::Isometry3d> poses;
 
   while(std::getline(input, line))
   {
-    Eigen::Matrix3f rot;
-    Eigen::Vector3f pos;
+    Eigen::Matrix3d rot;
+    Eigen::Vector3d pos;
 
     std::istringstream ss(line);
     ss  >> rot(0,0) >> rot(0,1) >> rot(0,2)  >> pos(0)
         >> rot(1,0) >> rot(1,1) >> rot(1,2)  >> pos(1)
         >> rot(2,0) >> rot(2,1) >> rot(2,2)  >> pos(2);
 
-    poses.emplace_back(Eigen::Translation3f(pos) * Eigen::Quaternionf(rot));
+    poses.emplace_back(Eigen::Translation3d(pos) * Eigen::Quaterniond(rot));
   }
   return poses;
 }
 
-template <class PointCloudT>
+template <class PointCloudT, typename Real = double>
 void ReadPointcloud(const std::string& cloud_file,
-                    const Eigen::Isometry3f& transform,
+                    const Eigen::Isometry3d& transform,
                     PointCloudT& points)
 {
   std::fstream input(cloud_file, std::ios::in | std::ios::binary);
@@ -97,8 +97,8 @@ void ReadPointcloud(const std::string& cloud_file,
     input.read((char *) &intensity, sizeof(float));
 
     // apply transform first
-    const Eigen::Vector3f p = transform * point;
-    points.push_back( {p.x(), p.y(), p.z()} );
+    const Eigen::Vector3d p = transform * point.cast<double>();
+    points.push_back( {Real(p.x()), Real(p.y()), Real(p.z())} );
   }
 }
 
@@ -158,10 +158,10 @@ int main(int argc, char** argv)
   for (size_t count = 0; count < cloud_filenames.size(); count++)
   {
     const auto& filename = cloud_filenames[count];
-    const Eigen::Isometry3f transform = poses[count] * calibration_transform;
+    const Eigen::Isometry3d transform = poses[count] * calibration_transform;
 
-    const Eigen::Vector3f origin(transform.translation());
-    std::vector<Eigen::Vector3f> pointcloud;
+    const Eigen::Vector3d origin(transform.translation());
+    std::vector<Eigen::Vector3d> pointcloud;
     ReadPointcloud(filename, transform, pointcloud);
 
     const auto t1 = std::chrono::system_clock::now();
@@ -197,13 +197,13 @@ int main(int argc, char** argv)
     for (size_t count = 0; count < cloud_filenames.size(); count++)
     {
       const auto& filename = cloud_filenames[count];
-      const Eigen::Isometry3f transform = poses[count] * calibration_transform;
+      const Eigen::Isometry3d transform = poses[count] * calibration_transform;
 
       const octomap::point3d origin(transform.translation().x(),
                                     transform.translation().y(),
                                     transform.translation().z());
       octomap::Pointcloud pointcloud;
-      ReadPointcloud(filename, transform, pointcloud);
+      ReadPointcloud<octomap::Pointcloud, float>(filename, transform, pointcloud);
 
       const auto t1 = std::chrono::system_clock::now();
 

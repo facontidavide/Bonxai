@@ -437,7 +437,6 @@ template<typename T>
 struct type_is_vector<std::array<T,3>> : std::true_type {};
 // clang-format on
 
-
 template <typename PointOut, typename PointIn>
 inline PointOut ConvertTo(const PointIn& v)
 {

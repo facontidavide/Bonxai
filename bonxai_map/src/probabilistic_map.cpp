@@ -83,19 +83,19 @@ void ProbabilisticMap::setOptions(const Options& options)
   _options = options;
 }
 
-void ProbabilisticMap::addPoint(const Eigen::Vector3f& origin,
-                                const Eigen::Vector3f& point,
+void ProbabilisticMap::addPoint(const Eigen::Vector3d &origin,
+                                const Eigen::Vector3d &point,
                                 float max_range,
                                 float max_range_sqr)
 {
-  Eigen::Vector3f vect(point - origin);
+  Eigen::Vector3d vect(point - origin);
   const double squared_norm = vect.squaredNorm();
   if (squared_norm >= max_range_sqr)
   {
     // this will be considered a "miss".
     // Compute the end point to cast a cleaning ray
     vect /= std::sqrt(squared_norm);
-    const Eigen::Vector3f new_point = origin + (vect * max_range);
+    const Eigen::Vector3d new_point = origin + (vect * max_range);
     const auto coord = _grid.posToCoord(new_point);
 
     // for very dense pointclouds, this MIGHT be true.
@@ -117,7 +117,7 @@ void ProbabilisticMap::addPoint(const Eigen::Vector3f& origin,
   }
 }
 
-void Bonxai::ProbabilisticMap::updateFreeCells(const Eigen::Vector3f& origin)
+void Bonxai::ProbabilisticMap::updateFreeCells(const Eigen::Vector3d &origin)
 {
   auto clearRay = [this](const CoordT& from, const CoordT& to) {
     auto accessor = _grid.createAccessor();
