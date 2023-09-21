@@ -23,7 +23,6 @@ static void Bonxai_ComputeRay(benchmark::State& state)
   {
     for(const auto& p: points)
     {
-      ray.clear();
       const auto coord = Bonxai::PosToCoord(p, inv_resolution);
       Bonxai::ComputeRay({0,0,0}, coord, ray);
     }

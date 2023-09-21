@@ -7,56 +7,7 @@ namespace Bonxai
 
 const int32_t ProbabilisticMap::UnknownProbability = ProbabilisticMap::logods(0.5f);
 
-bool ComputeRay(const CoordT& key_origin,
-                const CoordT& key_end,
-                std::vector<CoordT>& ray)
-{
-  ray.clear();
-  if (key_origin == key_end)
-  {
-    return true;
-  }
-  ray.push_back(key_origin);
 
-  CoordT error = { 0, 0, 0 };
-  CoordT coord = key_origin;
-  CoordT delta = (key_end - coord);
-  const CoordT step = { delta.x < 0 ? -1 : 1,
-                        delta.y < 0 ? -1 : 1,
-                        delta.z < 0 ? -1 : 1 };
-
-  delta = { delta.x < 0 ? -delta.x : delta.x,
-            delta.y < 0 ? -delta.y : delta.y,
-            delta.z < 0 ? -delta.z : delta.z };
-
-  const int max = std::max(std::max(delta.x, delta.y), delta.z);
-
-  // maximum change of any coordinate
-  for (int i = 0; i < max - 1; ++i)
-  {
-    // update errors
-    error = error + delta;
-    // manual loop unrolling
-    if ((error.x << 1) >= max)
-    {
-      coord.x += step.x;
-      error.x -= max;
-    }
-    if ((error.y << 1) >= max)
-    {
-      coord.y += step.y;
-      error.y -= max;
-    }
-    if ((error.z << 1) >= max)
-    {
-      coord.z += step.z;
-      error.z -= max;
-    }
-    ray.push_back(coord);
-  }
-
-  return true;
-}
 
 VoxelGrid<ProbabilisticMap::CellT>& ProbabilisticMap::grid()
 {
@@ -119,35 +70,31 @@ void ProbabilisticMap::addPoint(const Vector3D& origin,
 
 void Bonxai::ProbabilisticMap::updateFreeCells(const Vector3D& origin)
 {
-  auto clearRay = [this](const CoordT& from, const CoordT& to) {
-    auto accessor = _grid.createAccessor();
-    // clean space with ray casting
-    thread_local std::vector<Bonxai::CoordT> ray;
-    ComputeRay(from, to, ray);
+  auto accessor = _grid.createAccessor();
 
-    for (const auto& coord : ray)
+  auto clearPoint = [this, &accessor](const CoordT& coord)
+  {
+    CellT* cell = accessor.value(coord, true);
+    if (cell->update_id != _update_count)
     {
-      CellT* cell = accessor.value(coord, true);
-      if (cell->update_id != _update_count)
-      {
-        cell->probability_log = std::max(
-            cell->probability_log + _options.prob_miss_log, _options.clamp_min_log);
-        cell->update_id = _update_count;
-      }
+      cell->probability_log = std::max(
+          cell->probability_log + _options.prob_miss_log, _options.clamp_min_log);
+      cell->update_id = _update_count;
     }
+    return true;
   };
 
   const auto coord_origin = _grid.posToCoord(origin);
 
   for (const auto& coord_end : _hit_coords)
   {
-    clearRay(coord_origin, coord_end);
+    RayIterator(coord_origin, coord_end, clearPoint);
   }
   _hit_coords.clear();
 
   for (const auto& coord_end : _miss_coords)
   {
-    clearRay(coord_origin, coord_end);
+    RayIterator(coord_origin, coord_end, clearPoint);
   }
   _miss_coords.clear();
 

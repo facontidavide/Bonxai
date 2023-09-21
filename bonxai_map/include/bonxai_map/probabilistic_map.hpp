@@ -7,9 +7,22 @@
 namespace Bonxai
 {
 
-bool ComputeRay(const CoordT& key_origin,
-                const CoordT& key_end,
-                std::vector<CoordT>& ray);
+template <class Functor>
+void RayIterator(const CoordT& key_origin,
+                 const CoordT& key_end,
+                 const Functor& func);
+
+inline void ComputeRay(const CoordT& key_origin,
+                       const CoordT& key_end,
+                       std::vector<CoordT>& ray)
+{
+  ray.clear();
+  RayIterator(key_origin, key_end, [&ray](const CoordT& coord)
+              {
+                ray.push_back(coord);
+                return true;
+              } );
+}
 
 /**
  * @brief The ProbabilisticMap class is meant to behave as much as possible as
@@ -147,6 +160,61 @@ inline void ProbabilisticMap::insertPointCloud(const std::vector<PointT>& points
     addPoint(from, to, max_range, max_range_sqr);
   }
   updateFreeCells(from);
+}
+
+template <class Functor> inline
+void RayIterator(const CoordT& key_origin,
+                 const CoordT& key_end,
+                 const Functor &func)
+{
+  if (key_origin == key_end)
+  {
+    return;
+  }
+  if(!func(key_origin))
+  {
+    return;
+  }
+
+  CoordT error = { 0, 0, 0 };
+  CoordT coord = key_origin;
+  CoordT delta = (key_end - coord);
+  const CoordT step = { delta.x < 0 ? -1 : 1,
+                        delta.y < 0 ? -1 : 1,
+                        delta.z < 0 ? -1 : 1 };
+
+  delta = { delta.x < 0 ? -delta.x : delta.x,
+            delta.y < 0 ? -delta.y : delta.y,
+            delta.z < 0 ? -delta.z : delta.z };
+
+  const int max = std::max(std::max(delta.x, delta.y), delta.z);
+
+          // maximum change of any coordinate
+  for (int i = 0; i < max - 1; ++i)
+  {
+    // update errors
+    error = error + delta;
+    // manual loop unrolling
+    if ((error.x << 1) >= max)
+    {
+      coord.x += step.x;
+      error.x -= max;
+    }
+    if ((error.y << 1) >= max)
+    {
+      coord.y += step.y;
+      error.y -= max;
+    }
+    if ((error.z << 1) >= max)
+    {
+      coord.z += step.z;
+      error.z -= max;
+    }
+    if(!func(coord))
+    {
+      return;
+    }
+  }
 }
 
 }  // namespace Bonxai
