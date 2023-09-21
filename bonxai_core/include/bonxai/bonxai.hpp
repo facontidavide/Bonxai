@@ -33,7 +33,7 @@ namespace Bonxai
 // - arrays or vectors with 3 elements.
 
 template <typename PointOut, typename PointIn>
-PointOut ConvertTo(const PointIn& v);
+PointOut ConvertPoint(const PointIn& v);
 
 struct Point3D
 {
@@ -54,13 +54,13 @@ struct Point3D
   template <typename T>
   Point3D(const T& v)
   {
-    *this = ConvertTo<Point3D>(v);
+    *this = ConvertPoint<Point3D>(v);
   }
 
   template <typename T>
   Point3D& operator=(const T& v)
   {
-    *this = ConvertTo<Point3D>(v);
+    *this = ConvertPoint<Point3D>(v);
     return *this;
   }
 
@@ -438,7 +438,7 @@ struct type_is_vector<std::array<T,3>> : std::true_type {};
 // clang-format on
 
 template <typename PointOut, typename PointIn>
-inline PointOut ConvertTo(const PointIn& v)
+inline PointOut ConvertPoint(const PointIn& v)
 {
   // clang-format off
   static_assert(std::is_same_v<PointIn, PointOut> ||
@@ -446,6 +446,13 @@ inline PointOut ConvertTo(const PointIn& v)
                 type_has_member_x<PointIn>::value ||
                 type_is_vector<PointIn>::value,
                 "Can't convert from the specified type");
+
+  static_assert(std::is_same_v<PointIn, PointOut> ||
+                type_has_method_x<PointOut>::value ||
+                type_has_member_x<PointOut>::value ||
+                type_is_vector<PointOut>::value,
+                "Can't convert to the specified type");
+
   // clang-format on
   if constexpr (std::is_same_v<PointIn, PointOut>)
   {

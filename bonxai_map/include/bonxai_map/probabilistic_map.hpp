@@ -152,11 +152,11 @@ inline void ProbabilisticMap::insertPointCloud(const std::vector<PointT>& points
                                                const PointT& origin,
                                                double max_range)
 {
-  const auto from = ConvertTo<Vector3D>(origin);
+  const auto from = ConvertPoint<Vector3D>(origin);
   const double max_range_sqr = max_range * max_range;
   for (const auto& point : points)
   {
-    const auto to = ConvertTo<Vector3D>(point);
+    const auto to = ConvertPoint<Vector3D>(point);
     addPoint(from, to, max_range, max_range_sqr);
   }
   updateFreeCells(from);
