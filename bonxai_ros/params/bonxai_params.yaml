@@ -1,0 +1,17 @@
+bonxai_server_node:
+  ros__parameters:
+    resolution: 0.02
+    frame_id: "map"
+    base_frame_id: "base_footprint"
+
+    occupancy_min_z: -100.0
+    occupancy_max_z: 100.0
+
+    sensor_model:
+      max_range: -1.0
+      hit: 0.7
+      miss: 0.4
+      min: 0.12
+      max: 0.97
+
+    latch: false
