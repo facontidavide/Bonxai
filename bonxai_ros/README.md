@@ -8,7 +8,7 @@ cd ~/ws_bonxai/src
 ```
 2. Git clone the Bonxai package
 ```bash
-git clone https://github.com/enriquea52/Bonxai.git -b ros2
+git clone https://github.com/facontidavide/Bonxai.git -b ros2
 ```
 3. Go back to your `ws_bonxai` and build
 ```bash
@@ -84,14 +84,6 @@ Resolution in meter for the map when starting with an empty map. Otherwise the l
 
 The robot's base frame in which ground plane detection is performed (if enabled)
 
-`~use_height_map (bool, default: true)`
-
-Whether visualization should encode height with different colors
-
-`~color/[r/g/b/a] (float)`
-
-Color for visualizing occupied cells when ~heigh_map=False, in range [0:1]
-
 `~sensor_model/max_range (float, default: -1 (unlimited))`
 
 Maximum range in meter for inserting point cloud data when dynamically building a map. Limiting the range to something useful (e.g. 5m) prevents spurious erroneous points far away from the robot.
@@ -107,22 +99,6 @@ Minimum and maximum probability for clamping when dynamically building a map
 `~latch (bool, default: True for a static map, false if no initial map is given)`
 
 Whether topics are published latched or only once per change. For maximum performance when building a map (with frequent updates), set to false. When set to true, on every map change all topics and visualizations will be created.
-
-`~filter_ground_plane (bool, default: false)`
-
-Whether the ground plane should be detected and ignored from scan data when dynamically building a map, using pcl::SACMODEL_PERPENDICULAR_PLANE. This clears everything up to the ground, but will not insert the ground as obstacle in the map. If this is enabled, it can be further configured with the ~ground_filter/... parameters.
-
-`~ground_filter/distance (float, default: 0.04)`
-
-Distance threshold for points (in z direction) to be segmented to the ground plane
-
-`~ground_filter/angle (float, default: 0.15)`
-
-Angular threshold of the detected plane from the horizontal plane to be detected as ground
-
-`~ground_filter/plane_distance (float, default: 0.07)`
-
-Distance threshold from z=0 for a plane to be detected as ground (4th coefficient of the plane equation from PCL)
 
 `~point_cloud_[min|max]_z (float, default: -/+ infinity)`
 

@@ -32,3 +32,5 @@
 *.app
 /CMakeLists.txt.user
 /build/
+
+.vscode
