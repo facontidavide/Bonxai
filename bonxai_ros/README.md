@@ -8,7 +8,7 @@ cd ~/ws_bonxai/src
 ```
 2. Git clone the Bonxai package
 ```bash
-git clone https://github.com/facontidavide/Bonxai.git -b ros2
+git clone https://github.com/facontidavide/Bonxai.git -b add_ros_server
 ```
 3. Go back to your `ws_bonxai` and build
 ```bash
@@ -46,7 +46,7 @@ ros2 launch bonxai_ros bonxai_mapping.launch.py
 
 ## 3.1 Bonxai Server
 
-octomap_server builds and distributes volumetric 3D occupancy maps as OctoMap binary stream and in various ROS-compatible formats e.g. for obstacle avoidance or visualization. The map can be a static OctoMap .bt file (as command line argument) or can be incrementally built from incoming range data (as PointCloud2). octomap_server starts with an empty map if no command line argument is given. In general, octomap_server creates and publishes only on topics that are subscribed. Since some can be time-consuming to build for large maps, only subscribe to topics you absolutely need (e.g. in RViz) and set the "latch" parameter for false when building maps.
+Bonxai_server builds and distributes volumetric 3D occupancy maps for obstacle avoidance, planning or visualization. The map is incrementally built from incoming range data (as PointCloud2) either from RGBD cameras or LiDARs. 
 
 ## 3.1.1 Subscribed Topics
 
@@ -57,18 +57,15 @@ Incoming 3D point cloud for scan integration. You need to remap this topic to yo
 
 ## 3.1.2 Published Topics
 
-`occupied_voxel_vis_array (visualization_msgs/msg/Marker)`
+`bonxai_point_cloud_centers (sensor_msgs/msg/PointCloud2)`
 
-All occupied voxels as "box" markers for visualization in RViz. Be sure to subscribe to the topic occupied_cells_vis in RViz!
-
-`octomap_point_cloud_centers (sensor_msgs/msg/PointCloud2)`
-
-The centers of all occupied voxels as point cloud, useful for visualization. Note that this will have gaps as the points have no volumetric size and OctoMap voxels can have different resolutions! Use the MarkerArray topic instead.
+The centers of all occupied voxels as point cloud, useful for visualization. For an accurate visualization, manually change the pointcloud size in Rviz2 to the respective voxel resolution.
 
 ## 3.1.3 Parameters
 
 `~reset (std_srvs/srv/Empty)`
-Resets the complete map
+
+Resets the complete map.
 
 ## 3.1.4 Parameters
 
@@ -78,11 +75,11 @@ Static global frame in which the map will be published. A transform from sensor 
 
 `~resolution (float, default: 0.05)`
 
-Resolution in meter for the map when starting with an empty map. Otherwise the loaded file's resolution is used.
+Resolution in meter (voxel_size) for the map when starting with an empty map.
 
 `~base_frame_id (string, default: base_footprint)`
 
-The robot's base frame in which ground plane detection is performed (if enabled)
+The robot's base frame.
 
 `~sensor_model/max_range (float, default: -1 (unlimited))`
 
@@ -102,11 +99,11 @@ Whether topics are published latched or only once per change. For maximum perfor
 
 `~point_cloud_[min|max]_z (float, default: -/+ infinity)`
 
-Minimum and maximum height of points to consider for insertion in the callback. Any point outside of this intervall will be discarded before running any insertion or ground plane filtering. You can do a rough filtering based on height with this, but if you enable the ground_filter this interval needs to include the ground plane.
+Minimum and maximum height of points to consider for insertion in the callback. Any point outside of this intervall will be discarded before running any insertion.
 
 `~occupancy_[min|max]_z (float, default: -/+ infinity)`
 
-Minimum and maximum height of occupied cells to be consider in the final map. This ignores all occupied voxels outside of the interval when sending out visualizations and collision maps, but will not affect the actual octomap representation.
+Minimum and maximum height of occupied cells to be consider in the final map. This ignores all occupied voxels outside of the interval when sending out visualizations and collision maps, but will not affect the actual Bonxai map representation.
 
 ## 3.1.5 Required tf Transforms
 
