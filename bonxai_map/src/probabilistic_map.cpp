@@ -34,27 +34,8 @@ void ProbabilisticMap::setOptions(const Options& options)
   _options = options;
 }
 
-void ProbabilisticMap::addPoint(const Vector3D& origin,
-                                const Vector3D& point,
-                                float max_range,
-                                float max_range_sqr)
+void ProbabilisticMap::addHitPoint(const Vector3D &point)
 {
-  Vector3D vect(point - origin);
-  const double squared_norm = vect.squaredNorm();
-  if (squared_norm >= max_range_sqr)
-  {
-    // this will be considered a "miss".
-    // Compute the end point to cast a cleaning ray
-    vect /= std::sqrt(squared_norm);
-    const Vector3D new_point = origin + (vect * max_range);
-    const auto coord = _grid.posToCoord(new_point);
-
-    // for very dense pointclouds, this MIGHT be true.
-    // worth checking, to avoid calling unordered_set::insert
-    _miss_coords.insert(coord);
-    return;
-  }
-
   const auto coord = _grid.posToCoord(point);
   CellT* cell = _accessor.value(coord, true);
 
@@ -66,6 +47,12 @@ void ProbabilisticMap::addPoint(const Vector3D& origin,
     cell->update_id = _update_count;
     _hit_coords.push_back(coord);
   }
+}
+
+void ProbabilisticMap::addMissPoint(const Vector3D &point)
+{
+  const auto coord = _grid.posToCoord(point);
+  _miss_coords.insert(coord);
 }
 
 void Bonxai::ProbabilisticMap::updateFreeCells(const Vector3D& origin)
