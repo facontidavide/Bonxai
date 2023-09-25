@@ -8,7 +8,7 @@ cd ~/ws_bonxai/src
 ```
 2. Git clone the Bonxai package
 ```bash
-git clone https://github.com/facontidavide/Bonxai.git -b add_ros_server
+git clone https://github.com/facontidavide/Bonxai.git
 ```
 3. Go back to your `ws_bonxai` and build
 ```bash
