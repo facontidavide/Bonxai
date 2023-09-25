@@ -52,13 +52,23 @@ void ProbabilisticMap::addHitPoint(const Vector3D &point)
 void ProbabilisticMap::addMissPoint(const Vector3D &point)
 {
   const auto coord = _grid.posToCoord(point);
-  _miss_coords.insert(coord);
+  CellT* cell = _accessor.value(coord, true);
+
+  if (cell->update_id != _update_count)
+  {
+    cell->probability_log = std::max(
+        cell->probability_log + _options.prob_miss_log, _options.clamp_min_log);
+
+    cell->update_id = _update_count;
+    _miss_coords.push_back(coord);
+  }
 }
 
 void Bonxai::ProbabilisticMap::updateFreeCells(const Vector3D& origin)
 {
   auto accessor = _grid.createAccessor();
 
+  // same as addMissPoint, but using lambda will force inlining
   auto clearPoint = [this, &accessor](const CoordT& coord)
   {
     CellT* cell = accessor.value(coord, true);

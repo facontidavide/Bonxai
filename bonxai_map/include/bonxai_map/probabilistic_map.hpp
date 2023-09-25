@@ -142,7 +142,7 @@ private:
   Options _options;
   uint8_t _update_count = 1;
 
-  std::unordered_set<CoordT> _miss_coords;
+  std::vector<CoordT> _miss_coords;
   std::vector<CoordT> _hit_coords;
 
   Bonxai::VoxelGrid<CellT>::Accessor _accessor;
@@ -168,7 +168,7 @@ inline void ProbabilisticMap::insertPointCloud(const std::vector<PointT, Alloc>&
     if (squared_norm >= max_range_sqr)
     {
       // The new point will have distance == max_range from origin
-      const Vector3D new_point = from + ((vect / std::sqrt(squared_norm)) * max_range);
+      const Vector3D new_point = origin + ((vect / std::sqrt(squared_norm)) * max_range);
       addMissPoint(new_point);
     }
     else {
