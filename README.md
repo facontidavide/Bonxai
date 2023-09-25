@@ -17,10 +17,10 @@ As a reference **the diameter of planet Earth is 12.000 Km**.
 If you are familiar with [Octomap](https://octomap.github.io/) and Octrees, you know
 that those data structures are also sparse and unbounded.
 
-On the other hand, Bonxai is **much faster** and, in some cases, even more memory efficient
+On the other hand, Bonxai is **much faster** and, in some cases, even more memory-efficient
 than an Octree.
 
-This work is strongly based on [OpenVDB](https://www.openvdb.org/) and it can be considered
+This work is strongly influenced by [OpenVDB](https://www.openvdb.org/) and it can be considered
 an implementation of the original paper, with a couple of non-trivial changes:
 
     K. Museth, 
@@ -97,7 +97,7 @@ To insert values into a cell with coordinates x, y and z, use a
 In the next code sample, we will create a dense cube of cells with value 42:
 
 ```c++
-// Each cell will contail a `float` and it will have size 0.05
+// Each cell will contain a `float` and it will have size 0.05
 double voxel_resolution = 0.05;
 Bonxai::VoxelGrid<float> grid( voxel_resolution );
 
@@ -119,7 +119,7 @@ for( double x = 0; x < 1.0; x += voxel_resolution ) {
 }
 
 // You can read (or update) the value of a cell as shown below.
-// If the cell doesn't exist, `value_ptr` will be nullptr, 
+// If the cell doesn't exist, `value_ptr` will be `nullptr`, 
 
 Bonxai::CoordT coord = grid.posToCoord(x, y, z);
 float* value_ptr = accessor.value( coord );
@@ -127,7 +127,7 @@ float* value_ptr = accessor.value( coord );
 
 ## Note about multi-threading
 
-`Bonxai::VoxelGrid` is **not** thread safe, for write operations.
+`Bonxai::VoxelGrid` is **not** thread-safe, for write operations.
 
 If you want to access the grid in **read-only** mode, you can
 use multi-threading, but each thread should have its own 
@@ -156,6 +156,6 @@ use multi-threading, but each thread should have its own
 It is... complicated.
 
 If you need to store very sparse point clouds, you should expect Bonxai to use more memory (20-40% more).
-If the point cloud is relatively dense, Bonxai might use much less memory than Octomap (less than half).
+If the point cloud is relatively dense, Bonxai might use less memory than Octomap (less than half).
 
 
