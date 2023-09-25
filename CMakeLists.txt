@@ -45,11 +45,13 @@ add_subdirectory(bonxai_core)
 add_subdirectory(bonxai_map)
 
 
-
 # Default behavior
 find_package(ament_cmake QUIET)
 
 if ( ament_cmake_FOUND )
+
+    project(bonxai_ros)
+
     # Add colcon-specific configuration here
     message(STATUS "Building with colcon")
 

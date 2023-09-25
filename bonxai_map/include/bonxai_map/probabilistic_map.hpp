@@ -99,8 +99,8 @@ public:
    * @param max_range  max range of the ray, if exceeded, we will use that
    * to compute a free space
    */
-  template <typename PointT>
-  void insertPointCloud(const std::vector<PointT>& points,
+  template <typename PointT, typename Allocator>
+  void insertPointCloud(const std::vector<PointT, Allocator>& points,
                         const PointT& origin,
                         double max_range);
 

@@ -245,7 +245,7 @@ void BonxaiServer::publishAll(const rclcpp::Time& rostime)
 
   if (bonxai_result.size() <= 1)
   {
-    RCLCPP_WARN(get_logger(), "Nothing to publish, octree is empty");
+    RCLCPP_WARN(get_logger(), "Nothing to publish, bonxai is empty");
     return;
   }
 
