@@ -64,6 +64,33 @@ void ProbabilisticMap::addMissPoint(const Vector3D &point)
   }
 }
 
+bool ProbabilisticMap::isOccupied(const CoordT &coord) const
+{
+  if(auto* cell = _accessor.value(coord, false))
+  {
+    return cell->probability_log > _options.occupancy_threshold_log;
+  }
+  return false;
+}
+
+bool ProbabilisticMap::isUnknown(const CoordT &coord) const
+{
+  if(auto* cell = _accessor.value(coord, false))
+  {
+    return cell->probability_log == _options.occupancy_threshold_log;
+  }
+  return true;
+}
+
+bool ProbabilisticMap::isFree(const CoordT &coord) const
+{
+  if(auto* cell = _accessor.value(coord, false))
+  {
+    return cell->probability_log < _options.occupancy_threshold_log;
+  }
+  return false;
+}
+
 void Bonxai::ProbabilisticMap::updateFreeCells(const Vector3D& origin)
 {
   auto accessor = _grid.createAccessor();

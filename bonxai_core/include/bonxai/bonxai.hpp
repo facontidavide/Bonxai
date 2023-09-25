@@ -14,10 +14,8 @@
 #include <cmath>
 #include <cstdint>
 #include <functional>
-#include <iostream>
 #include <memory>
 #include <mutex>
-#include <shared_mutex>
 #include <type_traits>
 #include <unordered_map>
 
@@ -610,16 +608,21 @@ inline CoordT VoxelGrid<DataT>::getInnerKey(const CoordT& coord)
 template <typename DataT>
 inline uint32_t VoxelGrid<DataT>::getInnerIndex(const CoordT& coord)
 {
+  // clang-format off
   return ((coord.x >> LEAF_BITS) & INNER_MASK) |
          (((coord.y >> LEAF_BITS) & INNER_MASK) << INNER_BITS) |
          (((coord.z >> LEAF_BITS) & INNER_MASK) << (INNER_BITS * 2));
+  // clang-format on
 }
 
 template <typename DataT>
 inline uint32_t VoxelGrid<DataT>::getLeafIndex(const CoordT& coord)
 {
-  return (coord.x & LEAF_MASK) | ((coord.y & LEAF_MASK) << LEAF_BITS) |
+  // clang-format off
+  return (coord.x & LEAF_MASK) |
+         ((coord.y & LEAF_MASK) << LEAF_BITS) |
          ((coord.z & LEAF_MASK) << (LEAF_BITS * 2));
+  // clang-format on
 }
 
 template <typename DataT>

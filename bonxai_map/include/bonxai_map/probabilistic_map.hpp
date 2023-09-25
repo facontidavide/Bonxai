@@ -145,7 +145,7 @@ private:
   std::vector<CoordT> _miss_coords;
   std::vector<CoordT> _hit_coords;
 
-  Bonxai::VoxelGrid<CellT>::Accessor _accessor;
+  mutable Bonxai::VoxelGrid<CellT>::Accessor _accessor;
 
   void updateFreeCells(const Vector3D& origin);
 };
