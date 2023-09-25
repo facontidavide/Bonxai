@@ -147,8 +147,8 @@ private:
 
 //--------------------------------------------------
 
-template <typename PointT>
-inline void ProbabilisticMap::insertPointCloud(const std::vector<PointT>& points,
+template <typename PointT, typename Alloc>
+inline void ProbabilisticMap::insertPointCloud(const std::vector<PointT, Alloc>& points,
                                                const PointT& origin,
                                                double max_range)
 {
