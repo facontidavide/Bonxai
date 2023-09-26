@@ -1,6 +1,7 @@
 #include <benchmark/benchmark.h>
 #include "benchmark_utils.hpp"
 #include "bonxai/bonxai.hpp"
+#include "bonxai/bonxai_2D.hpp"
 
 using namespace Bonxai;
 
