@@ -82,7 +82,7 @@ template <typename DataT>
 inline void Serialize(std::ostream& out, const VoxelGrid<DataT>& grid)
 {
   static_assert(std::is_trivially_copyable_v<DataT>,
-                "DataT must ne trivially copyable");
+                "DataT must be trivially copyable");
 
   char header[256];
   std::string type_name = details::demangle(typeid(DataT).name());

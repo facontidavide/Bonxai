@@ -10,7 +10,7 @@ Bonxai data structure is:
 - **Unbounded**: you don't need to define the boundary of the 3D space (*).
 
 >(*) The dimension of the 3D space is virtually "infinite":
-since **32-bits indexes** are used, given a voxel size of **1 cm**,
+since **32-bits indices** are used, given a voxel size of **1 cm**,
 the maximum range of the X, Y and Z coordinates would be about **40.000 Km**.
 As a reference **the diameter of planet Earth is 12.000 Km**.
 
@@ -137,7 +137,7 @@ use multi-threading, but each thread should have its own
 
 - [x] serialization to/from file.
 - [x] full implementation of the Octomap algorithm (ray casting + probability map).
-- [x] integration with ROS2.
+- [x] integration with ROS 2.
 - [ ] RViz2 visualization messages.
 - [ ] integration with [FCL](https://github.com/flexible-collision-library/fcl) for collision detection (?)
 
