@@ -38,7 +38,7 @@ ros2 launch bonxai_ros bonxai_mapping.launch.py
   <img src="doc/nice_vis.gif" alt="Sublime's custom gif"/>
 </p>
 
-# 3. ROS2 node API
+# 3. ROS 2 node API
 
 <p align="center">
   <img src="doc/bonxai_ros_node.drawio.png" alt="Sublime's custom image"/>

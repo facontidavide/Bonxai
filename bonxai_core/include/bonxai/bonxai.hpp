@@ -193,7 +193,7 @@ public:
   /// Set all bits off
   void setOff();
 
-  /// Set all bits too the value "on"
+  /// Set all bits to the value "on"
   void set(bool on);
 
   /// Toggle the state of all bits in the mask
@@ -211,8 +211,8 @@ private:
 
 //----------------------------------------------------------
 /**
- * @brief The Grid class is used to store data in a
- * cube. The size (DIM) of the cube can only be a power of 2
+ * @brief The Grid class is used to store data in a cube.
+ * The size (DIM) of the cube can only be a power of 2.
  *
  * For instance, given Grid(3),
  * DIM will be 8 and SIZE 512 (8³)
@@ -291,16 +291,16 @@ public:
   /// @brief Return the total number of active cells
   [[nodiscard]] size_t activeCellsCount() const;
 
-  /// @brief posToCoord is used to convert real coordinates to CoordT indexes.
+  /// @brief posToCoord is used to convert real coordinates to CoordT indices.
   [[nodiscard]] CoordT posToCoord(double x, double y, double z);
 
-  /// @brief posToCoord is used to convert real coordinates to CoordT indexes.
+  /// @brief posToCoord is used to convert real coordinates to CoordT indices.
   [[nodiscard]] CoordT posToCoord(const Point3D& pos)
   {
     return posToCoord(pos.x, pos.y, pos.z);
   }
 
-  /// @brief coordToPos converts CoordT indexes to Point3D.
+  /// @brief coordToPos converts CoordT indices to Point3D.
   [[nodiscard]] Point3D coordToPos(const CoordT& coord);
 
   /**
@@ -316,7 +316,7 @@ public:
   /** Class to be used to set and get values of a cell of the Grid.
    *  It uses caching to speed up computation.
    *
-   *  Create an instance of this object with the method VoxelGrid::greateAccessor()
+   *  Create an instance of this object with the method VoxelGrid::createAccessor()
    */
   class Accessor
   {
@@ -1144,7 +1144,7 @@ struct hash<Bonxai::CoordT>
 {
   std::size_t operator()(const Bonxai::CoordT& p) const
   {
-    // same a OpenVDB
+    // same as OpenVDB
     return ((1 << 20) - 1) & (p.x * 73856093 ^ p.y * 19349663 ^ p.z * 83492791);
   }
 };

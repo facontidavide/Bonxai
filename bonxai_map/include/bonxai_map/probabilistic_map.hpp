@@ -92,7 +92,7 @@ public:
    * The template function can accept points of different types,
    * such as pcl:Point, Eigen::Vector or Bonxai::Point3d
    *
-   * Both origin and points must be in word coordinates
+   * Both origin and points must be in world coordinates
    *
    * @param points   a vector of points which represent detected obstacles
    * @param origin   origin of the point cloud
