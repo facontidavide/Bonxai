@@ -546,10 +546,7 @@ inline Grid<DataT>& Grid<DataT>::operator=(Grid&& other)
 template <typename DataT>
 inline Grid<DataT>::~Grid()
 {
-  if (data_)
-  {
-    delete[] data_;
-  }
+  delete[] data_;
 }
 
 template <typename DataT>
