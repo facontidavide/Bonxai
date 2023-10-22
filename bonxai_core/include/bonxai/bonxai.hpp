@@ -880,6 +880,7 @@ inline uint32_t Mask::FindLowestOn(uint64_t v)
 #pragma warning(push)
 #pragma warning(disable : 4146)
 #endif
+  /// @warning evil bit twiddling ahead!
   return DeBruijn[uint64_t((v & -v) * UINT64_C(0x022FDD63CC95386D)) >> 58];
 #if defined(_MSC_VER) && !defined(__NVCC__)
 #pragma warning(pop)
@@ -898,6 +899,7 @@ inline uint32_t Mask::CountOn(uint64_t v)
   v = __builtin_popcountll(v);
 #else
   // Software Implementation
+  /// @warning evil bit twiddling ahead!
   v = v - ((v >> 1) & uint64_t(0x5555555555555555));
   v = (v & uint64_t(0x3333333333333333)) + ((v >> 2) & uint64_t(0x3333333333333333));
   v = (((v + (v >> 4)) & uint64_t(0xF0F0F0F0F0F0F0F)) *
