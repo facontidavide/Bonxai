@@ -9,15 +9,19 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cmath>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <type_traits>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 namespace Bonxai
 {
@@ -94,9 +98,9 @@ struct CoordT
 
 [[nodiscard]] inline Point3D CoordToPos(const CoordT& coord, double resolution)
 {
-  return { (double(coord.x) + 0.5) * resolution,
-           (double(coord.y) + 0.5) * resolution,
-           (double(coord.z) + 0.5) * resolution };
+  return { (static_cast<double>(coord.x) + 0.5) * resolution,
+           (static_cast<double>(coord.y) + 0.5) * resolution,
+           (static_cast<double>(coord.z) + 0.5) * resolution };
 }
 
 //----------------------------------------------------------
@@ -251,11 +255,11 @@ public:
 
   [[nodiscard]] Bonxai::Mask& mask() { return mask_; };
 
-  [[nodiscard]] const Bonxai::Mask& mask() const { return mask_; };
+  [[nodiscard]] const Bonxai::Mask& mask() const { return mask_; }
 
-  [[nodiscard]] DataT& cell(size_t index) { return data_[index]; };
+  [[nodiscard]] DataT& cell(size_t index) { return data_[index]; }
 
-  [[nodiscard]] const DataT& cell(size_t index) const { return data_[index]; };
+  [[nodiscard]] const DataT& cell(size_t index) const { return data_[index]; }
 };
 
 //----------------------------------------------------------
@@ -433,9 +437,9 @@ struct type_has_member_x<T, std::void_t<decltype(T::x)>> : std::true_type {};
 template<typename>
 struct type_is_vector : std::false_type {};
 template<typename T, typename A>
-struct type_is_vector<std::vector<T,A>> : std::true_type {};
+struct type_is_vector<std::vector<T, A>> : std::true_type {};
 template<typename T>
-struct type_is_vector<std::array<T,3>> : std::true_type {};
+struct type_is_vector<std::array<T, 3>> : std::true_type {};
 // clang-format on
 
 template <typename PointOut, typename PointIn>
@@ -586,9 +590,9 @@ inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z)
 template <typename DataT>
 inline Point3D VoxelGrid<DataT>::coordToPos(const CoordT& coord)
 {
-  return { (double(coord.x) + 0.5) * resolution,
-           (double(coord.y) + 0.5) * resolution,
-           (double(coord.z) + 0.5) * resolution };
+  return { (static_cast<double>(coord.x) + 0.5) * resolution,
+           (static_cast<double>(coord.y) + 0.5) * resolution,
+           (static_cast<double>(coord.z) + 0.5) * resolution };
 }
 
 template <typename DataT>
