@@ -43,7 +43,7 @@ endif()
 ####################################################
 add_subdirectory(bonxai_core)
 add_subdirectory(bonxai_map)
-
+add_subdirectory(examples)
 
 # Default behavior
 find_package(ament_cmake QUIET)
