@@ -166,7 +166,7 @@ void BonxaiGridDisplay::updateAlpha()
 void BonxaiGridDisplay::updateScalarThreshold()
 {
   MFDClass::updateTopic();
-  const float prob_threshold = std::min(1.0, std::max(0.0, scalar_threshold_property_->getFloat()));
+  const float prob_threshold = std::min(1.0f, std::max(0.0f, scalar_threshold_property_->getFloat()));
   log_odds_threshold_ = Bonxai::ProbabilisticMap::logods(prob_threshold);
 }
 

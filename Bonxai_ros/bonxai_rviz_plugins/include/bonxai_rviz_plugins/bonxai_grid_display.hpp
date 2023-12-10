@@ -101,7 +101,7 @@ namespace bonxai_rviz_plugins
     double min_z_{-1.0};
 
     // for probability grids
-    int32_t log_odds_threshold_{0.0};
+    int32_t log_odds_threshold_{0};
 
   };
 
