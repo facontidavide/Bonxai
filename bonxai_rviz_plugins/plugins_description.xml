@@ -1,0 +1,18 @@
+<library path="bonxai_rviz_plugins">
+  <class name="bonxai_rviz_plugins/ScalarBonxaiGrid"
+         type="bonxai_rviz_plugins::FloatBonxaiGridDisplay"
+         base_class_type="rviz_common::Display">
+    <description>
+      Displays 3D grids containing scalar values generated from bonxai messages.
+    </description>
+    <message_type>bonxai_msgs/msg/bonxai</message_type>
+  </class>
+  <class name="bonxai_rviz_plugins/ColorBonxaiGrid"
+         type="bonxai_rviz_plugins::ColorBonxaiGridDisplay"
+         base_class_type="rviz_common::Display">
+    <description>
+      Displays 3D grids containing RGB values generated from bonxai messages.
+    </description>
+    <message_type>bonxai_msgs/msg/bonxai</message_type>
+  </class>
+</library>

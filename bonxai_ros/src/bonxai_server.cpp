@@ -131,8 +131,8 @@ BonxaiServer::BonxaiServer(const rclcpp::NodeOptions& node_options)
   }
 
   auto qos = latched_topics_ ? rclcpp::QoS{ 1 }.transient_local() : rclcpp::QoS{ 1 };
-  point_cloud_pub_ =
-      create_publisher<PointCloud2>("bonxai_point_cloud_centers", qos);
+  bonxai_pub_ =
+      create_publisher<PointCloud2>("bonxai_grid", qos);
 
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -239,41 +239,22 @@ BonxaiServer::onParameter(const std::vector<rclcpp::Parameter>& parameters)
 void BonxaiServer::publishAll(const rclcpp::Time& rostime)
 {
   const auto start_time = rclcpp::Clock{}.now();
-  thread_local std::vector<Eigen::Vector3d> bonxai_result;
-  bonxai_result.clear();
-  bonxai_->getOccupiedVoxels(bonxai_result);
 
-  if (bonxai_result.size() <= 1)
-  {
-    RCLCPP_WARN(get_logger(), "Nothing to publish, bonxai is empty");
-    return;
-  }
-
-  bool publish_point_cloud =
+  bool publish_bonxai =
       (latched_topics_ ||
-       point_cloud_pub_->get_subscription_count() +
-       point_cloud_pub_->get_intra_process_subscription_count() > 0);
+       bonxai_pub_->get_subscription_count() +
+       bonxai_pub_->get_intra_process_subscription_count() > 0);
 
   // init pointcloud for occupied space:
-  if (publish_point_cloud)
+  if (bonxai_ && publish_bonxai)
   {
-    thread_local pcl::PointCloud<PCLPoint> pcl_cloud;
-    pcl_cloud.clear();
+    bonxai_msgs::msg::Bonxai bonxai_msg;
+    bonxai_msgs::toROSMsg(*bonxai_, bonxai_msg);
 
-    for (const auto& voxel : bonxai_result)
-    {
-      if(voxel.z() >= occupancy_min_z_ && voxel.z() <= occupancy_max_z_)
-      {
-        pcl_cloud.push_back(PCLPoint(voxel.x(), voxel.y(), voxel.z()));
-      }
-    }
-    PointCloud2 cloud;
-    pcl::toROSMsg(pcl_cloud, cloud);
-
-    cloud.header.frame_id = world_frame_id_;
-    cloud.header.stamp = rostime;
-    point_cloud_pub_->publish(cloud);
-    RCLCPP_WARN(get_logger(), "Published occupancy grid with %ld voxels", pcl_cloud.points.size());
+    bonxai_msg.header.frame_id = world_frame_id_;
+    bonxai_msg.header.stamp = rostime;
+    bonxai_pub_->publish(bonxai_msg);
+    RCLCPP_WARN(get_logger(), "Published occupancy grid");
   }
 }
 

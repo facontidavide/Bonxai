@@ -4,6 +4,8 @@
 #include "bonxai_map/pcl_utils.hpp"
 #include "bonxai_map/probabilistic_map.hpp"
 #include "bonxai/bonxai.hpp"
+#include "bonxai_msgs/conversion.hpp"
+#include "bonxai_msgs/msg/bonxai.hpp"
 
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/io/pcd_io.h>
@@ -60,7 +62,7 @@ protected:
   rcl_interfaces::msg::SetParametersResult
   onParameter(const std::vector<rclcpp::Parameter>& parameters);
 
-  rclcpp::Publisher<PointCloud2>::SharedPtr point_cloud_pub_;
+  rclcpp::Publisher<bonxai_msgs::msg::Bonxai>::SharedPtr bonxai_pub_;
   message_filters::Subscriber<PointCloud2> point_cloud_sub_;
   std::shared_ptr<tf2_ros::MessageFilter<PointCloud2>> tf_point_cloud_sub_;
   // rclcpp::Service<BBoxSrv>::SharedPtr clear_bbox_srv_;
