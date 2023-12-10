@@ -6,7 +6,7 @@ Panels:
       Expanded:
         - /TF1/Frames1
         - /Sensor_Cloud1
-        - /ScalarBonxaiGrid1
+        - /ProbabilisticBonxaiGrid1
       Splitter Ratio: 0.5
     Tree Height: 440
   - Class: rviz_common/Selection
@@ -145,9 +145,9 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
-    - Class: bonxai_rviz_plugins/ScalarBonxaiGrid
+    - Class: bonxai_rviz_plugins/ProbabilisticBonxaiGrid
       Enabled: true
-      Name: ScalarBonxaiGrid
+      Name: ProbabilisticBonxaiGrid
       Topic:
         Depth: 5
         Durability Policy: Volatile
