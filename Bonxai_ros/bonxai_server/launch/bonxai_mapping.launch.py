@@ -8,7 +8,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     # Current Package Name
-    package = "bonxai_ros"
+    package = "bonxai_server"
 
     bonxai_params = os.path.join(
         get_package_share_directory(package),
