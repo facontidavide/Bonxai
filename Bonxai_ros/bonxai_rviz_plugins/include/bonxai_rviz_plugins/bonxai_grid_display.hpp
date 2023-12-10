@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "bonxai_msgs/msg/bonxai.hpp"
+#include "bonxai_map/probabilistic_map.hpp"
 
 #include <std_msgs/msg/color_rgba.hpp>
 
@@ -46,6 +47,8 @@ namespace bonxai_rviz_plugins
       {0, 0, -1},
   };
 
+  using ProbabilisticCell = Bonxai::ProbabilisticMap::CellT;
+
   class BonxaiGridDisplay
       : public rviz_common::MessageFilterDisplay<bonxai_msgs::msg::Bonxai>
   {
@@ -62,7 +65,9 @@ namespace bonxai_rviz_plugins
   private Q_SLOTS:
     void updateBonxaiColorMode();
     void updateAlpha();
-
+    void updateScalarThreshold();
+    void updateStyle();
+  
   protected:
     void unsubscribe() override;
 
@@ -87,8 +92,8 @@ namespace bonxai_rviz_plugins
     std_msgs::msg::Header header_;
 
     // Plugin properties
-    rviz_common::properties::EnumProperty *bonxai_coloring_property_;
-    rviz_common::properties::FloatProperty *alpha_property_;
+    rviz_common::properties::EnumProperty *bonxai_coloring_property_, *style_property_;
+    rviz_common::properties::FloatProperty *alpha_property_, *scalar_threshold_property_;
 
     // parameters to control the z-axis scaling
     double color_factor_{0.8};
@@ -110,6 +115,8 @@ namespace bonxai_rviz_plugins
         rviz_rendering::PointCloud::Point &new_point,
         CellT &cell) = 0;
 
+    virtual bool shouldShowCell(const CellT &cell) = 0;
+
     /// Returns false, if the type_id (of the message) does not correspond to the template paramter
     /// of this class, true if correct or unknown (i.e., no specialized method for that template).
     virtual bool checkType(const std::string &type_id) = 0;
@@ -126,6 +133,23 @@ namespace bonxai_rviz_plugins
         rviz_rendering::PointCloud::Point &new_point,
         CellT &cell) override;
 
+    bool shouldShowCell(const CellT &cell) override;
+
+    bool checkType(const std::string &type_id) override;
+  };
+
+  /**
+   * @brief Specialization of BonxaiGrid template for ProbabilisticMap
+  */
+  class ProbabilisticBonxaiGridDisplay : public TemplatedBonxaiGridDisplay<ProbabilisticCell>
+  {
+  protected:
+    void setVoxelColor(
+        rviz_rendering::PointCloud::Point &new_point,
+        ProbabilisticCell &cell) override;
+
+    bool shouldShowCell(const ProbabilisticCell &cell) override;
+
     bool checkType(const std::string &type_id) override;
   };
 
@@ -138,6 +162,12 @@ namespace bonxai_rviz_plugins
     void setVoxelColor(
         rviz_rendering::PointCloud::Point &new_point,
         std_msgs::msg::ColorRGBA &cell) override;
+
+    bool shouldShowCell(const std_msgs::msg::ColorRGBA &cell){
+      (void) cell; // silence compiler warning
+
+      return true;
+    };
 
     bool checkType(const std::string &type_id) override;
   };

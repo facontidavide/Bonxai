@@ -64,6 +64,36 @@ Octomap_IterateAllCells     698 us
 - **Update** means modifying the value of an already allocated VoxelGrid.
 - **IterateAllCells** will get the value and the coordinates of all the existing cells.
 
+# How to build it
+
+## Copy-paste
+
+If all you care about is the bonxai datastructure, you could copy Bonxai/bonxai_core/include/bonxai.hpp into your project. And then build your project normally.
+
+## Cmake Users
+
+If you want the functionality in bonxai_core and bonxai_map, and you want to run the examples and benchmarks, you can perform a cmake build.
+
+Pretend Bonxai_ros is not there.
+
+cd into Bonxai/Bonxai
+
+Do the cmake dance:
+
+mkdir build
+cmake ..
+make -j4
+
+## ROS2 / Colcon Users
+
+clone Bonxai into your ros_ws
+
+colcon build --symlink-install
+
+source the install/setup.bash in your workspace
+
+This will give access to all the packages in Bonxai_ros, along with the rviz plugins.
+
 # How to use it
 
 The core of **Bonxai** is a header-only library that you can simply copy into your project
