@@ -166,6 +166,8 @@ void BonxaiGridDisplay::updateAlpha()
 void BonxaiGridDisplay::updateScalarThreshold()
 {
   MFDClass::updateTopic();
+  const float prob_threshold = std::min(1.0, std::max(0.0, scalar_threshold_property_->getFloat()));
+  log_odds_threshold_ = Bonxai::ProbabilisticMap::logods(prob_threshold);
 }
 
 void BonxaiGridDisplay::updateStyle()
@@ -258,8 +260,7 @@ bool ScalarBonxaiGridDisplay<float>::shouldShowCell(const float& cell)
 
 bool ProbabilisticBonxaiGridDisplay::shouldShowCell(const ProbabilisticCell& cell)
 {
-  return (Bonxai::ProbabilisticMap::prob(cell.probability_log) >
-          scalar_threshold_property_->getFloat());
+  return (cell.probability_log > log_odds_threshold_);
 }
 
 template <>
