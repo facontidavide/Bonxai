@@ -8,7 +8,7 @@
   <author email="jjdang21@gmail.com">John D'Angelo</author>
   <maintainer email="jjdang21@gmail.com">John D'Angelo</maintainer>
 
-  <license>MIT</license>
+  <license>MPL-2.0</license>
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 

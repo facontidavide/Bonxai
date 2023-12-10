@@ -5,7 +5,7 @@
   <version>0.0.0</version>
   <description>This packages has two nodes. One to publish random Bonxai msgs. And another to subscribe to them.</description>
   <maintainer email="jjdang21@gmail.com">John D'Angelo</maintainer>
-  <license>MIT</license>
+  <license>MPL-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
