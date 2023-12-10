@@ -195,7 +195,6 @@ void BonxaiGridDisplay::update([[maybe_unused]] float wall_dt,
     // Width/height are only applicable to billboards and boxes, depth
     // is only applicable to boxes.
     cloud_->setDimensions(box_size_, box_size_, box_size_);
-    cloud_->setDimensions()
 
     cloud_->addPoints(new_points_.begin(), new_points_.end());
     new_points_.clear();
