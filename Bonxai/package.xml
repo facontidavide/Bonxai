@@ -1,0 +1,20 @@
+<package format="3">
+  <name>Bonxai</name>
+  <version>3.0.1</version>
+  <description>Core bonxai functionality ros package</description>
+  <author>TODO</author>
+  <maintainer email="todo@eventually.net">TODO</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <build_depend>eigen3</build_depend>
+  <build_depend>libpcl-dev</build_depend>
+  <build_depend>lz4</build_depend>
+  <build_depend>octomap</build_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+
+</package>
