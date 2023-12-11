@@ -131,8 +131,7 @@ BonxaiServer::BonxaiServer(const rclcpp::NodeOptions& node_options)
   }
 
   auto qos = latched_topics_ ? rclcpp::QoS{ 1 }.transient_local() : rclcpp::QoS{ 1 };
-  bonxai_pub_ =
-      create_publisher<bonxai_msgs::msg::Bonxai>("bonxai_grid", qos);
+  bonxai_pub_ = create_publisher<bonxai_msgs::msg::Bonxai>("bonxai_grid", qos);
 
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -243,7 +242,8 @@ void BonxaiServer::publishAll(const rclcpp::Time& rostime)
   bool publish_bonxai =
       (latched_topics_ ||
        bonxai_pub_->get_subscription_count() +
-       bonxai_pub_->get_intra_process_subscription_count() > 0);
+               bonxai_pub_->get_intra_process_subscription_count() >
+           0);
 
   // init pointcloud for occupied space:
   if (bonxai_ && publish_bonxai)
