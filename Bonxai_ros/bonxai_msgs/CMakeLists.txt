@@ -20,7 +20,6 @@ find_package(std_msgs REQUIRED)
 
 set(msg_files
 	"msg/Bonxai.msg"
-	"msg/BonxaiWithPose.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
