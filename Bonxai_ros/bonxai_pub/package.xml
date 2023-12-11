@@ -3,7 +3,11 @@
 <package format="3">
   <name>bonxai_pub</name>
   <version>0.0.0</version>
-  <description>This packages has two nodes. One to publish random Bonxai msgs. And another to subscribe to them.</description>
+  <description>
+  This package is a simple demo of using bonxai_msgs.
+  It has two nodes. One to publish random Bonxai msgs. And another 
+  to subscribe to them.
+  </description>
   <maintainer email="jjdang21@gmail.com">John D'Angelo</maintainer>
   <license>MPL-2.0</license>
 
