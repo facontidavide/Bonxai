@@ -46,9 +46,7 @@ ros2 launch bonxai_ros bonxai_mapping.launch.py
 
 ## 3.1 Bonxai Server
 
-Bonxai_server builds and distributes volumetric 3D occupancy maps for obstacle avoidance, planning or visualization. The map is incrementally built from incoming range data (as PointCloud2) either from RGBD cameras* or LiDARs.
-
-*Ray tracing pointclouds from depth cameras can be very cpu and memory intensive.
+Bonxai_server builds and distributes volumetric 3D occupancy maps for obstacle avoidance, planning or visualization. The map is incrementally built from incoming range data (as PointCloud2) either from RGBD cameras or LiDARs.
 
 ## 3.1.1 Subscribed Topics
 

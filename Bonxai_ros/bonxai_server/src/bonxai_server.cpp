@@ -1,4 +1,5 @@
 #include "bonxai_server.hpp"
+#include <pcl/filters/filter.h>
 
 namespace
 {
@@ -189,6 +190,8 @@ void BonxaiServer::insertCloudCallback(const PointCloud2::ConstSharedPtr cloud)
           .cast<float>();
 
   // Transforming Points to Global Reference Frame
+  std::vector<int> indices;
+  pcl::removeNaNFromPointCloud(pc, pc, indices);
   pcl::transformPointCloud(pc, pc, sensor_to_world);
 
   // Getting the Translation from the sensor to the Global Reference Frame
