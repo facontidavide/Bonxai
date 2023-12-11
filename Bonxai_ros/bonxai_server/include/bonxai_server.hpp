@@ -9,6 +9,7 @@
 
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/filters/filter.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/common/transforms.h>

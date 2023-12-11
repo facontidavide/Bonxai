@@ -66,8 +66,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0.9150652885437012
-        Min Value: -0.5835498571395874
+        Max Value: 2.5927000045776367
+        Min Value: 0.6900100111961365
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -75,7 +75,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: AxisColor
       Decay Time: 1
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -96,7 +96,7 @@ Visualization Manager:
         Value: /cloud_in
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz_default_plugins/Image
       Enabled: true
       Max Value: 1
@@ -148,6 +148,8 @@ Visualization Manager:
     - Class: bonxai_rviz_plugins/ProbabilisticBonxaiGrid
       Enabled: true
       Name: ProbabilisticBonxaiGrid
+      Style: Boxes
+      Threshold: 0.10000000149011612
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -204,25 +206,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 3.4389750957489014
+      Distance: 3.4911351203918457
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.33896613121032715
-        Y: 1.5239466428756714
-        Z: 0.7281569242477417
+        X: 0.40828827023506165
+        Y: 0.438720166683197
+        Z: 0.8273112177848816
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.11520363390445709
+      Pitch: -1.089796781539917
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz_default_plugins)
-      Yaw: 5.451834678649902
+      Yaw: 4.571813583374023
     Saved: ~
 Window Geometry:
   Displays:

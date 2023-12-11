@@ -1,5 +1,4 @@
 #include "bonxai_server.hpp"
-#include <pcl/filters/filter.h>
 
 namespace
 {
