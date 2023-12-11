@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(bonxai_rviz_plugins)
 
 if(NOT CMAKE_CXX_STANDARD)
