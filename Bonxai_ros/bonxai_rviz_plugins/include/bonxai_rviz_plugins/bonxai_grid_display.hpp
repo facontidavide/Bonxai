@@ -1,9 +1,12 @@
-// 
-// Author: John D'Angelo
-//
-// This plugin takes a lot of inspiration from the Octomap rviz plugin
-// https://github.com/OctoMap/octomap_rviz_plugins/tree/ros2
-// 
+/**
+ * 
+ * Rviz plugin for visualizing Bonxai messages.
+ * 
+ * This plugin takes a lot of inspiration from the Octomap rviz plugin
+ * https://github.com/OctoMap/octomap_rviz_plugins/tree/ros2
+ * 
+ * Author: John D'Angelo
+*/
 
 #ifndef BONXAI_RVIZ_PLUGINS__OCCUPANCY_GRID_DISPLAY_HPP_
 #define BONXAI_RVIZ_PLUGINS__OCCUPANCY_GRID_DISPLAY_HPP_

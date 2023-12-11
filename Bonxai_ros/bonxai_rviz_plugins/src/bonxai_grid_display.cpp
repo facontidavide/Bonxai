@@ -1,9 +1,12 @@
-//
-// Author: John D'Angelo
-//
-// This plugin takes a lot of inspiration from the Octomap rviz plugin
-// https://github.com/OctoMap/octomap_rviz_plugins/tree/ros2
-//
+/**
+ * 
+ * Rviz plugin for visualizing Bonxai messages.
+ * 
+ * This plugin takes a lot of inspiration from the Octomap rviz plugin
+ * https://github.com/OctoMap/octomap_rviz_plugins/tree/ros2 
+ * 
+ * Author: John D'Angelo
+*/
 
 #include <algorithm>
 #include <limits>
@@ -65,11 +68,13 @@ BonxaiGridDisplay::BonxaiGridDisplay()
 
   // credit to: https://github.com/OctoMap/octomap_rviz_plugins/pull/20
   style_property_ = new rviz_common::properties::EnumProperty("Style",
-                                     "Boxes",
-                                     "Rendering mode to use, in order of "
-                                     "computational complexity.",
-                                     this,
-                                     SLOT(updateStyle()));
+                                                              "Boxes",
+                                                              "Rendering mode to "
+                                                              "use, in order of "
+                                                              "computational "
+                                                              "complexity.",
+                                                              this,
+                                                              SLOT(updateStyle()));
   style_property_->addOption("Points", rviz_rendering::PointCloud::RM_POINTS);
   style_property_->addOption("Squares", rviz_rendering::PointCloud::RM_SQUARES);
   style_property_->addOption("Flat Squares",
@@ -95,7 +100,7 @@ void BonxaiGridDisplay::onInitialize()
 
 void BonxaiGridDisplay::unsubscribe()
 {
-  clear();
+  clear(); // locks mutex_
   MFDClass::unsubscribe();
 }
 
@@ -166,15 +171,20 @@ void BonxaiGridDisplay::updateAlpha()
 void BonxaiGridDisplay::updateScalarThreshold()
 {
   MFDClass::updateTopic();
-  const float prob_threshold = std::min(1.0f, std::max(0.0f, scalar_threshold_property_->getFloat()));
+
+  std::scoped_lock<std::mutex> lock(mutex_);
+  const float prob_threshold =
+      std::min(1.0f, std::max(0.0f, scalar_threshold_property_->getFloat()));
   log_odds_threshold_ = Bonxai::ProbabilisticMap::logods(prob_threshold);
 }
 
 void BonxaiGridDisplay::updateStyle()
 {
   MFDClass::updateTopic();
-  cloud_->setRenderMode(
-      static_cast<rviz_rendering::PointCloud::RenderMode>(style_property_->getOptionInt()));
+
+  std::scoped_lock<std::mutex> lock(mutex_);
+  cloud_->setRenderMode(static_cast<rviz_rendering::PointCloud::RenderMode>(
+      style_property_->getOptionInt()));
 }
 
 void BonxaiGridDisplay::clear()
@@ -195,8 +205,17 @@ void BonxaiGridDisplay::update([[maybe_unused]] float wall_dt,
     cloud_->clearAndRemoveAllPoints();
     // Set the dimensions of the billboards used to render each point.
     // Width/height are only applicable to billboards and boxes, depth
-    // is only applicable to boxes.
-    cloud_->setDimensions(box_size_, box_size_, box_size_);
+    // is only applicable to boxes. Points are also treated differently.
+    if (static_cast<rviz_rendering::PointCloud::RenderMode>(
+            style_property_->getOptionInt()) ==
+        rviz_rendering::PointCloud::RM_POINTS)
+    {
+      cloud_->setDimensions(1, 1, 1);
+    }
+    else
+    {
+      cloud_->setDimensions(box_size_, box_size_, box_size_);
+    }
 
     cloud_->addPoints(new_points_.begin(), new_points_.end());
     new_points_.clear();
@@ -284,6 +303,7 @@ void ScalarBonxaiGridDisplay<float>::setVoxelColor(
     case BONXAI_PROBABILITY_COLOR:
       // TODO (jjd9): Add min/max parameter for scaling between 0 and 1.
       cell_probability = std::max(std::min(1.0f, cell), 0.0f);
+      // high probability -> green, low probability -> red
       new_point.setColor((1.0f - cell_probability), cell_probability, 0.0);
       break;
     default:
@@ -455,7 +475,7 @@ using FloatBonxaiGridDisplay = ScalarBonxaiGridDisplay<float>;
 
 #include "pluginlib/class_list_macros.hpp"
 
-// TODO (jjd9): These plugins are SUPER specific (i.e. float and
+// TODO (jjd9): These plugins are SUPER specific (e.g. float and
 // std_msgs::msg::ColorRGBA, whereas bonxai supports all scalar values and all
 // rgb-like structs). It would be nice to make this more flexible somehow.
 PLUGINLIB_EXPORT_CLASS(bonxai_rviz_plugins::FloatBonxaiGridDisplay,
