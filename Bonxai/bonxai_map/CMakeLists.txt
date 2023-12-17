@@ -16,6 +16,20 @@ target_link_libraries(bonxai_map PUBLIC
     bonxai_core
     ${PCL_LIBRARIES})
 
+install(
+    DIRECTORY include/
+    DESTINATION include/
+)
+
+install(
+    TARGETS bonxai_map
+    EXPORT export_${PROJECT_NAME}
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+)
+    
+
 ####################################################
 
 if(benchmark_FOUND AND octomap_FOUND)

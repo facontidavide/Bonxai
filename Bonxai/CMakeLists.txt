@@ -50,37 +50,17 @@ find_package(ament_cmake QUIET)
 
 if ( ament_cmake_FOUND )
 
-    project(bonxai_ros)
+  message(STATUS "Building with colcon")
 
-    # Add colcon-specific configuration here
-    message(STATUS "Building with colcon")
+  set(dependencies
+    PCL
+    octomap
+    Eigen3
+  )
 
-    find_package(ament_cmake_auto REQUIRED)
-    ament_auto_find_build_dependencies()
-
-    include_directories(bonxai_ros/include 3rdparty)
-
-    ament_auto_add_library(bonxai_server SHARED
-      bonxai_ros/src/bonxai_server.cpp
-    )
-
-    target_link_libraries(bonxai_server
-      bonxai_map
-      ${PCL_LIBRARIES}
-    )
-
-    rclcpp_components_register_node(bonxai_server
-      PLUGIN "bonxai_server::BonxaiServer"
-      EXECUTABLE bonxai_server_node
-    )
-
-
-    ament_auto_package(
-      INSTALL_TO_SHARE
-      bonxai_ros/launch 
-      bonxai_ros/rviz 
-      bonxai_ros/params 
-    )
+  ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+  ament_export_dependencies(${dependencies})
+  ament_package()
 
 else()
 
