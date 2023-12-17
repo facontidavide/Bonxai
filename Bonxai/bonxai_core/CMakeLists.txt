@@ -21,7 +21,7 @@ install(
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
 )
-    
+
 
 if(benchmark_FOUND)
     add_subdirectory(benchmark)
