@@ -15,10 +15,6 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-fno-omit-frame-pointer -g")
 
-#---- Add the subdirectory cmake ----
-set(CMAKE_CONFIG_PATH ${CMAKE_MODULE_PATH}  "${CMAKE_CURRENT_LIST_DIR}/cmake")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CONFIG_PATH}")
-
 #---- Use Address sanitizer if compiled in Debug mode ----
 option(BONXAI_SANITIZE "Add address sanitizer when compiling in Debug mode" ON)
 
