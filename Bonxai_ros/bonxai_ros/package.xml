@@ -2,9 +2,8 @@
   <name>bonxai_ros</name>
   <version>3.0.1</version>
   <description>Metapackage with for bonxai ros packages</description>
-  <author>TODO</author>
-  <maintainer email="todo@eventually.net">TODO</maintainer>
-  <license>TODO</license>
+  <maintainer email="enrique.aleman1998@gmail.com">enrique</maintainer>
+  <license>MPL-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
