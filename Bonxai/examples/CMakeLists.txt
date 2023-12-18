@@ -13,3 +13,10 @@ add_executable(test_serialization test_serialization.cpp)
 
 target_link_libraries(test_serialization PUBLIC
     bonxai_core)
+
+install(
+    TARGETS
+        bonxai_map_playground
+        test_serialization
+    RUNTIME DESTINATION lib/${PROJECT_NAME}
+)    

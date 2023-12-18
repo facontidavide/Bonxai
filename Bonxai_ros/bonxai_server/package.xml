@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>bonxai_ros</name>
+  <name>bonxai_server</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>3D Probabilistic grid mapping server using Bonxai for the grid</description>
   <maintainer email="enrique.aleman1998@gmail.com">enrique</maintainer>
-  <license>TODO: License declaration</license>
+  <license>MPL-2.0</license>
 
-  <!-- <buildtool_depend>ament_cmake</buildtool_depend> -->
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
+  <depend>Bonxai</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>pcl_conversions</depend>

@@ -64,6 +64,36 @@ Octomap_IterateAllCells     698 us
 - **Update** means modifying the value of an already allocated VoxelGrid.
 - **IterateAllCells** will get the value and the coordinates of all the existing cells.
 
+# How to build it
+
+## Copy-paste
+
+If your goal is just to use the bonxai data structure in your project, you could copy `Bonxai/Bonxai/bonxai_core/include/bonxai.hpp` into your project. And then build your project normally.
+
+## Cmake Users
+
+If you want the functionality in bonxai_core and bonxai_map, and you want to run the examples and benchmarks, you can perform a cmake build.
+
+clone this repository.
+
+cd into Bonxai/Bonxai
+
+Do the cmake dance:
+
+mkdir build
+cmake ..
+make -j4
+
+## ROS2 / Colcon Users
+
+clone this repository into your ros_ws
+
+colcon build --symlink-install
+
+source the install/setup.bash in your workspace
+
+This will give access to the bonxai data structure via the Bonxai package as well as all the packages in Bonxai_ros.
+
 # How to use it
 
 The core of **Bonxai** is a header-only library that you can simply copy into your project
@@ -157,5 +187,4 @@ It is... complicated.
 
 If you need to store very sparse point clouds, you should expect Bonxai to use more memory (20-40% more).
 If the point cloud is relatively dense, Bonxai might use less memory than Octomap (less than half).
-
 

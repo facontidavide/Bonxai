@@ -1,0 +1,16 @@
+<package format="3">
+  <name>bonxai_ros</name>
+  <version>3.0.1</version>
+  <description>Metapackage for bonxai ros packages</description>
+  <maintainer email="enrique.aleman1998@gmail.com">enrique</maintainer>
+  <license>MPL-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>bonxai_server</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+
+</package>
