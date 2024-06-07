@@ -197,7 +197,7 @@ void BonxaiServer::insertCloudCallback(const PointCloud2::ConstSharedPtr cloud)
 
   const pcl::PointXYZ sensor_to_world_vec3(t.x, t.y, t.z);
 
-  bonxai_->insertPointCloud(pc.points, sensor_to_world_vec3, 30.0);
+  bonxai_->insertPointCloud(pc.points, sensor_to_world_vec3, max_range_);
 
   double total_elapsed = (rclcpp::Clock{}.now() - start_time).seconds();
   RCLCPP_DEBUG(
