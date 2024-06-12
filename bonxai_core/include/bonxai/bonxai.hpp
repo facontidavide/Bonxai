@@ -267,13 +267,13 @@ template <typename DataT>
 class VoxelGrid
 {
 public:
-  uint32_t INNER_BITS;
-  uint32_t LEAF_BITS;
-  uint32_t Log2N;
-  double resolution;
-  double inv_resolution;
-  uint32_t INNER_MASK;
-  uint32_t LEAF_MASK;
+  const uint32_t INNER_BITS;
+  const uint32_t LEAF_BITS;
+  const uint32_t Log2N;
+  const double resolution;
+  const double inv_resolution;
+  const uint32_t INNER_MASK;
+  const uint32_t LEAF_MASK;
 
   using LeafGrid = Grid<DataT>;
   using InnerGrid = Grid<std::shared_ptr<LeafGrid>>;
@@ -585,10 +585,10 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
 
 template <typename DataT>
 inline VoxelGrid<DataT>::VoxelGrid(VoxelGrid&& other)
-  : INNER_BITS(std::move(other.INNER_BITS))
-  , LEAF_BITS(std::move(other.LEAF_BITS))
+  : INNER_BITS(other.INNER_BITS)
+  , LEAF_BITS(other.LEAF_BITS)
   , Log2N(INNER_BITS + LEAF_BITS)
-  , resolution(std::move(other.resolution))
+  , resolution(other.resolution)
   , inv_resolution(1.0 / resolution)
   , INNER_MASK((1 << INNER_BITS) - 1)
   , LEAF_MASK((1 << LEAF_BITS) - 1)
@@ -600,10 +600,10 @@ inline VoxelGrid<DataT>::VoxelGrid(VoxelGrid&& other)
 template <typename DataT>
 inline VoxelGrid<DataT>& VoxelGrid<DataT>::operator=(VoxelGrid<DataT>&& other)
 {
-  INNER_BITS = std::move(other.INNER_BITS);
-  LEAF_BITS = std::move(other.LEAF_BITS);
+  INNER_BITS = other.INNER_BITS;
+  LEAF_BITS = other.LEAF_BITS;
   Log2N = INNER_BITS + LEAF_BITS;
-  resolution = std::move(other.resolution);
+  resolution = other.resolution;
   inv_resolution = 1.0 / resolution;
   INNER_MASK = (1 << INNER_BITS) - 1;
   LEAF_MASK = (1 << LEAF_BITS) - 1;
