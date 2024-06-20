@@ -196,9 +196,14 @@ void BonxaiServer::insertCloudCallback(const PointCloud2::ConstSharedPtr cloud)
   const auto& t = sensor_to_world_transform_stamped.transform.translation;
 
   const pcl::PointXYZ sensor_to_world_vec3(t.x, t.y, t.z);
+  if (max_range_ >= 0)
+  {
+    bonxai_->insertPointCloud(pc.points, sensor_to_world_vec3, max_range_);
+  } else
+  {
+    bonxai_->insertPointCloud(pc.points, sensor_to_world_vec3, std::numeric_limits<double>::infinity());
 
-  bonxai_->insertPointCloud(pc.points, sensor_to_world_vec3, 30.0);
-
+  }
   double total_elapsed = (rclcpp::Clock{}.now() - start_time).seconds();
   RCLCPP_DEBUG(
       get_logger(), "Pointcloud insertion in Bonxai done, %f sec)", total_elapsed);
