@@ -689,7 +689,7 @@ inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT& coord,
     prev_inner_coord_ = inner_key;
   }
   uint32_t index = grid_.getLeafIndex(coord);
-  bool was_on = prev_leaf_ptr_->mask.setOn(index);
+  bool was_on = prev_leaf_ptr_->mask().setOn(index);
   if (!was_on)
   {
     prev_leaf_ptr_->cell(index) = default_value;
@@ -711,7 +711,7 @@ inline bool VoxelGrid<DataT>::Accessor::setCellOff(const CoordT& coord)
   if (prev_leaf_ptr_)
   {
     uint32_t index = grid_.getLeafIndex(coord);
-    return prev_leaf_ptr_->mask.setOff(index);
+    return prev_leaf_ptr_->mask().setOff(index);
   }
   return false;
 }
