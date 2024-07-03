@@ -267,13 +267,13 @@ template <typename DataT>
 class VoxelGrid
 {
 public:
-  const uint32_t INNER_BITS;
-  const uint32_t LEAF_BITS;
-  const uint32_t Log2N;
-  const double resolution;
-  const double inv_resolution;
-  const uint32_t INNER_MASK;
-  const uint32_t LEAF_MASK;
+  uint32_t INNER_BITS;
+  uint32_t LEAF_BITS;
+  uint32_t Log2N;
+  double resolution;
+  double inv_resolution;
+  uint32_t INNER_MASK;
+  uint32_t LEAF_MASK;
 
   using LeafGrid = Grid<DataT>;
   using InnerGrid = Grid<std::shared_ptr<LeafGrid>>;
@@ -288,6 +288,10 @@ public:
    * CoordT
    */
   VoxelGrid(double voxel_size, uint8_t inner_bits = 2, uint8_t leaf_bits = 3);
+
+  VoxelGrid(VoxelGrid<DataT>&& other);
+
+  VoxelGrid<DataT>& operator=(VoxelGrid<DataT>&& other);
 
   /// @brief getMemoryUsage returns the amount of bytes used by this data structure
   [[nodiscard]] size_t memUsage() const;
@@ -577,6 +581,34 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
     throw std::runtime_error(
         "The minimum value of the inner_bits and leaf_bits should be 1");
   }
+}
+
+template <typename DataT>
+inline VoxelGrid<DataT>::VoxelGrid(VoxelGrid&& other)
+  : INNER_BITS(std::move(other.INNER_BITS))
+  , LEAF_BITS(std::move(other.LEAF_BITS))
+  , Log2N(INNER_BITS + LEAF_BITS)
+  , resolution(std::move(other.resolution))
+  , inv_resolution(1.0 / resolution)
+  , INNER_MASK((1 << INNER_BITS) - 1)
+  , LEAF_MASK((1 << LEAF_BITS) - 1)
+  , root_map(std::move(other.root_map))
+{
+
+}
+
+template <typename DataT>
+inline VoxelGrid<DataT>& VoxelGrid<DataT>::operator=(VoxelGrid<DataT>&& other)
+{
+  INNER_BITS = std::move(other.INNER_BITS);
+  LEAF_BITS = std::move(other.LEAF_BITS);
+  Log2N = INNER_BITS + LEAF_BITS;
+  resolution = std::move(other.resolution);
+  inv_resolution = 1.0 / resolution;
+  INNER_MASK = (1 << INNER_BITS) - 1;
+  LEAF_MASK = (1 << LEAF_BITS) - 1;
+  root_map = std::move(other.root_map);
+  return *this;
 }
 
 template <typename DataT>
