@@ -296,16 +296,16 @@ public:
   [[nodiscard]] size_t activeCellsCount() const;
 
   /// @brief posToCoord is used to convert real coordinates to CoordT indices.
-  [[nodiscard]] CoordT posToCoord(double x, double y, double z);
+  [[nodiscard]] CoordT posToCoord(double x, double y, double z) const;
 
   /// @brief posToCoord is used to convert real coordinates to CoordT indices.
-  [[nodiscard]] CoordT posToCoord(const Point3D& pos)
+  [[nodiscard]] CoordT posToCoord(const Point3D& pos) const
   {
     return posToCoord(pos.x, pos.y, pos.z);
   }
 
   /// @brief coordToPos converts CoordT indices to Point3D.
-  [[nodiscard]] Point3D coordToPos(const CoordT& coord);
+  [[nodiscard]] Point3D coordToPos(const CoordT& coord) const;
 
   /**
    *  @brief forEachCell apply a function of type:
@@ -389,13 +389,13 @@ public:
 
   Accessor createAccessor() { return Accessor(*this); }
 
-  [[nodiscard]] CoordT getRootKey(const CoordT& coord);
+  [[nodiscard]] CoordT getRootKey(const CoordT& coord) const;
 
-  [[nodiscard]] CoordT getInnerKey(const CoordT& coord);
+  [[nodiscard]] CoordT getInnerKey(const CoordT& coord) const;
 
-  [[nodiscard]] uint32_t getInnerIndex(const CoordT& coord);
+  [[nodiscard]] uint32_t getInnerIndex(const CoordT& coord) const;
 
-  [[nodiscard]] uint32_t getLeafIndex(const CoordT& coord);
+  [[nodiscard]] uint32_t getLeafIndex(const CoordT& coord) const;
 };
 
 //----------------------------------------------------
@@ -580,7 +580,7 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
 }
 
 template <typename DataT>
-inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z)
+inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z) const
 {
   return { static_cast<int32_t>(x * inv_resolution - std::signbit(x)),
            static_cast<int32_t>(y * inv_resolution - std::signbit(y)),
@@ -588,7 +588,7 @@ inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z)
 }
 
 template <typename DataT>
-inline Point3D VoxelGrid<DataT>::coordToPos(const CoordT& coord)
+inline Point3D VoxelGrid<DataT>::coordToPos(const CoordT& coord) const
 {
   return { (static_cast<double>(coord.x) + 0.5) * resolution,
            (static_cast<double>(coord.y) + 0.5) * resolution,
@@ -596,21 +596,21 @@ inline Point3D VoxelGrid<DataT>::coordToPos(const CoordT& coord)
 }
 
 template <typename DataT>
-inline CoordT VoxelGrid<DataT>::getRootKey(const CoordT& coord)
+inline CoordT VoxelGrid<DataT>::getRootKey(const CoordT& coord) const
 {
   const int32_t MASK = ~((1 << Log2N) - 1);
   return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
 }
 
 template <typename DataT>
-inline CoordT VoxelGrid<DataT>::getInnerKey(const CoordT& coord)
+inline CoordT VoxelGrid<DataT>::getInnerKey(const CoordT& coord) const
 {
   const int32_t MASK = ~((1 << LEAF_BITS) - 1);
   return { coord.x & MASK, coord.y & MASK, coord.z & MASK };
 }
 
 template <typename DataT>
-inline uint32_t VoxelGrid<DataT>::getInnerIndex(const CoordT& coord)
+inline uint32_t VoxelGrid<DataT>::getInnerIndex(const CoordT& coord) const
 {
   // clang-format off
   return ((coord.x >> LEAF_BITS) & INNER_MASK) |
@@ -620,7 +620,7 @@ inline uint32_t VoxelGrid<DataT>::getInnerIndex(const CoordT& coord)
 }
 
 template <typename DataT>
-inline uint32_t VoxelGrid<DataT>::getLeafIndex(const CoordT& coord)
+inline uint32_t VoxelGrid<DataT>::getLeafIndex(const CoordT& coord) const
 {
   // clang-format off
   return (coord.x & LEAF_MASK) |
