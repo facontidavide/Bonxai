@@ -91,16 +91,16 @@ struct CoordT
 
 [[nodiscard]] inline CoordT PosToCoord(const Point3D& point, double inv_resolution)
 {
-  return { int32_t(point.x * inv_resolution) - std::signbit(point.x),
-           int32_t(point.y * inv_resolution) - std::signbit(point.y),
-           int32_t(point.z * inv_resolution) - std::signbit(point.z) };
+  return { static_cast<int32_t>(std::nearbyint(point.x * inv_resolution)),
+           static_cast<int32_t>(std::nearbyint(point.y * inv_resolution)),
+           static_cast<int32_t>(std::nearbyint(point.z * inv_resolution)) };
 }
 
 [[nodiscard]] inline Point3D CoordToPos(const CoordT& coord, double resolution)
 {
-  return { (static_cast<double>(coord.x) + 0.5) * resolution,
-           (static_cast<double>(coord.y) + 0.5) * resolution,
-           (static_cast<double>(coord.z) + 0.5) * resolution };
+  return { (static_cast<double>(coord.x)) * resolution,
+           (static_cast<double>(coord.y)) * resolution,
+           (static_cast<double>(coord.z)) * resolution };
 }
 
 //----------------------------------------------------------
@@ -582,17 +582,17 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
 template <typename DataT>
 inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z) const
 {
-  return { static_cast<int32_t>(x * inv_resolution - std::signbit(x)),
-           static_cast<int32_t>(y * inv_resolution - std::signbit(y)),
-           static_cast<int32_t>(z * inv_resolution - std::signbit(z)) };
+  return { static_cast<int32_t>(std::nearbyint(x * inv_resolution)),
+           static_cast<int32_t>(std::nearbyint(y * inv_resolution)),
+           static_cast<int32_t>(std::nearbyint(z * inv_resolution)) };
 }
 
 template <typename DataT>
 inline Point3D VoxelGrid<DataT>::coordToPos(const CoordT& coord) const
 {
-  return { (static_cast<double>(coord.x) + 0.5) * resolution,
-           (static_cast<double>(coord.y) + 0.5) * resolution,
-           (static_cast<double>(coord.z) + 0.5) * resolution };
+  return { (static_cast<double>(coord.x)) * resolution,
+           (static_cast<double>(coord.y)) * resolution,
+           (static_cast<double>(coord.z)) * resolution };
 }
 
 template <typename DataT>
