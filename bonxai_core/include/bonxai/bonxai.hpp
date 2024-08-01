@@ -310,12 +310,25 @@ public:
   /**
    *  @brief forEachCell apply a function of type:
    *
-   *      void(DataT*, const CoordT&)
+   *      void(const DataT&, const CoordT&)
    *
    * to each active element of the grid.
    */
   template <class VisitorFunction>
-  void forEachCell(VisitorFunction func);
+  void forEachCell(VisitorFunction func) const;
+
+  /**
+   *  @brief forEachCell apply a function of type:
+   *
+   *      void(DataT&, const CoordT&)
+   *
+   * to each active element of the grid.
+   */
+  template <class VisitorFunction>
+  void forEachCell(VisitorFunction func)
+  {
+    static_cast<const VoxelGrid*>(this)->forEachCell(func);
+  }
 
 
   class ConstAccessor
@@ -893,7 +906,7 @@ inline size_t VoxelGrid<DataT>::activeCellsCount() const
 //----------------------------------
 template <typename DataT>
 template <class VisitorFunction>
-inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func)
+inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func) const
 {
   const int32_t MASK_LEAF = ((1 << LEAF_BITS) - 1);
   const int32_t MASK_INNER = ((1 << INNER_BITS) - 1);
@@ -901,8 +914,8 @@ inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func)
   for (auto& map_it : root_map)
   {
     const auto& [xA, yA, zA] = (map_it.first);
-    InnerGrid& inner_grid = map_it.second;
-    auto& mask2 = inner_grid.mask();
+    const InnerGrid& inner_grid = map_it.second;
+    const auto& mask2 = inner_grid.mask();
 
     for (auto inner_it = mask2.beginOn(); inner_it; ++inner_it)
     {
@@ -914,8 +927,8 @@ inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func)
       int32_t zB = zA | (((inner_index >> (INNER_BITS_2)) & MASK_INNER) << LEAF_BITS);
       // clang-format on
 
-      auto& leaf_grid = inner_grid.cell(inner_index);
-      auto& mask1 = leaf_grid->mask();
+      const auto& leaf_grid = inner_grid.cell(inner_index);
+      const auto& mask1 = leaf_grid->mask();
 
       for (auto leaf_it = mask1.beginOn(); leaf_it; ++leaf_it)
       {
