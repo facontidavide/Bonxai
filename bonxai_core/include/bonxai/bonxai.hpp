@@ -317,16 +317,46 @@ public:
   template <class VisitorFunction>
   void forEachCell(VisitorFunction func);
 
+
+  class ConstAccessor
+  {
+  public:
+    ConstAccessor(const VoxelGrid& grid)
+      : grid_(grid) {}
+
+    /** @brief value getter.
+     *
+     * @param coord   coordinate of the cell.
+     * @return        return the pointer to the value or nullptr if not set.
+     */
+    [[nodiscard]] const DataT* value(const CoordT& coord) const;
+
+    /// @brief lastInnerGrid returns the pointer to the InnerGrid in the cache.
+    [[nodiscard]] const InnerGrid* lastInnerGrid() const { return prev_inner_ptr_; }
+
+    /// @brief lastLeafGrid returns the pointer to the LeafGrid in the cache.
+    [[nodiscard]] const LeafGrid* lastLeafGrid() const { return prev_leaf_ptr_; }
+
+    [[nodiscard]] const LeafGrid* getLeafGrid(const CoordT& coord) const;
+
+  protected:
+    const VoxelGrid& grid_;
+    mutable CoordT prev_root_coord_ = { std::numeric_limits<int32_t>::max(), 0, 0 };
+    mutable CoordT prev_inner_coord_ = { std::numeric_limits<int32_t>::max(), 0, 0 };
+    mutable InnerGrid* prev_inner_ptr_ = nullptr;
+    mutable LeafGrid* prev_leaf_ptr_ = nullptr;
+  };
+
   /** Class to be used to set and get values of a cell of the Grid.
    *  It uses caching to speed up computation.
    *
    *  Create an instance of this object with the method VoxelGrid::createAccessor()
    */
-  class Accessor
+  class Accessor : public ConstAccessor
   {
   public:
     Accessor(VoxelGrid& grid)
-      : grid_(grid)
+      : ConstAccessor(grid), mutable_grid_(grid)
     {}
 
     /**
@@ -362,12 +392,6 @@ public:
      */
     bool setCellOff(const CoordT& coord);
 
-    /// @brief lastInnerdGrid returns the pointer to the InnerGrid in the cache.
-    [[nodiscard]] const InnerGrid* lastInnerdGrid() const { return prev_inner_ptr_; }
-
-    /// @brief lastLeafGrid returns the pointer to the LeafGrid in the cache.
-    [[nodiscard]] const LeafGrid* lastLeafGrid() const { return prev_leaf_ptr_; }
-
     /**
      * @brief getLeafGrid gets the pointer to the LeafGrid containing the cell.
      * It is the basic class used by setValue() and value().
@@ -380,7 +404,7 @@ public:
                                         bool create_if_missing = false);
 
   private:
-    VoxelGrid& grid_;
+    VoxelGrid& mutable_grid_;
     CoordT prev_root_coord_ = { std::numeric_limits<int32_t>::max(), 0, 0 };
     CoordT prev_inner_coord_ = { std::numeric_limits<int32_t>::max(), 0, 0 };
     InnerGrid* prev_inner_ptr_ = nullptr;
@@ -388,6 +412,8 @@ public:
   };
 
   Accessor createAccessor() { return Accessor(*this); }
+
+  ConstAccessor createConstAccessor() { return Accessor(*this); }
 
   [[nodiscard]] CoordT getRootKey(const CoordT& coord) const;
 
@@ -633,14 +659,14 @@ template <typename DataT>
 inline bool VoxelGrid<DataT>::Accessor::setValue(const CoordT& coord,
                                                  const DataT& value)
 {
-  const CoordT inner_key = grid_.getInnerKey(coord);
+  const CoordT inner_key = mutable_grid_.getInnerKey(coord);
   if (inner_key != prev_inner_coord_ || prev_leaf_ptr_ == nullptr)
   {
     prev_leaf_ptr_ = getLeafGrid(coord, true);
     prev_inner_coord_ = inner_key;
   }
 
-  const uint32_t index = grid_.getLeafIndex(coord);
+  const uint32_t index = mutable_grid_.getLeafIndex(coord);
   const bool was_on = prev_leaf_ptr_->mask().setOn(index);
   prev_leaf_ptr_->cell(index) = value;
   return was_on;
@@ -651,7 +677,7 @@ template <typename DataT>
 inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord,
                                                 bool create_if_missing)
 {
-  const CoordT inner_key = grid_.getInnerKey(coord);
+  const CoordT inner_key = mutable_grid_.getInnerKey(coord);
 
   if (inner_key != prev_inner_coord_)
   {
@@ -661,7 +687,7 @@ inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord,
 
   if (prev_leaf_ptr_)
   {
-    const uint32_t index = grid_.getLeafIndex(coord);
+    const uint32_t index = mutable_grid_.getLeafIndex(coord);
     if (prev_leaf_ptr_->mask().isOn(index))
     {
       return &(prev_leaf_ptr_->cell(index));
@@ -676,19 +702,41 @@ inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord,
   return nullptr;
 }
 
+template <typename DataT>
+inline const DataT* VoxelGrid<DataT>::ConstAccessor::value(const CoordT& coord) const {
+  const CoordT inner_key = grid_.getInnerKey(coord);
+
+  if (inner_key != prev_inner_coord_)
+  {
+    prev_leaf_ptr_ = getLeafGrid(coord);
+    prev_inner_coord_ = inner_key;
+  }
+
+  if (prev_leaf_ptr_)
+  {
+    const uint32_t index = grid_.getLeafIndex(coord);
+    if (prev_leaf_ptr_->mask().isOn(index))
+    {
+      return &(prev_leaf_ptr_->cell(index));
+    }
+  }
+  return nullptr;
+}
+
+
 //----------------------------------
 template <typename DataT>
 inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT& coord,
                                                   const DataT& default_value)
 {
-  const CoordT inner_key = grid_.getInnerKey(coord);
+  const CoordT inner_key = mutable_grid_.getInnerKey(coord);
 
   if (inner_key != prev_inner_coord_)
   {
     prev_leaf_ptr_ = getLeafGrid(coord, true);
     prev_inner_coord_ = inner_key;
   }
-  uint32_t index = grid_.getLeafIndex(coord);
+  uint32_t index = mutable_grid_.getLeafIndex(coord);
   bool was_on = prev_leaf_ptr_->mask().setOn(index);
   if (!was_on)
   {
@@ -701,7 +749,7 @@ inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT& coord,
 template <typename DataT>
 inline bool VoxelGrid<DataT>::Accessor::setCellOff(const CoordT& coord)
 {
-  const CoordT inner_key = grid_.getInnerKey(coord);
+  const CoordT inner_key = mutable_grid_.getInnerKey(coord);
 
   if (inner_key != prev_inner_coord_)
   {
@@ -710,7 +758,7 @@ inline bool VoxelGrid<DataT>::Accessor::setCellOff(const CoordT& coord)
   }
   if (prev_leaf_ptr_)
   {
-    uint32_t index = grid_.getLeafIndex(coord);
+    uint32_t index = mutable_grid_.getLeafIndex(coord);
     return prev_leaf_ptr_->mask().setOff(index);
   }
   return false;
@@ -722,34 +770,33 @@ inline typename VoxelGrid<DataT>::LeafGrid*
 VoxelGrid<DataT>::Accessor::getLeafGrid(const CoordT& coord, bool create_if_missing)
 {
   InnerGrid* inner_ptr = prev_inner_ptr_;
-  const CoordT root_key = grid_.getRootKey(coord);
+  const CoordT root_key = mutable_grid_.getRootKey(coord);
 
   if (root_key != prev_root_coord_ || !inner_ptr)
   {
-    auto it = grid_.root_map.find(root_key);
-    if (it == grid_.root_map.end())
+    auto it = mutable_grid_.root_map.find(root_key);
+    if (it == mutable_grid_.root_map.end())
     {
       if (!create_if_missing)
       {
         return nullptr;
       }
-      it = grid_.root_map.insert({ root_key, InnerGrid(grid_.INNER_BITS) }).first;
+      it = mutable_grid_.root_map.insert({ root_key, InnerGrid(mutable_grid_.INNER_BITS) }).first;
     }
     inner_ptr = &(it->second);
-
     // update the cache
     prev_root_coord_ = root_key;
     prev_inner_ptr_ = inner_ptr;
   }
 
-  const uint32_t inner_index = grid_.getInnerIndex(coord);
+  const uint32_t inner_index = mutable_grid_.getInnerIndex(coord);
   auto& inner_data = inner_ptr->cell(inner_index);
 
   if (create_if_missing)
   {
     if (!inner_ptr->mask().setOn(inner_index))
     {
-      inner_data = std::make_shared<LeafGrid>(grid_.LEAF_BITS);
+      inner_data = std::make_shared<LeafGrid>(mutable_grid_.LEAF_BITS);
     }
   }
   else
@@ -759,7 +806,37 @@ VoxelGrid<DataT>::Accessor::getLeafGrid(const CoordT& coord, bool create_if_miss
       return nullptr;
     }
   }
+  return inner_data.get();
+}
 
+
+template <typename DataT>
+inline const typename VoxelGrid<DataT>::LeafGrid*
+VoxelGrid<DataT>::ConstAccessor::getLeafGrid(const CoordT& coord) const
+{
+  InnerGrid* inner_ptr = prev_inner_ptr_;
+  const CoordT root_key = grid_.getRootKey(coord);
+
+  if (root_key != prev_root_coord_ || !inner_ptr)
+  {
+    auto it = grid_.root_map.find(root_key);
+    if (it == grid_.root_map.end())
+    {
+      return nullptr;
+    }
+    inner_ptr = &(it->second);
+    // update the cache
+    prev_root_coord_ = root_key;
+    prev_inner_ptr_ = inner_ptr;
+  }
+
+  const uint32_t inner_index = grid_.getInnerIndex(coord);
+  auto& inner_data = inner_ptr->cell(inner_index);
+
+  if (!inner_ptr->mask().isOn(inner_index))
+  {
+    return nullptr;
+  }
   return inner_data.get();
 }
 
