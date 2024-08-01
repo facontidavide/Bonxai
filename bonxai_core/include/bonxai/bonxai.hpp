@@ -356,8 +356,8 @@ public:
     const VoxelGrid& grid_;
     mutable CoordT prev_root_coord_ = { std::numeric_limits<int32_t>::max(), 0, 0 };
     mutable CoordT prev_inner_coord_ = { std::numeric_limits<int32_t>::max(), 0, 0 };
-    mutable InnerGrid* prev_inner_ptr_ = nullptr;
-    mutable LeafGrid* prev_leaf_ptr_ = nullptr;
+    mutable const InnerGrid* prev_inner_ptr_ = nullptr;
+    mutable const LeafGrid* prev_leaf_ptr_ = nullptr;
   };
 
   /** Class to be used to set and get values of a cell of the Grid.
@@ -426,7 +426,7 @@ public:
 
   Accessor createAccessor() { return Accessor(*this); }
 
-  ConstAccessor createConstAccessor() { return Accessor(*this); }
+  ConstAccessor createConstAccessor() const { return ConstAccessor(*this); }
 
   [[nodiscard]] CoordT getRootKey(const CoordT& coord) const;
 
@@ -716,7 +716,8 @@ inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord,
 }
 
 template <typename DataT>
-inline const DataT* VoxelGrid<DataT>::ConstAccessor::value(const CoordT& coord) const {
+inline const DataT* VoxelGrid<DataT>::ConstAccessor::value(const CoordT& coord) const
+{
   const CoordT inner_key = grid_.getInnerKey(coord);
 
   if (inner_key != prev_inner_coord_)
@@ -794,7 +795,9 @@ VoxelGrid<DataT>::Accessor::getLeafGrid(const CoordT& coord, bool create_if_miss
       {
         return nullptr;
       }
-      it = mutable_grid_.root_map.insert({ root_key, InnerGrid(mutable_grid_.INNER_BITS) }).first;
+      it = mutable_grid_.root_map
+               .insert({ root_key, InnerGrid(mutable_grid_.INNER_BITS) })
+               .first;
     }
     inner_ptr = &(it->second);
     // update the cache
@@ -827,7 +830,7 @@ template <typename DataT>
 inline const typename VoxelGrid<DataT>::LeafGrid*
 VoxelGrid<DataT>::ConstAccessor::getLeafGrid(const CoordT& coord) const
 {
-  InnerGrid* inner_ptr = prev_inner_ptr_;
+  const InnerGrid* inner_ptr = prev_inner_ptr_;
   const CoordT root_key = grid_.getRootKey(coord);
 
   if (root_key != prev_root_coord_ || !inner_ptr)
@@ -844,7 +847,7 @@ VoxelGrid<DataT>::ConstAccessor::getLeafGrid(const CoordT& coord) const
   }
 
   const uint32_t inner_index = grid_.getInnerIndex(coord);
-  auto& inner_data = inner_ptr->cell(inner_index);
+  const auto& inner_data = inner_ptr->cell(inner_index);
 
   if (!inner_ptr->mask().isOn(inner_index))
   {

@@ -40,6 +40,9 @@ int main()
   const auto& gridConstRef = grid;
   gridConstRef.forEachCell(constVisitor);
 
+  auto const_accessor = gridConstRef.createConstAccessor();
+  std::cout << "value at origing: "<< *(const_accessor.value({0, 0, 0})) << "\n";
+
   std::cout << "DONE\n";
   return 0;
 }
