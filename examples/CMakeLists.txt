@@ -1,4 +1,13 @@
 
+add_executable(visitors visitors.cpp)
+target_link_libraries(visitors PUBLIC bonxai_core)
+
+###############################################
+add_executable(test_serialization test_serialization.cpp)
+target_link_libraries(test_serialization PUBLIC bonxai_core)
+
+###############################################
+
 add_executable(bonxai_map_playground bonxai_map_playground.cpp)
 
 target_include_directories(bonxai_map_playground PUBLIC ${octomap_INCLUDE_DIRS})
@@ -8,8 +17,3 @@ target_link_libraries(bonxai_map_playground PUBLIC
  ${OCTOMAP_LIBRARIES}
  )
 
-###############################################
-add_executable(test_serialization test_serialization.cpp)
-
-target_link_libraries(test_serialization PUBLIC
-    bonxai_core)
