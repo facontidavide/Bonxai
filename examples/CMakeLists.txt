@@ -1,6 +1,6 @@
 
-add_executable(visitors visitors.cpp)
-target_link_libraries(visitors PUBLIC bonxai_core)
+add_executable(tutorial tutorial.cpp)
+target_link_libraries(tutorial PUBLIC bonxai_core)
 
 ###############################################
 add_executable(test_serialization test_serialization.cpp)
