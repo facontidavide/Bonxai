@@ -18,6 +18,7 @@
 #include <limits>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
