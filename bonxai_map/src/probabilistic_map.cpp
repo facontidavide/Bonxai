@@ -7,8 +7,6 @@ namespace Bonxai
 
 const int32_t ProbabilisticMap::UnknownProbability = ProbabilisticMap::logods(0.5f);
 
-
-
 VoxelGrid<ProbabilisticMap::CellT>& ProbabilisticMap::grid()
 {
   return _grid;
@@ -34,7 +32,7 @@ void ProbabilisticMap::setOptions(const Options& options)
   _options = options;
 }
 
-void ProbabilisticMap::addHitPoint(const Vector3D &point)
+void ProbabilisticMap::addHitPoint(const Vector3D& point)
 {
   const auto coord = _grid.posToCoord(point);
   CellT* cell = _accessor.value(coord, true);
@@ -49,42 +47,42 @@ void ProbabilisticMap::addHitPoint(const Vector3D &point)
   }
 }
 
-void ProbabilisticMap::addMissPoint(const Vector3D &point)
+void ProbabilisticMap::addMissPoint(const Vector3D& point)
 {
   const auto coord = _grid.posToCoord(point);
   CellT* cell = _accessor.value(coord, true);
 
   if (cell->update_id != _update_count)
   {
-    cell->probability_log = std::max(
-        cell->probability_log + _options.prob_miss_log, _options.clamp_min_log);
+    cell->probability_log = std::max(cell->probability_log + _options.prob_miss_log,
+                                     _options.clamp_min_log);
 
     cell->update_id = _update_count;
     _miss_coords.push_back(coord);
   }
 }
 
-bool ProbabilisticMap::isOccupied(const CoordT &coord) const
+bool ProbabilisticMap::isOccupied(const CoordT& coord) const
 {
-  if(auto* cell = _accessor.value(coord, false))
+  if (auto* cell = _accessor.value(coord, false))
   {
     return cell->probability_log > _options.occupancy_threshold_log;
   }
   return false;
 }
 
-bool ProbabilisticMap::isUnknown(const CoordT &coord) const
+bool ProbabilisticMap::isUnknown(const CoordT& coord) const
 {
-  if(auto* cell = _accessor.value(coord, false))
+  if (auto* cell = _accessor.value(coord, false))
   {
     return cell->probability_log == _options.occupancy_threshold_log;
   }
   return true;
 }
 
-bool ProbabilisticMap::isFree(const CoordT &coord) const
+bool ProbabilisticMap::isFree(const CoordT& coord) const
 {
-  if(auto* cell = _accessor.value(coord, false))
+  if (auto* cell = _accessor.value(coord, false))
   {
     return cell->probability_log < _options.occupancy_threshold_log;
   }
@@ -96,8 +94,7 @@ void Bonxai::ProbabilisticMap::updateFreeCells(const Vector3D& origin)
   auto accessor = _grid.createAccessor();
 
   // same as addMissPoint, but using lambda will force inlining
-  auto clearPoint = [this, &accessor](const CoordT& coord)
-  {
+  auto clearPoint = [this, &accessor](const CoordT& coord) {
     CellT* cell = accessor.value(coord, true);
     if (cell->update_id != _update_count)
     {

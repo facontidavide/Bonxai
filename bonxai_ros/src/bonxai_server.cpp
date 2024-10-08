@@ -199,10 +199,11 @@ void BonxaiServer::insertCloudCallback(const PointCloud2::ConstSharedPtr cloud)
   if (max_range_ >= 0)
   {
     bonxai_->insertPointCloud(pc.points, sensor_to_world_vec3, max_range_);
-  } else
+  }
+  else
   {
-    bonxai_->insertPointCloud(pc.points, sensor_to_world_vec3, std::numeric_limits<double>::infinity());
-
+    bonxai_->insertPointCloud(
+        pc.points, sensor_to_world_vec3, std::numeric_limits<double>::infinity());
   }
   double total_elapsed = (rclcpp::Clock{}.now() - start_time).seconds();
   RCLCPP_DEBUG(
@@ -257,7 +258,8 @@ void BonxaiServer::publishAll(const rclcpp::Time& rostime)
   bool publish_point_cloud =
       (latched_topics_ ||
        point_cloud_pub_->get_subscription_count() +
-       point_cloud_pub_->get_intra_process_subscription_count() > 0);
+               point_cloud_pub_->get_intra_process_subscription_count() >
+           0);
 
   // init pointcloud for occupied space:
   if (publish_point_cloud)
@@ -267,7 +269,7 @@ void BonxaiServer::publishAll(const rclcpp::Time& rostime)
 
     for (const auto& voxel : bonxai_result)
     {
-      if(voxel.z() >= occupancy_min_z_ && voxel.z() <= occupancy_max_z_)
+      if (voxel.z() >= occupancy_min_z_ && voxel.z() <= occupancy_max_z_)
       {
         pcl_cloud.push_back(PCLPoint(voxel.x(), voxel.y(), voxel.z()));
       }
@@ -278,7 +280,9 @@ void BonxaiServer::publishAll(const rclcpp::Time& rostime)
     cloud.header.frame_id = world_frame_id_;
     cloud.header.stamp = rostime;
     point_cloud_pub_->publish(cloud);
-    RCLCPP_WARN(get_logger(), "Published occupancy grid with %ld voxels", pcl_cloud.points.size());
+    RCLCPP_WARN(get_logger(),
+                "Published occupancy grid with %ld voxels",
+                pcl_cloud.points.size());
   }
 }
 

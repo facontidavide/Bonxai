@@ -69,4 +69,3 @@ static void Octomap_IterateAllCells(benchmark::State& state)
 BENCHMARK(Octomap_Create)->Arg(0)->Arg(1)->MinTime(1);
 BENCHMARK(Octomap_Update)->Arg(0)->Arg(1)->MinTime(1);
 BENCHMARK(Octomap_IterateAllCells)->Arg(0)->Arg(1)->MinTime(1);
-

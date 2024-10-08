@@ -10,7 +10,7 @@ int main()
   auto accessor = grid.createAccessor();
 
   auto value_ptr = accessor.value({});
-  if(!value_ptr)
+  if (!value_ptr)
   {
     std::cout << "Empty as expected" << std::endl;
   }

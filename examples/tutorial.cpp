@@ -38,9 +38,11 @@ int main()
   *origin_ptr = 500;
   std::cout << "Value at (0, 0, 0): " << *origin_ptr << std::endl;
 
-  // you can also use the method value to create voxels and get their pointer in a single step
+  // you can also use the method value to create voxels and get their pointer in a
+  // single step
   bool create_voxel_if_missing = true;
-  int* far_voxel = accessor.value(grid.posToCoord(10, 10, 10), create_voxel_if_missing);
+  int* far_voxel =
+      accessor.value(grid.posToCoord(10, 10, 10), create_voxel_if_missing);
   (*far_voxel)++;
   // The value is initialized to int(), in this case 0
   std::cout << "Value at (10, 10, 10): " << *far_voxel << std::endl;
@@ -48,17 +50,18 @@ int main()
   //-------------------------------------------------
   // We need a way to iterate through all the voxels.
   // In Bonxai it is done with lambdas and calling  VoxelGrid::forEachCell
-  auto mutableVisitor = [&grid, &accessor](int& value, const Bonxai::CoordT& coord)
-  {
+  auto mutableVisitor = [&grid, &accessor](int& value, const Bonxai::CoordT& coord) {
     // this visitor will:
     // - remove all the voxels with Z < -0.1
     // - set to 1 all the voxels with Z >= -0.1
     Bonxai::Point3D pos = grid.coordToPos(coord);
-    if(pos.z < -0.1) {
-      accessor.setCellOff(coord); // disable the voxel
+    if (pos.z < -0.1)
+    {
+      accessor.setCellOff(coord);  // disable the voxel
     }
-    else {
-      value = 1; // overwite the value (mutable reference).
+    else
+    {
+      value = 1;  // overwite the value (mutable reference).
     }
   };
   grid.forEachCell(mutableVisitor);
@@ -67,9 +70,8 @@ int main()
 
   // When you have a const reference to the VoxelGrid or/and you want
   // non-mutable interfaces, you can do instead
-  auto constVisitor = [](const int& value, const Bonxai::CoordT& coord)
-  {
-    if(value < 0)
+  auto constVisitor = [](const int& value, const Bonxai::CoordT& coord) {
+    if (value < 0)
     {
       throw std::runtime_error("unexpected");
     }

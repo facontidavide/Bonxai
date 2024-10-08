@@ -90,16 +90,16 @@ inline void Serialize(std::ostream& out, const VoxelGrid<DataT>& grid)
   sprintf(header,
           "Bonxai::VoxelGrid<%s,%d,%d>(%lf)\n",
           type_name.c_str(),
-          grid.INNER_BITS,
-          grid.LEAF_BITS,
-          grid.resolution);
+          grid.innetBits(),
+          grid.leafBits(),
+          grid.voxelSize());
 
   out.write(header, std::strlen(header));
 
   //------------
-  Write(out, uint32_t(grid.root_map.size()));
+  Write(out, uint32_t(grid.rootMap().size()));
 
-  for (const auto& it : grid.root_map)
+  for (const auto& it : grid.rootMap())
   {
     const CoordT& root_coord = it.first;
     Write(out, root_coord.x);
@@ -189,11 +189,11 @@ inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info)
     root_coord.y = Read<int32_t>(input);
     root_coord.z = Read<int32_t>(input);
 
-    auto inner_it = grid.root_map.find(root_coord);
-    if (inner_it == grid.root_map.end())
+    auto inner_it = grid.rootMap().find(root_coord);
+    if (inner_it == grid.rootMap().end())
     {
       inner_it =
-          grid.root_map
+          grid.rootMap()
               .insert({ root_coord,
                         typename VoxelGrid<DataT>::InnerGrid(info.inner_bits) })
               .first;
@@ -228,4 +228,3 @@ inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info)
 }
 
 }  // namespace Bonxai
-

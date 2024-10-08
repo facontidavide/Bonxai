@@ -16,4 +16,3 @@ target_link_libraries(bonxai_map_playground PUBLIC
  bonxai_map
  ${OCTOMAP_LIBRARIES}
  )
-

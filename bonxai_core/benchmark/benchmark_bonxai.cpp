@@ -80,6 +80,5 @@ BENCHMARK(Bonxai_Create)->Arg(0)->Arg(1)->MinTime(1);
 BENCHMARK(Bonxai_Update)->Arg(0)->Arg(1)->MinTime(1);
 BENCHMARK(Bonxai_IterateAllCells)->Arg(0)->Arg(1)->MinTime(1);
 
-
 // Run the benchmark
 BENCHMARK_MAIN();

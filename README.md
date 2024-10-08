@@ -23,16 +23,16 @@ than an Octree.
 This work is strongly influenced by [OpenVDB](https://www.openvdb.org/) and it can be considered
 an implementation of the original paper, with a couple of non-trivial changes:
 
-    K. Museth, 
+    K. Museth,
     “VDB: High-Resolution Sparse Volumes with Dynamic Topology”,
     ACM Transactions on Graphics 32(3), 2013. Presented at SIGGRAPH 2013.
-    
+
 You can read the previous paper [here](http://www.museth.org/Ken/Publications_files/Museth_TOG13.pdf).
 
 There is also some overlap with this other paper, but their implementation is much** simpler,
 even if conceptually similar:
 
-     Eurico Pedrosa, Artur Pereira, Nuno Lau 
+     Eurico Pedrosa, Artur Pereira, Nuno Lau
      "A Sparse-Dense Approach for Efficient Grid Mapping"
      2018 IEEE International Conference on Autonomous Robot Systems and Competitions (ICARSC)
 
@@ -42,19 +42,19 @@ educational purposes. Don't expect any API stability for the time being.
 
 # Benchmark (preliminary)
 
-Take these numbers with a grain of salt, since they are preliminary and the benchmark is 
+Take these numbers with a grain of salt, since they are preliminary and the benchmark is
 strongly influenced by the way the data is stored.
 Anyway, they gave you a fair idea of what you may expect, in terms of performance.
 
 ```
 -------------------------------------------
-Benchmark                     Time      
+Benchmark                     Time
 -------------------------------------------
-Bonxai_Create              1165 us  
-Octomap_Create            25522 us  
+Bonxai_Create              1165 us
+Octomap_Create            25522 us
 
-Bonxai_Update               851 us  
-Octomap_Update             3824 us  
+Bonxai_Update               851 us
+Octomap_Update             3824 us
 
 Bonxai_IterateAllCells      124 us
 Octomap_IterateAllCells     698 us
@@ -119,7 +119,7 @@ for( double x = 0; x < 1.0; x += voxel_resolution ) {
 }
 
 // You can read (or update) the value of a cell as shown below.
-// If the cell doesn't exist, `value_ptr` will be `nullptr`, 
+// If the cell doesn't exist, `value_ptr` will be `nullptr`,
 
 Bonxai::CoordT coord = grid.posToCoord(x, y, z);
 float* value_ptr = accessor.value( coord );
@@ -130,7 +130,7 @@ float* value_ptr = accessor.value( coord );
 `Bonxai::VoxelGrid` is **not** thread-safe, for write operations.
 
 If you want to access the grid in **read-only** mode, you can
-use multi-threading, but each thread should have its own 
+use multi-threading, but each thread should have its own
 `accessor`.
 
 # Roadmap
@@ -157,5 +157,3 @@ It is... complicated.
 
 If you need to store very sparse point clouds, you should expect Bonxai to use more memory (20-40% more).
 If the point cloud is relatively dense, Bonxai might use less memory than Octomap (less than half).
-
-

@@ -21,10 +21,10 @@ static void Bonxai_ComputeRay(benchmark::State& state)
 
   for (auto _ : state)
   {
-    for(const auto& p: points)
+    for (const auto& p : points)
     {
       const auto coord = Bonxai::PosToCoord(p, inv_resolution);
-      Bonxai::ComputeRay({0,0,0}, coord, ray);
+      Bonxai::ComputeRay({ 0, 0, 0 }, coord, ray);
     }
   }
 }
@@ -39,10 +39,11 @@ static void OctoMap_ComputeRay(benchmark::State& state)
 
   for (auto _ : state)
   {
-    for(const auto& p: points)
+    for (const auto& p : points)
     {
       ray.reset();
-      octree.computeRayKeys({0,0,0}, { float(p.x()), float(p.y()), float(p.z())}, ray);
+      octree.computeRayKeys(
+          { 0, 0, 0 }, { float(p.x()), float(p.y()), float(p.z()) }, ray);
     }
   }
 }

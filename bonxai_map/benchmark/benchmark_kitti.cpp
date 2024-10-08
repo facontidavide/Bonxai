@@ -19,7 +19,7 @@ long ToMsec(std::chrono::system_clock::duration const& dur)
 
 Eigen::Isometry3d ReadCalibration(const std::string& calibration_file)
 {
-  if(!std::filesystem::exists(calibration_file))
+  if (!std::filesystem::exists(calibration_file))
   {
     throw std::runtime_error("Calibration file not found");
   }
@@ -31,18 +31,17 @@ Eigen::Isometry3d ReadCalibration(const std::string& calibration_file)
 
   Eigen::Isometry3d calib;
 
-  while(std::getline(input, line))
+  while (std::getline(input, line))
   {
     Eigen::Matrix3d rot;
     Eigen::Vector3d pos;
 
     std::istringstream ss(line);
-    ss  >> header
-        >> rot(0,0) >> rot(0,1) >> rot(0,2)  >> pos(0)
-        >> rot(1,0) >> rot(1,1) >> rot(1,2)  >> pos(1)
-        >> rot(2,0) >> rot(2,1) >> rot(2,2)  >> pos(2);
+    ss >> header >> rot(0, 0) >> rot(0, 1) >> rot(0, 2) >> pos(0) >> rot(1, 0) >>
+        rot(1, 1) >> rot(1, 2) >> pos(1) >> rot(2, 0) >> rot(2, 1) >> rot(2, 2) >>
+        pos(2);
 
-    if(header == "Tr:")
+    if (header == "Tr:")
     {
       calib = Eigen::Translation3d(pos) * Eigen::Quaterniond(rot);
       return calib;
@@ -54,7 +53,7 @@ Eigen::Isometry3d ReadCalibration(const std::string& calibration_file)
 
 std::vector<Eigen::Isometry3d> ReadPoses(const std::string& poses_file)
 {
-  if(!std::filesystem::exists(poses_file))
+  if (!std::filesystem::exists(poses_file))
   {
     throw std::runtime_error("Calibration file not found");
   }
@@ -64,15 +63,14 @@ std::vector<Eigen::Isometry3d> ReadPoses(const std::string& poses_file)
 
   std::vector<Eigen::Isometry3d> poses;
 
-  while(std::getline(input, line))
+  while (std::getline(input, line))
   {
     Eigen::Matrix3d rot;
     Eigen::Vector3d pos;
 
     std::istringstream ss(line);
-    ss  >> rot(0,0) >> rot(0,1) >> rot(0,2)  >> pos(0)
-        >> rot(1,0) >> rot(1,1) >> rot(1,2)  >> pos(1)
-        >> rot(2,0) >> rot(2,1) >> rot(2,2)  >> pos(2);
+    ss >> rot(0, 0) >> rot(0, 1) >> rot(0, 2) >> pos(0) >> rot(1, 0) >> rot(1, 1) >>
+        rot(1, 2) >> pos(1) >> rot(2, 0) >> rot(2, 1) >> rot(2, 2) >> pos(2);
 
     poses.emplace_back(Eigen::Translation3d(pos) * Eigen::Quaterniond(rot));
   }
@@ -89,34 +87,40 @@ void ReadPointcloud(const std::string& cloud_file,
   points.clear();
   while (input.good() && !input.eof())
   {
-    Eigen::Vector3f point; // must be float
+    Eigen::Vector3f point;  // must be float
     float intensity;
-    input.read((char *) &point.x(), sizeof(float));
-    input.read((char *) &point.y(), sizeof(float));
-    input.read((char *) &point.z(), sizeof(float));
-    input.read((char *) &intensity, sizeof(float));
+    input.read((char*)&point.x(), sizeof(float));
+    input.read((char*)&point.y(), sizeof(float));
+    input.read((char*)&point.z(), sizeof(float));
+    input.read((char*)&intensity, sizeof(float));
 
     // apply transform first
     const Eigen::Vector3d p = transform * point.cast<double>();
-    points.push_back( {Real(p.x()), Real(p.y()), Real(p.z())} );
+    points.push_back({ Real(p.x()), Real(p.y()), Real(p.z()) });
   }
 }
-
 
 //-----------------------------------------------------------
 int main(int argc, char** argv)
 {
   cxxopts::Options options("Kitti benchmarks", "ctomap VS Bonxai");
 
-  options.add_options()
-      ("clouds", "Pointcloud folder path", cxxopts::value<std::string>())
-      ("calib", "Calibration file path", cxxopts::value<std::string>())
-      ("poses", "Poses file path", cxxopts::value<std::string>())
-      ("max_files", "Max files to process", cxxopts::value<size_t>()->default_value("1000"))
-      ("max_dist", "Max distance in meters", cxxopts::value<double>()->default_value("25.0"))
-      ("voxel_size", "Voxel size in meters", cxxopts::value<double>()->default_value("0.2"))
-      ("skip_octree", "Do not compute the octree", cxxopts::value<bool>()->default_value("false"))
-      ;
+  options.add_options()(
+      "clouds", "Pointcloud folder path", cxxopts::value<std::string>())(
+      "calib", "Calibration file path", cxxopts::value<std::string>())(
+      "poses", "Poses file path", cxxopts::value<std::string>())(
+      "max_files",
+      "Max files to process",
+      cxxopts::value<size_t>()->default_value("1000"))(
+      "max_dist",
+      "Max distance in meters",
+      cxxopts::value<double>()->default_value("25.0"))(
+      "voxel_size",
+      "Voxel size in meters",
+      cxxopts::value<double>()->default_value("0.2"))(
+      "skip_octree",
+      "Do not compute the octree",
+      cxxopts::value<bool>()->default_value("false"));
   const auto options_res = options.parse(argc, argv);
 
   const auto velodyne_path = options_res["clouds"].as<std::string>();
@@ -127,8 +131,8 @@ int main(int argc, char** argv)
   auto max_pointclouds = options_res["max_files"].as<size_t>();
   const auto skip_octree = options_res["skip_octree"].as<bool>();
 
-  if (options_res.count("pc") || velodyne_path.empty() ||
-      poses_file.empty() || calibration_file.empty())
+  if (options_res.count("pc") || velodyne_path.empty() || poses_file.empty() ||
+      calibration_file.empty())
   {
     std::cout << options.help() << std::endl;
     exit(0);
@@ -181,10 +185,10 @@ int main(int argc, char** argv)
   std::vector<Bonxai::CoordT> free_coords;
   bonxai_map.getFreeVoxels(free_coords);
   std::cout << "free cells: " << free_coords.size() << std::endl;
-  std::cout << "bonxai_result.pcd contains " << bonxai_result.size()
-            << " points\n" << std::endl;
+  std::cout << "bonxai_result.pcd contains " << bonxai_result.size() << " points\n"
+            << std::endl;
 
-  if(!bonxai_result.empty())
+  if (!bonxai_result.empty())
   {
     Bonxai::WritePointsFromPCD("bonxai_result.pcd", bonxai_result);
   }
@@ -192,7 +196,7 @@ int main(int argc, char** argv)
   std::cout << "//-----------------------------------------\n";
   //----------------------------------------------------
 
-  if(!skip_octree)
+  if (!skip_octree)
   {
     for (size_t count = 0; count < cloud_filenames.size(); count++)
     {
@@ -210,7 +214,8 @@ int main(int argc, char** argv)
       octree.insertPointCloud(pointcloud, origin, max_distance, false, true);
 
       const auto diff = ToMsec(std::chrono::system_clock::now() - t1);
-      std::cout << "[" << filename << "] octree time: " << diff << " ms" << std::endl;
+      std::cout << "[" << filename << "] octree time: " << diff << " ms"
+                << std::endl;
       total_time_octree += diff;
     }
 
@@ -221,17 +226,20 @@ int main(int argc, char** argv)
     int free_cell_count = 0;
     for (auto it = octree.begin(), end = octree.end(); it != end; ++it)
     {
-      if (octree.isNodeOccupied(*it)){
-        octree_result.push_back( {it.getX(), it.getY(), it.getZ()} );
+      if (octree.isNodeOccupied(*it))
+      {
+        octree_result.push_back({ it.getX(), it.getY(), it.getZ() });
       }
-      else {
+      else
+      {
         free_cell_count++;
       }
     }
     std::cout << "free cells: " << free_cell_count << std::endl;
     std::cout << "octomap_result.pcd contains " << octree_result.size()
-              << " points\n" << std::endl;
-    if(!octree_result.empty())
+              << " points\n"
+              << std::endl;
+    if (!octree_result.empty())
     {
       Bonxai::WritePointsFromPCD("octomap_result.pcd", octree_result);
     }
@@ -239,7 +247,8 @@ int main(int argc, char** argv)
     std::cout << "\nMemory used. octree: " << int(octree.memoryUsage() / 1000)
               << " Kb / bonxai: " << int(bonxai_map.grid().memUsage() / 1000)
               << " Kb" << std::endl;
-    printf("speed up: %.1f X\n", double(total_time_octree) / double(total_time_bonxai));
+    printf("speed up: %.1f X\n",
+           double(total_time_octree) / double(total_time_bonxai));
   }
 
   return 0;

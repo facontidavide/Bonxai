@@ -77,13 +77,13 @@ if ( ament_cmake_FOUND )
 
     ament_auto_package(
       INSTALL_TO_SHARE
-      bonxai_ros/launch 
-      bonxai_ros/rviz 
-      bonxai_ros/params 
+      bonxai_ros/launch
+      bonxai_ros/rviz
+      bonxai_ros/params
     )
 
 else()
 
   message(STATUS "Building with cmake")
-  
+
 endif()

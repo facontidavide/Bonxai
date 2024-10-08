@@ -266,20 +266,19 @@ public:
 template <typename DataT>
 class VoxelGrid
 {
-public:
-  const uint32_t INNER_BITS;
-  const uint32_t LEAF_BITS;
-  const uint32_t Log2N;
-  const double resolution;
-  const double inv_resolution;
-  const uint32_t INNER_MASK;
-  const uint32_t LEAF_MASK;
+private:
+  uint32_t INNER_BITS;
+  uint32_t LEAF_BITS;
+  uint32_t Log2N;
+  double resolution;
+  double inv_resolution;
+  uint32_t INNER_MASK;
+  uint32_t LEAF_MASK;
 
+public:
   using LeafGrid = Grid<DataT>;
   using InnerGrid = Grid<std::shared_ptr<LeafGrid>>;
   using RootMap = std::unordered_map<CoordT, InnerGrid>;
-
-  RootMap root_map;
 
   /**
    * @brief VoxelGrid constructor
@@ -287,10 +286,28 @@ public:
    * @param voxel_size  dimension of the voxel. Used to convert between Point3D and
    * CoordT
    */
-  VoxelGrid(double voxel_size, uint8_t inner_bits = 2, uint8_t leaf_bits = 3);
+  explicit VoxelGrid(double voxel_size,
+                     uint8_t inner_bits = 2,
+                     uint8_t leaf_bits = 3);
+
+  VoxelGrid(const VoxelGrid&) = delete;
+  VoxelGrid& operator=(const VoxelGrid&) = delete;
+
+  VoxelGrid(VoxelGrid&& other) = default;
+  VoxelGrid& operator=(VoxelGrid&& other) = default;
+
+  uint32_t innetBits() const { return INNER_BITS; }
+  uint32_t leafBits() const { return LEAF_BITS; }
+  double voxelSize() const { return resolution; }
+
+  const RootMap& rootMap() const { return root_map; }
+  RootMap& rootMap() { return root_map; }
 
   /// @brief getMemoryUsage returns the amount of bytes used by this data structure
   [[nodiscard]] size_t memUsage() const;
+
+  /// @brief free memory, by removing inner/leaf grids where all the cells are Off
+  void freeMemory();
 
   /// @brief Return the total number of active cells
   [[nodiscard]] size_t activeCellsCount() const;
@@ -330,12 +347,12 @@ public:
     static_cast<const VoxelGrid*>(this)->forEachCell(func);
   }
 
-
   class ConstAccessor
   {
   public:
     ConstAccessor(const VoxelGrid& grid)
-      : grid_(grid) {}
+      : grid_(grid)
+    {}
 
     /** @brief value getter.
      *
@@ -369,7 +386,8 @@ public:
   {
   public:
     Accessor(VoxelGrid& grid)
-      : ConstAccessor(grid), mutable_grid_(grid)
+      : ConstAccessor(grid)
+      , mutable_grid_(grid)
     {}
 
     /**
@@ -435,6 +453,9 @@ public:
   [[nodiscard]] uint32_t getInnerIndex(const CoordT& coord) const;
 
   [[nodiscard]] uint32_t getLeafIndex(const CoordT& coord) const;
+
+private:
+  RootMap root_map;
 };
 
 //----------------------------------------------------
@@ -737,7 +758,6 @@ inline const DataT* VoxelGrid<DataT>::ConstAccessor::value(const CoordT& coord) 
   return nullptr;
 }
 
-
 //----------------------------------
 template <typename DataT>
 inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT& coord,
@@ -825,7 +845,6 @@ VoxelGrid<DataT>::Accessor::getLeafGrid(const CoordT& coord, bool create_if_miss
   return inner_data.get();
 }
 
-
 template <typename DataT>
 inline const typename VoxelGrid<DataT>::LeafGrid*
 VoxelGrid<DataT>::ConstAccessor::getLeafGrid(const CoordT& coord) const
@@ -887,6 +906,33 @@ inline size_t VoxelGrid<DataT>::memUsage() const
     }
   }
   return total_size;
+}
+
+template <typename DataT>
+inline void VoxelGrid<DataT>::freeMemory()
+{
+  std::vector<CoordT> keys_to_delete;
+  for (const auto& [key, inner_grid] : root_map)
+  {
+    for (auto inner_it = inner_grid.mask().beginOn(); inner_it; ++inner_it)
+    {
+      const int32_t inner_index = *inner_it;
+      auto& leaf_grid = inner_grid.cell(inner_index);
+      if (leaf_grid->mask().isOff())
+      {
+        inner_grid.mask().setOff(inner_index);
+        leaf_grid.reset();
+      }
+    }
+    if (inner_grid.mask().isOff())
+    {
+      keys_to_delete.push_back(key);
+    }
+  }
+  for (const auto& key : keys_to_delete)
+  {
+    root_map.erase(key);
+  }
 }
 
 template <typename DataT>

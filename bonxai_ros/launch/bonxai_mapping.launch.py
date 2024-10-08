@@ -15,7 +15,7 @@ def generate_launch_description():
         'params',
         'bonxai_params.yaml'
         )
-        
+
     # Bonxai Server Node
     bonxai_node = Node(
         package=package,
@@ -39,7 +39,7 @@ def generate_launch_description():
 
     # Launch Nodes
     return LaunchDescription(
-        [            
+        [
             bonxai_node,
             rviz_node,
         ]
