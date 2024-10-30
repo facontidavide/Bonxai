@@ -1287,7 +1287,9 @@ struct hash<Bonxai::CoordT>
   std::size_t operator()(const Bonxai::CoordT& p) const
   {
     // same as OpenVDB
-    return ((1 << 20) - 1) & (p.x * 73856093 ^ p.y * 19349663 ^ p.z * 83492791);
+    return ((1 << 20) - 1) & (static_cast<int64_t>(p.x) * 73856093 ^
+                              static_cast<int64_t>(p.y) * 19349663 ^
+                              static_cast<int64_t>(p.z) * 83492791);
   }
 };
 }  // namespace std
