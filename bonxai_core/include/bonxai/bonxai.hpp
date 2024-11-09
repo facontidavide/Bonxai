@@ -310,8 +310,12 @@ class SimpleBlockAllocator
 {
 public:
   SimpleBlockAllocator(size_t block_bytes, int blocks_per_chunk = 1024);
+
   DataT* allocateBlock();
+
   void clear();
+
+  size_t memUsage() const;
 
 private:
   size_t blocks_per_chunk_ = 0;
@@ -679,7 +683,7 @@ template <typename DataT>
 inline size_t Grid<DataT>::memUsage() const
 {
   auto mem = mask_.memUsage() + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(DataT*);
-  if constexpr (!std::is_same_v<DataT, EmptyVoxel>)
+  if (!std::is_same_v<DataT, EmptyVoxel> && !external_memory_)
   {
     mem += sizeof(DataT) * size_;
   }
@@ -1020,6 +1024,9 @@ inline size_t VoxelGrid<DataT>::memUsage() const
       total_size += leaf_grid->memUsage();
     }
   }
+  // if we are using the memory pool, leaf_grid->memUsage() did not return the right
+  // value
+  total_size += leaf_block_allocator_.memUsage();
   return total_size;
 }
 
@@ -1415,6 +1422,12 @@ template <typename DataT>
 inline void SimpleBlockAllocator<DataT>::clear()
 {
   chunks_.clear();
+}
+
+template <typename DataT>
+inline size_t SimpleBlockAllocator<DataT>::memUsage() const
+{
+  return chunks_.size() * (sizeof(std::vector<char>) + block_bytes_);
 }
 
 template <typename DataT>
