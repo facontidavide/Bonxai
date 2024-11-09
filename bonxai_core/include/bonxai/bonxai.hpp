@@ -11,13 +11,12 @@
 
 #include <algorithm>
 #include <array>
-#include <atomic>
 #include <cmath>
 #include <cstdint>
 #include <functional>
 #include <limits>
 #include <memory>
-#include <mutex>
+#include <stdexcept>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
@@ -213,6 +212,11 @@ private:
   static uint32_t CountOn(uint64_t v);
 };
 
+// empty data structure used exclusively in BinaryVoxelGrid
+struct EmptyVoxel
+{
+};
+
 //----------------------------------------------------------
 /**
  * @brief The Grid class is used to store data in a cube.
@@ -225,21 +229,32 @@ template <typename DataT>
 class Grid
 {
 private:
-  uint8_t dim_;
+  uint8_t dim_ = 0;
   // total number of elements in the cube
-  uint32_t size_;
+  uint32_t size_ = 0;
 
   DataT* data_ = nullptr;
   Bonxai::Mask mask_;
+  bool external_memory_ = false;
 
 public:
   Grid(size_t log2dim)
     : dim_(1 << log2dim)
-    , size_(dim_ * dim_ * dim_)
     , mask_(log2dim)
   {
-    data_ = new DataT[size_];
+    if constexpr (!std::is_same_v<DataT, EmptyVoxel>)
+    {
+      size_ = dim_ * dim_ * dim_;
+      data_ = new DataT[size_];
+    }
   }
+
+  Grid(size_t log2dim, DataT* preAllocatedMemory)
+    : dim_(1 << log2dim)
+    , data_(preAllocatedMemory)
+    , mask_(log2dim)
+    , external_memory_(true)
+  {}
 
   Grid(const Grid& other) = delete;
   Grid& operator=(const Grid& other) = delete;
@@ -247,7 +262,13 @@ public:
   Grid(Grid&& other);
   Grid& operator=(Grid&& other);
 
-  ~Grid();
+  ~Grid()
+  {
+    if (!external_memory_)
+    {
+      delete[] data_;
+    }
+  }
 
   [[nodiscard]] size_t memUsage() const;
 
@@ -257,12 +278,51 @@ public:
 
   [[nodiscard]] const Bonxai::Mask& mask() const { return mask_; }
 
-  [[nodiscard]] DataT& cell(size_t index) { return data_[index]; }
+  [[nodiscard]] DataT& cell(size_t index)
+  {
+    static_assert(!std::is_same_v<DataT, EmptyVoxel>,
+                  "Cells have no value, when DataT == EmptyVoxel");
+    return data_[index];
+  }
 
-  [[nodiscard]] const DataT& cell(size_t index) const { return data_[index]; }
+  [[nodiscard]] const DataT& cell(size_t index) const
+  {
+    static_assert(!std::is_same_v<DataT, EmptyVoxel>,
+                  "Cells have no value, when DataT == EmptyVoxel");
+    return data_[index];
+  }
 };
 
 //----------------------------------------------------------
+
+enum ClearOption
+{
+  // reset the entire grid, freeing all the memory allocated so far
+  CLEAR_MEMORY,
+  // keep the memory allocated, but set all the cells to OFF
+  SET_ALL_CELLS_OFF
+};
+
+// This is a simplistic allocator that can only grow and will never
+// release memory. Good option in many cases
+template <typename DataT>
+class SimpleBlockAllocator
+{
+public:
+  SimpleBlockAllocator(size_t block_bytes, int blocks_per_chunk = 1024);
+  DataT* allocateBlock();
+  void clear();
+
+private:
+  size_t blocks_per_chunk_ = 0;
+  size_t block_bytes_ = 0;
+  size_t capacity_ = 0;
+  size_t size_ = 0;
+  std::vector<std::shared_ptr<std::vector<char>>> chunks_;
+
+  void addNewChunk();
+};
+
 template <typename DataT>
 class VoxelGrid
 {
@@ -274,6 +334,8 @@ private:
   double inv_resolution;
   uint32_t INNER_MASK;
   uint32_t LEAF_MASK;
+
+  SimpleBlockAllocator<DataT> leaf_block_allocator_;
 
 public:
   using LeafGrid = Grid<DataT>;
@@ -305,9 +367,6 @@ public:
 
   /// @brief getMemoryUsage returns the amount of bytes used by this data structure
   [[nodiscard]] size_t memUsage() const;
-
-  /// @brief free memory, by removing inner/leaf grids where all the cells are Off
-  void freeMemory();
 
   /// @brief Return the total number of active cells
   [[nodiscard]] size_t activeCellsCount() const;
@@ -347,6 +406,8 @@ public:
     static_cast<const VoxelGrid*>(this)->forEachCell(func);
   }
 
+  void clear(ClearOption opt);
+
   class ConstAccessor
   {
   public:
@@ -360,6 +421,12 @@ public:
      * @return        return the pointer to the value or nullptr if not set.
      */
     [[nodiscard]] const DataT* value(const CoordT& coord) const;
+
+    /**
+     * @brief isCellOn only check if a cell is in "On" state
+     * @param coordinate of the cell.
+     */
+    [[nodiscard]] bool isCellOn(const CoordT& coord) const;
 
     /// @brief lastInnerGrid returns the pointer to the InnerGrid in the cache.
     [[nodiscard]] const InnerGrid* lastInnerGrid() const { return prev_inner_ptr_; }
@@ -458,6 +525,7 @@ private:
   RootMap root_map;
 };
 
+using BinaryVoxelGrid = VoxelGrid<EmptyVoxel>;
 //----------------------------------------------------
 //----------------- Implementations ------------------
 //----------------------------------------------------
@@ -608,16 +676,14 @@ inline Grid<DataT>& Grid<DataT>::operator=(Grid&& other)
 }
 
 template <typename DataT>
-inline Grid<DataT>::~Grid()
-{
-  delete[] data_;
-}
-
-template <typename DataT>
 inline size_t Grid<DataT>::memUsage() const
 {
-  return mask_.memUsage() + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(DataT*) +
-         sizeof(DataT) * size_;
+  auto mem = mask_.memUsage() + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(DataT*);
+  if constexpr (!std::is_same_v<DataT, EmptyVoxel>)
+  {
+    mem += sizeof(DataT) * size_;
+  }
+  return mem;
 }
 
 template <typename DataT>
@@ -631,6 +697,8 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size,
   , inv_resolution(1.0 / resolution)
   , INNER_MASK((1 << INNER_BITS) - 1)
   , LEAF_MASK((1 << LEAF_BITS) - 1)
+  , leaf_block_allocator_((1 << LEAF_BITS) * (1 << LEAF_BITS) * (1 << LEAF_BITS) *
+                          sizeof(DataT))
 {
   if (LEAF_BITS < 1 || INNER_BITS < 1)
   {
@@ -693,6 +761,10 @@ template <typename DataT>
 inline bool VoxelGrid<DataT>::Accessor::setValue(const CoordT& coord,
                                                  const DataT& value)
 {
+  static_assert(!std::is_same_v<DataT, EmptyVoxel>,
+                "You can not access a value when using type EmptyVoxel. Use "
+                "setCellOn / setCellOff");
+
   const CoordT inner_key = mutable_grid_.getInnerKey(coord);
   if (inner_key != prev_inner_coord_ || prev_leaf_ptr_ == nullptr)
   {
@@ -711,6 +783,10 @@ template <typename DataT>
 inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord,
                                                 bool create_if_missing)
 {
+  static_assert(!std::is_same_v<DataT, EmptyVoxel>,
+                "You can not access a value when using type EmptyVoxel. Use "
+                "isCellOn / setCellOn / setCellOff");
+
   const CoordT inner_key = mutable_grid_.getInnerKey(coord);
 
   if (inner_key != prev_inner_coord_)
@@ -739,6 +815,10 @@ inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord,
 template <typename DataT>
 inline const DataT* VoxelGrid<DataT>::ConstAccessor::value(const CoordT& coord) const
 {
+  static_assert(!std::is_same_v<DataT, EmptyVoxel>,
+                "You can not access a value when using type EmptyVoxel. Use "
+                "isCellOn");
+
   const CoordT inner_key = grid_.getInnerKey(coord);
 
   if (inner_key != prev_inner_coord_)
@@ -758,6 +838,28 @@ inline const DataT* VoxelGrid<DataT>::ConstAccessor::value(const CoordT& coord) 
   return nullptr;
 }
 
+template <typename DataT>
+inline bool VoxelGrid<DataT>::ConstAccessor::isCellOn(const CoordT& coord) const
+{
+  const CoordT inner_key = grid_.getInnerKey(coord);
+
+  if (inner_key != prev_inner_coord_)
+  {
+    prev_leaf_ptr_ = getLeafGrid(coord);
+    prev_inner_coord_ = inner_key;
+  }
+
+  if (prev_leaf_ptr_)
+  {
+    const uint32_t index = grid_.getLeafIndex(coord);
+    if (prev_leaf_ptr_->mask().isOn(index))
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
 //----------------------------------
 template <typename DataT>
 inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT& coord,
@@ -772,9 +874,12 @@ inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT& coord,
   }
   uint32_t index = mutable_grid_.getLeafIndex(coord);
   bool was_on = prev_leaf_ptr_->mask().setOn(index);
-  if (!was_on)
+  if constexpr (!std::is_same_v<DataT, EmptyVoxel>)
   {
-    prev_leaf_ptr_->cell(index) = default_value;
+    if (!was_on)
+    {
+      prev_leaf_ptr_->cell(index) = default_value;
+    }
   }
   return was_on;
 }
@@ -832,7 +937,17 @@ VoxelGrid<DataT>::Accessor::getLeafGrid(const CoordT& coord, bool create_if_miss
   {
     if (!inner_ptr->mask().setOn(inner_index))
     {
-      inner_data = std::make_shared<LeafGrid>(mutable_grid_.LEAF_BITS);
+      if constexpr (std::is_trivial_v<DataT>)
+      {
+        DataT* preAllocatedMemory =
+            mutable_grid_.leaf_block_allocator_.allocateBlock();
+        inner_data =
+            std::make_shared<LeafGrid>(mutable_grid_.LEAF_BITS, preAllocatedMemory);
+      }
+      else
+      {
+        inner_data = std::make_shared<LeafGrid>(mutable_grid_.LEAF_BITS);
+      }
     }
   }
   else
@@ -909,30 +1024,18 @@ inline size_t VoxelGrid<DataT>::memUsage() const
 }
 
 template <typename DataT>
-inline void VoxelGrid<DataT>::freeMemory()
+inline void VoxelGrid<DataT>::clear(ClearOption opt)
 {
-  std::vector<CoordT> keys_to_delete;
-  for (const auto& [key, inner_grid] : root_map)
+  if (opt == CLEAR_MEMORY)
   {
-    for (auto inner_it = inner_grid.mask().beginOn(); inner_it; ++inner_it)
-    {
-      const int32_t inner_index = *inner_it;
-      auto& leaf_grid = inner_grid.cell(inner_index);
-      if (leaf_grid->mask().isOff())
-      {
-        inner_grid.mask().setOff(inner_index);
-        leaf_grid.reset();
-      }
-    }
-    if (inner_grid.mask().isOff())
-    {
-      keys_to_delete.push_back(key);
-    }
+    root_map.clear();
+    leaf_block_allocator_.clear();
+    return;
   }
-  for (const auto& key : keys_to_delete)
-  {
-    root_map.erase(key);
-  }
+  auto accessor = createAccessor();
+  forEachCell([&accessor, this](DataT&, const CoordT& coord) {
+    accessor.setCellOff(coord);
+  });
 }
 
 template <typename DataT>
@@ -987,7 +1090,15 @@ inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func) const
                        yB | ((leaf_index >> LEAF_BITS) & MASK_LEAF),
                        zB | ((leaf_index >> (LEAF_BITS_2)) & MASK_LEAF) };
         // apply the visitor
-        func(leaf_grid->cell(leaf_index), pos);
+        if constexpr (std::is_same_v<DataT, EmptyVoxel>)
+        {
+          EmptyVoxel dummy{};
+          func(dummy, pos);
+        }
+        else
+        {
+          func(leaf_grid->cell(leaf_index), pos);
+        }
       }
     }
   }
@@ -1181,7 +1292,7 @@ inline Mask::Mask(Mask&& other)
 
 inline Mask::~Mask()
 {
-  if (words_ && WORD_COUNT > 8)
+  if (WORD_COUNT > 8)
   {
     delete[] words_;
   }
@@ -1275,6 +1386,43 @@ inline void Mask::set(uint32_t n, bool On)
 #else
   On ? this->setOn(n) : this->setOff(n);
 #endif
+}
+
+template <typename DataT>
+inline SimpleBlockAllocator<DataT>::SimpleBlockAllocator(size_t block_bytes,
+                                                         int blocks_per_chunk)
+  : blocks_per_chunk_(blocks_per_chunk)
+  , block_bytes_(block_bytes)
+{
+  addNewChunk();
+}
+
+template <typename DataT>
+inline DataT* SimpleBlockAllocator<DataT>::allocateBlock()
+{
+  if (size_ >= capacity_)
+  {
+    addNewChunk();
+  }
+  const size_t chunck_index = size_ / blocks_per_chunk_;
+  const size_t item_index = size_ % blocks_per_chunk_;
+  size_++;
+  return reinterpret_cast<DataT*>(
+      &(chunks_.at(chunck_index)->at(block_bytes_ * item_index)));
+}
+
+template <typename DataT>
+inline void SimpleBlockAllocator<DataT>::clear()
+{
+  chunks_.clear();
+}
+
+template <typename DataT>
+inline void SimpleBlockAllocator<DataT>::addNewChunk()
+{
+  chunks_.push_back(
+      std::make_shared<std::vector<char>>(blocks_per_chunk_ * block_bytes_));
+  capacity_ += blocks_per_chunk_;
 }
 
 }  // namespace Bonxai
