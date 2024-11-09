@@ -264,7 +264,7 @@ public:
 
   ~Grid()
   {
-    if (!external_memory_)
+    if (data_ != nullptr && !external_memory_)
     {
       delete[] data_;
     }
@@ -941,12 +941,11 @@ VoxelGrid<DataT>::Accessor::getLeafGrid(const CoordT& coord, bool create_if_miss
   {
     if (!inner_ptr->mask().setOn(inner_index))
     {
-      if constexpr (std::is_trivial_v<DataT>)
+      if constexpr (std::is_trivial_v<DataT> && !std::is_same_v<DataT, EmptyVoxel>)
       {
-        DataT* preAllocatedMemory =
-            mutable_grid_.leaf_block_allocator_.allocateBlock();
+        DataT* memory_block = mutable_grid_.leaf_block_allocator_.allocateBlock();
         inner_data =
-            std::make_shared<LeafGrid>(mutable_grid_.LEAF_BITS, preAllocatedMemory);
+            std::make_shared<LeafGrid>(mutable_grid_.LEAF_BITS, memory_block);
       }
       else
       {
@@ -1400,9 +1399,7 @@ inline SimpleBlockAllocator<DataT>::SimpleBlockAllocator(size_t block_bytes,
                                                          int blocks_per_chunk)
   : blocks_per_chunk_(blocks_per_chunk)
   , block_bytes_(block_bytes)
-{
-  addNewChunk();
-}
+{}
 
 template <typename DataT>
 inline DataT* SimpleBlockAllocator<DataT>::allocateBlock()
