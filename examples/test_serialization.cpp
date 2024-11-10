@@ -1,27 +1,23 @@
-#include "bonxai/bonxai.hpp"
-#include "bonxai/serialization.hpp"
 #include <sstream>
 
-int main()
-{
+#include "bonxai/bonxai.hpp"
+#include "bonxai/serialization.hpp"
+
+int main() {
   const double VOXEL_RESOLUTION = 0.1;
 
   Bonxai::VoxelGrid<int> grid(VOXEL_RESOLUTION);
   auto accessor = grid.createAccessor();
 
   auto value_ptr = accessor.value({});
-  if(!value_ptr)
-  {
+  if (!value_ptr) {
     std::cout << "Empty as expected" << std::endl;
   }
 
   int count = 0;
-  for (double x = -0.5; x < 0.5; x += VOXEL_RESOLUTION)
-  {
-    for (double y = -0.5; y < 0.5; y += VOXEL_RESOLUTION)
-    {
-      for (double z = -0.5; z < 0.5; z += VOXEL_RESOLUTION)
-      {
+  for (double x = -0.5; x < 0.5; x += VOXEL_RESOLUTION) {
+    for (double y = -0.5; y < 0.5; y += VOXEL_RESOLUTION) {
+      for (double z = -0.5; z < 0.5; z += VOXEL_RESOLUTION) {
         accessor.setValue(grid.posToCoord(x, y, z), count++);
       }
     }
@@ -47,16 +43,12 @@ int main()
   bool everything_fine = true;
 
   count = 0;
-  for (double x = -0.5; x < 0.5; x += VOXEL_RESOLUTION)
-  {
-    for (double y = -0.5; y < 0.5; y += VOXEL_RESOLUTION)
-    {
-      for (double z = -0.5; z < 0.5; z += VOXEL_RESOLUTION)
-      {
+  for (double x = -0.5; x < 0.5; x += VOXEL_RESOLUTION) {
+    for (double y = -0.5; y < 0.5; y += VOXEL_RESOLUTION) {
+      for (double z = -0.5; z < 0.5; z += VOXEL_RESOLUTION) {
         Bonxai::CoordT coord = grid.posToCoord(x, y, z);
         int* value_ptr = new_accessor.value(coord);
-        if (!value_ptr || *value_ptr != count)
-        {
+        if (!value_ptr || *value_ptr != count) {
           std::cout << " Problem at cell " << x << " " << y << " " << z << std::endl;
           everything_fine = false;
         }
@@ -64,8 +56,7 @@ int main()
       }
     }
   }
-  if (everything_fine)
-  {
+  if (everything_fine) {
     std::cout << "Round trip looks good!" << std::endl;
   }
 

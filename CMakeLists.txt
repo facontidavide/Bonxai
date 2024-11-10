@@ -13,7 +13,6 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-fno-omit-frame-pointer -g")
 
 #---- Add the subdirectory cmake ----
 set(CMAKE_CONFIG_PATH ${CMAKE_MODULE_PATH}  "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -27,7 +26,7 @@ find_package(LZ4 QUIET)
 find_package(Eigen3 QUIET)
 
 #---- Use Address sanitizer if compiled in Debug mode ----
-option(BONXAI_SANITIZE "Add address sanitizer when compiling in Debug mode" ON)
+option(BONXAI_SANITIZE "Add address sanitizer when compiling in Debug mode" OFF)
 
 if(BONXAI_SANITIZE)
     set (CMAKE_CXX_DEBUG_FLAGS "${CMAKE_CXX_DEBUG_FLAGS}  -fsanitize=address")
@@ -74,16 +73,15 @@ if ( ament_cmake_FOUND )
       EXECUTABLE bonxai_server_node
     )
 
-
     ament_auto_package(
       INSTALL_TO_SHARE
-      bonxai_ros/launch 
-      bonxai_ros/rviz 
-      bonxai_ros/params 
+      bonxai_ros/launch
+      bonxai_ros/rviz
+      bonxai_ros/params
     )
 
 else()
 
   message(STATUS "Building with cmake")
-  
+
 endif()

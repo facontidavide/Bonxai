@@ -39,7 +39,3 @@ if( octomap_FOUND )
         compile_benchmark(benchmark_compression)
     endif()
 endif()
-
-
-
-

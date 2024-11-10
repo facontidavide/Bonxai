@@ -2,7 +2,7 @@
 
 # 1. Installation
 
-1. Navigate towards your workspace `src` folder 
+1. Navigate towards your workspace `src` folder
 ```bash
 cd ~/ws_bonxai/src
 ```
@@ -46,11 +46,11 @@ ros2 launch bonxai_ros bonxai_mapping.launch.py
 
 ## 3.1 Bonxai Server
 
-Bonxai_server builds and distributes volumetric 3D occupancy maps for obstacle avoidance, planning or visualization. The map is incrementally built from incoming range data (as PointCloud2) either from RGBD cameras or LiDARs. 
+Bonxai_server builds and distributes volumetric 3D occupancy maps for obstacle avoidance, planning or visualization. The map is incrementally built from incoming range data (as PointCloud2) either from RGBD cameras or LiDARs.
 
 ## 3.1.1 Subscribed Topics
 
- `cloud_in (sensor_msgs/msg/PointCloud2)` 
+ `cloud_in (sensor_msgs/msg/PointCloud2)`
 
 Incoming 3D point cloud for scan integration. You need to remap this topic to your sensor data and provide a tf transform between the sensor data and the static map frame. The frame_id of the point cloud has to be the sensor frame. Raytracing (clearing of free space) is always done from the origin of this frame at the time of the point cloud.
 

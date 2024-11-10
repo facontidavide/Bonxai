@@ -12,5 +12,3 @@ target_include_directories(bonxai_core PUBLIC
 if(benchmark_FOUND)
     add_subdirectory(benchmark)
 endif()
-
-
