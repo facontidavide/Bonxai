@@ -80,9 +80,9 @@ class GridBlockAllocator {
   Deleter createDeleter(std::shared_ptr<Chunk> chunk, uint32_t index);
 };
 
-//----------------------------------------------------------------
-//----------------------------------------------------------------
-//----------------------------------------------------------------
+//----------------------------------------------------
+//----------------- Implementations ------------------
+//----------------------------------------------------
 
 template <typename DataT>
 inline GridBlockAllocator<DataT>::GridBlockAllocator(size_t log2dim)

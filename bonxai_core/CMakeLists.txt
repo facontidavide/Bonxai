@@ -2,6 +2,7 @@
 add_library(bonxai_core
     include/bonxai/bonxai.hpp
     include/bonxai/serialization.hpp
+    include/bonxai/grid_coord.hpp
 )
 set_target_properties(bonxai_core PROPERTIES LINKER_LANGUAGE CXX)
 
