@@ -283,6 +283,10 @@ class VoxelGrid {
 
   void clear(ClearOption opt);
 
+  // You should never use this function directly. It is exposed in the public API only
+  // for special cases, such as serialization or testing
+  std::shared_ptr<LeafGrid> allocateLeafGrid();
+
   class ConstAccessor {
    public:
     ConstAccessor(const VoxelGrid& grid)
@@ -750,6 +754,22 @@ inline bool VoxelGrid<DataT>::Accessor::setCellOff(const CoordT& coord) {
 
 //----------------------------------
 template <typename DataT>
+inline typename std::shared_ptr<Grid<DataT>> VoxelGrid<DataT>::allocateLeafGrid() {
+  if constexpr (std::is_trivial_v<DataT> && !std::is_same_v<DataT, EmptyVoxel>) {
+    auto allocated = leaf_block_allocator_.allocateBlock();
+    DataT* memory_block = allocated.first;
+    auto deleter = [deleter_impl = std::move(allocated.second)](LeafGrid* ptr) {
+      deleter_impl();
+      ptr->~LeafGrid();
+      delete ptr;
+    };
+    return std::shared_ptr<LeafGrid>(new LeafGrid(LEAF_BITS, memory_block), deleter);
+  } else {
+    return std::make_shared<LeafGrid>(LEAF_BITS);
+  }
+}
+
+template <typename DataT>
 inline typename VoxelGrid<DataT>::LeafGrid* VoxelGrid<DataT>::Accessor::getLeafGrid(
     const CoordT& coord, bool create_if_missing) {
   InnerGrid* inner_ptr = prev_inner_ptr_;
@@ -774,18 +794,7 @@ inline typename VoxelGrid<DataT>::LeafGrid* VoxelGrid<DataT>::Accessor::getLeafG
 
   if (create_if_missing) {
     if (!inner_ptr->mask().setOn(inner_index)) {
-      if constexpr (std::is_trivial_v<DataT> && !std::is_same_v<DataT, EmptyVoxel>) {
-        auto allocated = mutable_grid_.leaf_block_allocator_.allocateBlock();
-        DataT* memory_block = allocated.first;
-        auto deleter = [deleter_impl = std::move(allocated.second)](LeafGrid* ptr) {
-          deleter_impl();
-          ptr->~LeafGrid();
-          delete ptr;
-        };
-        inner_data.reset(new LeafGrid(mutable_grid_.LEAF_BITS, memory_block), deleter);
-      } else {
-        inner_data = std::make_shared<LeafGrid>(mutable_grid_.LEAF_BITS);
-      }
+      inner_data = mutable_grid_.allocateLeafGrid();
     }
   } else {
     if (!inner_ptr->mask().isOn(inner_index)) {

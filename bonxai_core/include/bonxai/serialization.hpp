@@ -182,11 +182,8 @@ inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info) {
       inner_grid.mask().setWord(w, word);
     }
     for (auto inner = inner_grid.mask().beginOn(); inner; ++inner) {
-      const uint32_t inner_index = *inner;
-      using LeafGridT = typename VoxelGrid<DataT>::LeafGrid;
-      // FIXME, not using the allocator, as it should
-      inner_grid.cell(inner_index) = std::make_shared<LeafGridT>(info.leaf_bits);
-      auto& leaf_grid = inner_grid.cell(inner_index);
+      auto& leaf_grid = inner_grid.cell(*inner);
+      leaf_grid = grid.allocateLeafGrid();
 
       for (size_t w = 0; w < leaf_grid->mask().wordCount(); w++) {
         uint64_t word = Read<uint64_t>(input);
@@ -198,7 +195,7 @@ inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info) {
       }
     }
   }
-  return std::move(grid);
+  return grid;
 }
 
 }  // namespace Bonxai
