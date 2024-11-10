@@ -17,5 +17,3 @@ if(octomap_FOUND)
         ${OCTOMAP_LIBRARIES}
     )
 endif()
-
-

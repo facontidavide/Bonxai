@@ -72,7 +72,7 @@ int main() {
 
   // When you have a const reference to the VoxelGrid or/and you want
   // non-mutable interfaces, you can do instead
-  auto constVisitor = [](const int& value, const Bonxai::CoordT& coord) {
+  auto constVisitor = [](const int& value, const Bonxai::CoordT& /*coord*/) {
     if (value < 0) {
       throw std::runtime_error("unexpected");
     }
