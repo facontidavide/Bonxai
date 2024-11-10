@@ -1,56 +1,49 @@
 #include <benchmark/benchmark.h>
+
 #include "benchmark_utils.hpp"
 #include "bonxai/bonxai.hpp"
 
 using namespace Bonxai;
 
-static void Bonxai_Create(benchmark::State& state)
-{
+static void Bonxai_Create(benchmark::State& state) {
   const auto& params = TestParameters[state.range(0)];
   auto cloud = ReadCloud(params.filename);
 
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     VoxelGrid<uint32_t> grid(params.voxel_size);
     auto accessor = grid.createAccessor();
 
-    for (const auto& point : *cloud)
-    {
+    for (const auto& point : *cloud) {
       auto coord = grid.posToCoord(point.x, point.y, point.z);
       accessor.setValue(coord, 42);
     }
   }
 }
 
-static void Bonxai_Update(benchmark::State& state)
-{
+static void Bonxai_Update(benchmark::State& state) {
   const auto& params = TestParameters[state.range(0)];
   auto cloud = ReadCloud(params.filename);
   VoxelGrid<uint32_t> grid(params.voxel_size);
 
   {
     auto accessor = grid.createAccessor();
-    for (const auto& point : *cloud)
-    {
+    for (const auto& point : *cloud) {
       auto coord = grid.posToCoord(point.x, point.y, point.z);
       accessor.setValue(coord, 42);
     }
   }
 
-  for (auto _ : state)
-  {
+  for (auto _ : state) {
     auto accessor = grid.createAccessor();
 
-    for (const auto& point : *cloud)
-    {
+    for (const auto& point : *cloud) {
       auto coord = grid.posToCoord(point.x, point.y, point.z);
       accessor.setValue(coord, 42);
     }
   }
 }
 
-static void Bonxai_IterateAllCells(benchmark::State& state)
-{
+static void Bonxai_IterateAllCells(benchmark::State& state) {
   const auto& params = TestParameters[state.range(0)];
   auto cloud = ReadCloud(params.filename);
 
@@ -58,19 +51,15 @@ static void Bonxai_IterateAllCells(benchmark::State& state)
 
   {
     auto accessor = grid.createAccessor();
-    for (const auto& point : *cloud)
-    {
+    for (const auto& point : *cloud) {
       auto coord = grid.posToCoord(point.x, point.y, point.z);
       accessor.setValue(coord, 42);
     }
   }
 
   long count = 0;
-  for (auto _ : state)
-  {
-    auto visitor = [&](uint32_t&, const CoordT&) {
-      benchmark::DoNotOptimize(count++);
-    };
+  for (auto _ : state) {
+    auto visitor = [&](uint32_t&, const CoordT&) { benchmark::DoNotOptimize(count++); };
     grid.forEachCell(visitor);
   }
 }
