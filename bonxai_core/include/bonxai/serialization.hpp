@@ -184,6 +184,7 @@ inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info) {
     for (auto inner = inner_grid.mask().beginOn(); inner; ++inner) {
       const uint32_t inner_index = *inner;
       using LeafGridT = typename VoxelGrid<DataT>::LeafGrid;
+      // FIXME, not using the allocator, as it should
       inner_grid.cell(inner_index) = std::make_shared<LeafGridT>(info.leaf_bits);
       auto& leaf_grid = inner_grid.cell(inner_index);
 
@@ -197,7 +198,7 @@ inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info) {
       }
     }
   }
-  return grid;
+  return std::move(grid);
 }
 
 }  // namespace Bonxai
