@@ -546,8 +546,7 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size, uint8_t inner_bits, uint8_
       inv_resolution(1.0 / resolution),
       INNER_MASK((1 << INNER_BITS) - 1),
       LEAF_MASK((1 << LEAF_BITS) - 1),
-      leaf_block_allocator_(
-          (1 << LEAF_BITS) * (1 << LEAF_BITS) * (1 << LEAF_BITS) * sizeof(DataT)) {
+      leaf_block_allocator_(leaf_bits) {
   if (LEAF_BITS < 1 || INNER_BITS < 1) {
     throw std::runtime_error("The minimum value of the inner_bits and leaf_bits should be 1");
   }
@@ -749,9 +748,12 @@ inline typename VoxelGrid<DataT>::LeafGrid* VoxelGrid<DataT>::Accessor::getLeafG
       if constexpr (std::is_trivial_v<DataT> && !std::is_same_v<DataT, EmptyVoxel>) {
         auto allocated = mutable_grid_.leaf_block_allocator_.allocateBlock();
         DataT* memory_block = allocated.first;
-        auto deleter = [deleter_impl = std::move(allocated.second)](LeafGrid*) { deleter_impl(); };
-        inner_data =
-            std::shared_ptr<LeafGrid>(new LeafGrid(mutable_grid_.LEAF_BITS, memory_block), deleter);
+        auto deleter = [deleter_impl = std::move(allocated.second)](LeafGrid* ptr) {
+          deleter_impl();
+          ptr->~LeafGrid();
+          delete ptr;
+        };
+        inner_data.reset(new LeafGrid(mutable_grid_.LEAF_BITS, memory_block), deleter);
       } else {
         inner_data = std::make_shared<LeafGrid>(mutable_grid_.LEAF_BITS);
       }

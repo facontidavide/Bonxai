@@ -18,9 +18,16 @@
 
 namespace Bonxai {
 
+/**
+ * @brief The GridBlockAllocator is used to pre-allocate the meory of multiple Grids
+ * in "chunks". It is a very simple memory pool.
+ *
+ * Each chunk allocates memory for 512 Grids
+ */
 template <typename DataT>
 class GridBlockAllocator {
  public:
+  // use log2dim of the block to be allocated
   GridBlockAllocator(size_t log2dim);
 
   GridBlockAllocator(const GridBlockAllocator&) = delete;
@@ -51,7 +58,7 @@ class GridBlockAllocator {
 
   size_t memUsage() const;
 
-  // specific for Mask(3)
+  // specific size to use for Mask(3)
   static constexpr size_t blocks_per_chunk = 512;
 
  protected:
@@ -100,7 +107,7 @@ GridBlockAllocator<DataT>::allocateBlock() {
 
   // There must be available memory, somewhere. Search in reverse order
   for (auto it = chunks_.rbegin(); it != chunks_.rend(); it++) {
-    std::shared_ptr<Chunk> chunk = (*it);
+    std::shared_ptr<Chunk>& chunk = (*it);
     auto mask_index = chunk->mask.findFirstOn();
     if (mask_index < chunk->mask.size()) {
       // found in this chunk
