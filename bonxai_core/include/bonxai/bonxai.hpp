@@ -1419,12 +1419,15 @@ template <typename DataT>
 inline void SimpleBlockAllocator<DataT>::clear()
 {
   chunks_.clear();
+  size_ = 0;
+  capacity_ = 0;
 }
 
 template <typename DataT>
 inline size_t SimpleBlockAllocator<DataT>::memUsage() const
 {
-  return chunks_.size() * (sizeof(std::vector<char>) + block_bytes_);
+  return chunks_.size() *
+         (sizeof(std::vector<char>) + blocks_per_chunk_ * block_bytes_);
 }
 
 template <typename DataT>
