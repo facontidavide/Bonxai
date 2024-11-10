@@ -18,7 +18,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CONFIG_PATH ${CMAKE_MODULE_PATH}  "${CMAKE_CURRENT_LIST_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CONFIG_PATH}")
 
-find_package(PCL REQUIRED COMPONENTS common io)
+find_package(PCL QUIET COMPONENTS common io)
 
 find_package(benchmark QUIET)
 find_package(octomap QUIET)
@@ -41,8 +41,11 @@ endif()
 
 ####################################################
 add_subdirectory(bonxai_core)
-add_subdirectory(bonxai_map)
 add_subdirectory(examples)
+
+if(Eigen_FOUND AND PCL_FOUND )
+    add_subdirectory(bonxai_map)
+endif()
 
 # Default behavior
 find_package(ament_cmake QUIET)
