@@ -238,6 +238,13 @@ class VoxelGrid {
   /// @brief getMemoryUsage returns the amount of bytes used by this data structure
   [[nodiscard]] size_t memUsage() const;
 
+  /**
+   *  Try freeing memory;  this will discard grids where all the cells are OFF.
+   *  Note that the memory release is NOT guaranteed, since we are using a memory pool too.
+   *  CAREFULL: This will invalidate all the existing Accessors (you need to create new ones).
+   */
+  void releaseUnusedMemory();
+
   /// @brief Return the total number of active cells
   [[nodiscard]] size_t activeCellsCount() const;
 
@@ -535,6 +542,28 @@ inline size_t Grid<DataT>::memUsage() const {
     mem += sizeof(DataT) * size_;
   }
   return mem;
+}
+
+template <typename DataT>
+inline void VoxelGrid<DataT>::releaseUnusedMemory() {
+  std::vector<CoordT> keys_to_delete;
+  for (const auto& [key, inner_grid] : root_map) {
+    for (auto inner_it = inner_grid.mask().beginOn(); inner_it; ++inner_it) {
+      const int32_t inner_index = *inner_it;
+      auto& leaf_grid = inner_grid.cell(inner_index);
+      if (leaf_grid->mask().isOff()) {
+        inner_grid.mask().setOff(inner_index);
+        leaf_grid.reset();
+      }
+    }
+    if (inner_grid.mask().isOff()) {
+      keys_to_delete.push_back(key);
+    }
+  }
+  for (const auto& key : keys_to_delete) {
+    root_map.erase(key);
+  }
+  leaf_block_allocator_.releaseUnusedMemory();
 }
 
 template <typename DataT>

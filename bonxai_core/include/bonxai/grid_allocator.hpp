@@ -46,7 +46,7 @@ class GridBlockAllocator {
     capacity_ = 0;
   }
 
-  void releaseMemory();
+  void releaseUnusedMemory();
 
   size_t capacity() const {
     return capacity_;
@@ -122,7 +122,7 @@ GridBlockAllocator<DataT>::allocateBlock() {
 }
 
 template <typename DataT>
-inline void GridBlockAllocator<DataT>::releaseMemory() {
+inline void GridBlockAllocator<DataT>::releaseUnusedMemory() {
   std::unique_lock lock(*mutex_);
   int to_be_erased_count = 0;
   auto remove_if = std::remove_if(chunks_.begin(), chunks_.end(), [&](const auto& chunk) -> bool {
