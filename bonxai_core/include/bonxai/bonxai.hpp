@@ -367,7 +367,7 @@ inline size_t Grid<DataT>::memUsage() const {
 template <typename DataT>
 inline void VoxelGrid<DataT>::releaseUnusedMemory() {
   std::vector<CoordT> keys_to_delete;
-  for (const auto& [key, inner_grid] : root_map) {
+  for (auto& [key, inner_grid] : root_map) {
     for (auto inner_it = inner_grid.mask().beginOn(); inner_it; ++inner_it) {
       const int32_t inner_index = *inner_it;
       auto& leaf_grid = inner_grid.cell(inner_index);
