@@ -404,9 +404,9 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size, uint8_t inner_bits, uint8_
 template <typename DataT>
 inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z) const {
   return {
-      static_cast<int32_t>(std::nearbyint(x * inv_resolution)),
-      static_cast<int32_t>(std::nearbyint(y * inv_resolution)),
-      static_cast<int32_t>(std::nearbyint(z * inv_resolution))};
+      static_cast<int32_t>(std::floor(x * inv_resolution)),
+      static_cast<int32_t>(std::floor(y * inv_resolution)),
+      static_cast<int32_t>(std::floor(z * inv_resolution))};
 }
 
 template <typename DataT>
