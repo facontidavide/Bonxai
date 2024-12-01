@@ -79,9 +79,9 @@ struct CoordT {
 
 [[nodiscard]] inline CoordT PosToCoord(const Point3D& point, double inv_resolution) {
   return {
-      static_cast<int32_t>(std::nearbyint(point.x * inv_resolution)),
-      static_cast<int32_t>(std::nearbyint(point.y * inv_resolution)),
-      static_cast<int32_t>(std::nearbyint(point.z * inv_resolution))};
+      static_cast<int32_t>(std::floor(point.x * inv_resolution)),
+      static_cast<int32_t>(std::floor(point.y * inv_resolution)),
+      static_cast<int32_t>(std::floor(point.z * inv_resolution))};
 }
 
 [[nodiscard]] inline Point3D CoordToPos(const CoordT& coord, double resolution) {
