@@ -69,6 +69,7 @@ if ( ament_cmake_FOUND )
     target_link_libraries(bonxai_server
       bonxai_map
       ${PCL_LIBRARIES}
+      ${octomap_LIBRARIES}
     )
 
     rclcpp_components_register_node(bonxai_server
