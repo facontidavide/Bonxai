@@ -76,7 +76,7 @@ class BonxaiServer : public rclcpp::Node {
   std::string base_frame_id_;   // base of the robot for ground plane filtering
 
   bool latched_topics_;
-  bool octomap_;
+  bool octomap_topic_;
 
   double res_;
 

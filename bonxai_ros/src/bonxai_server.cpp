@@ -115,8 +115,8 @@ BonxaiServer::BonxaiServer(const rclcpp::NodeOptions& node_options)
 
   auto qos = latched_topics_ ? rclcpp::QoS{1}.transient_local() : rclcpp::QoS{1};
   
-  octomap_ = declare_parameter("publish_octomap", false);
-  if (octomap_) {
+  octomap_topic_ = declare_parameter("publish_octomap", false);
+  if (octomap_topic_) {
     octomap_pub_ = create_publisher<Octomap>("bonxai_point_cloud_centers", qos);
     RCLCPP_INFO(
         get_logger(),
@@ -225,7 +225,7 @@ void BonxaiServer::publishAll(const rclcpp::Time& rostime) {
     return;
   }
 
-  int subscription_count = octomap_ 
+  int subscription_count = octomap_topic_ 
     ? octomap_pub_->get_subscription_count() + octomap_pub_->get_intra_process_subscription_count()
     : point_cloud_pub_->get_subscription_count() + point_cloud_pub_->get_intra_process_subscription_count();
 
@@ -237,13 +237,13 @@ void BonxaiServer::publishAll(const rclcpp::Time& rostime) {
     thread_local pcl::PointCloud<PCLPoint> pcl_cloud;
     pcl_cloud.clear();
 
-    if (octomap_) {
+    if (octomap_topic_) {
         tree = std::make_unique<octomap::OcTree>(res_);
     }
 
     for (const auto& voxel : bonxai_result) {
       if (voxel.z() >= occupancy_min_z_ && voxel.z() <= occupancy_max_z_) {
-        if (octomap_) {
+        if (octomap_topic_) {
           tree->updateNode(octomap::point3d(voxel.x(), voxel.y(), voxel.z()), true);
         } else {
           pcl_cloud.push_back(PCLPoint(voxel.x(), voxel.y(), voxel.z()));
@@ -252,7 +252,7 @@ void BonxaiServer::publishAll(const rclcpp::Time& rostime) {
     }
 
     // Publish OctoMap
-    if (octomap_ && tree) {
+    if (octomap_topic_ && tree) {
       Octomap octomap_msg;
       octomap_msg.header.frame_id = world_frame_id_;
       octomap_msg.header.stamp = rostime;
