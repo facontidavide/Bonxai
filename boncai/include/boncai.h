@@ -19,16 +19,13 @@
 #define BONCAI_EXPORT __attribute__((visibility("default")))
 #endif
 
-#define BONCAI_API_BEGIN extern "C" {
-#define BONCAI_API_END }
-
 #define BONCAI_OK 0
 #define BONCAI_ERR_INV_ARG 1
 
 #define BONCAI_FALSE 0
 #define BONCAI_TRUE 1
 
-BONCAI_API_BEGIN
+extern "C" {
 
 typedef int boncai_error_t;
 typedef int boncai_bool_t;
@@ -128,7 +125,6 @@ BONCAI_EXPORT boncai_error_t
 boncai_serialize_u64(boncai_grid_u64_handle grid, boncai_output_stream_handle stream);
 BONCAI_EXPORT boncai_error_t
 boncai_deserialize_u64(boncai_input_stream_handle stream, boncai_grid_u64_handle* grid);
-
-BONCAI_API_END
+}
 
 #endif  // BONCAI_H

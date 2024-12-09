@@ -148,7 +148,7 @@ template <typename T, typename HANDLE>
 }
 }  // namespace Boncai
 
-BONCAI_API_BEGIN
+extern "C" {
 
 BONCAI_EXPORT boncai_error_t boncai_output_stream_new(boncai_output_stream_handle* stream) {
   if (stream == nullptr) {
@@ -198,5 +198,4 @@ BONCAI_DEFINE_GRID_IMPL(u8, uint8_t)
 BONCAI_DEFINE_GRID_IMPL(u16, uint16_t)
 BONCAI_DEFINE_GRID_IMPL(u32, uint32_t)
 BONCAI_DEFINE_GRID_IMPL(u64, uint64_t)
-
-BONCAI_API_END
+}
