@@ -144,6 +144,15 @@ void BonxaiServer::insertCloudCallback(const PointCloud2::ConstSharedPtr cloud) 
   PCLPointCloud pc;  // input cloud for filtering and ground-detection
   pcl::fromROSMsg(*cloud, pc);
 
+  // remove NaN and Inf values
+  size_t filtered_index = 0;
+  for (const auto& point : pc.points) {
+    if (std::isfinite(point.x) && std::isfinite(point.y) && std::isfinite(point.z)) {
+      pc.points[filtered_index++] = point;
+    }
+  }
+  pc.resize(filtered_index);
+
   // Sensor In Global Frames Coordinates
   geometry_msgs::msg::TransformStamped sensor_to_world_transform_stamped;
   try {
