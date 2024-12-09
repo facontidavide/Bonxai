@@ -28,33 +28,21 @@
 #define BONCAI_FALSE 0
 #define BONCAI_TRUE 1
 
-#define BONCAI_DEFINE_GRID_API(t, T)                                                       \
-  typedef struct boncai_grid_##t* boncai_grid_##t##_handle;                                \
-  typedef struct boncai_accessor_##t* boncai_accessor_##t##_handle;                        \
-  BONCAI_EXPORT boncai_error_t boncai_grid_##t##_new(                                      \
-      double resolution, boncai_grid_##t##_handle* grid);                                  \
-  BONCAI_EXPORT boncai_error_t boncai_grid_##t##_pos_to_coord(                             \
-      boncai_grid_##t##_handle grid, double x, double y, double z, boncai_coord_t* coord); \
-  BONCAI_EXPORT void boncai_grid_##t##_delete(boncai_grid_##t##_handle grid);              \
-  BONCAI_EXPORT boncai_error_t boncai_accessor_##t##_new(                                  \
-      boncai_grid_##t##_handle grid, boncai_accessor_##t##_handle* accessor);              \
-  BONCAI_EXPORT boncai_error_t boncai_accessor_##t##_set(                                  \
-      boncai_accessor_##t##_handle accessor, const boncai_coord_t* coord, T value);        \
-  BONCAI_EXPORT boncai_error_t boncai_accessor_##t##_get(                                  \
-      boncai_accessor_##t##_handle accessor, const boncai_coord_t* coord,                  \
-      boncai_bool_t create_if_missing, T** value);                                         \
-  BONCAI_EXPORT void boncai_accessor_##t##_delete(boncai_accessor_##t##_handle accessor);  \
-  BONCAI_EXPORT boncai_error_t boncai_serialize_##t(                                       \
-      boncai_grid_##t##_handle grid, boncai_output_stream_handle stream);                  \
-  BONCAI_EXPORT boncai_error_t boncai_deserialize_##t(                                     \
-      boncai_input_stream_handle stream, boncai_grid_##t##_handle* grid);
-
 BONCAI_API_BEGIN
 
 typedef int boncai_error_t;
 typedef int boncai_bool_t;
 typedef struct boncai_output_stream* boncai_output_stream_handle;
 typedef struct boncai_input_stream* boncai_input_stream_handle;
+
+typedef struct boncai_grid_u8* boncai_grid_u8_handle;
+typedef struct boncai_accessor_u8* boncai_accessor_u8_handle;
+typedef struct boncai_grid_u16* boncai_grid_u16_handle;
+typedef struct boncai_accessor_u16* boncai_accessor_u16_handle;
+typedef struct boncai_grid_u32* boncai_grid_u32_handle;
+typedef struct boncai_accessor_u32* boncai_accessor_u32_handle;
+typedef struct boncai_grid_u64* boncai_grid_u64_handle;
+typedef struct boncai_accessor_u64* boncai_accessor_u64_handle;
 
 typedef struct boncai_coord {
   int32_t x;
@@ -73,10 +61,73 @@ BONCAI_EXPORT boncai_error_t
 boncai_input_stream_new(const void* data, size_t size, boncai_input_stream_handle* stream);
 BONCAI_EXPORT void boncai_input_stream_delete(boncai_input_stream_handle stream);
 
-BONCAI_DEFINE_GRID_API(u8, uint8_t)
-BONCAI_DEFINE_GRID_API(u16, uint16_t)
-BONCAI_DEFINE_GRID_API(u32, uint32_t)
-BONCAI_DEFINE_GRID_API(u64, uint64_t)
+BONCAI_EXPORT boncai_error_t boncai_grid_u8_new(double resolution, boncai_grid_u8_handle* grid);
+BONCAI_EXPORT boncai_error_t boncai_grid_u8_pos_to_coord(
+    boncai_grid_u8_handle grid, double x, double y, double z, boncai_coord_t* coord);
+BONCAI_EXPORT void boncai_grid_u8_delete(boncai_grid_u8_handle grid);
+BONCAI_EXPORT boncai_error_t
+boncai_accessor_u8_new(boncai_grid_u8_handle grid, boncai_accessor_u8_handle* accessor);
+BONCAI_EXPORT boncai_error_t boncai_accessor_u8_set(
+    boncai_accessor_u8_handle accessor, const boncai_coord_t* coord, uint8_t value);
+BONCAI_EXPORT boncai_error_t boncai_accessor_u8_get(
+    boncai_accessor_u8_handle accessor, const boncai_coord_t* coord,
+    boncai_bool_t create_if_missing, uint8_t** value);
+BONCAI_EXPORT void boncai_accessor_u8_delete(boncai_accessor_u8_handle accessor);
+BONCAI_EXPORT boncai_error_t
+boncai_serialize_u8(boncai_grid_u8_handle grid, boncai_output_stream_handle stream);
+BONCAI_EXPORT boncai_error_t
+boncai_deserialize_u8(boncai_input_stream_handle stream, boncai_grid_u8_handle* grid);
+
+BONCAI_EXPORT boncai_error_t boncai_grid_u16_new(double resolution, boncai_grid_u16_handle* grid);
+BONCAI_EXPORT boncai_error_t boncai_grid_u16_pos_to_coord(
+    boncai_grid_u16_handle grid, double x, double y, double z, boncai_coord_t* coord);
+BONCAI_EXPORT void boncai_grid_u16_delete(boncai_grid_u16_handle grid);
+BONCAI_EXPORT boncai_error_t
+boncai_accessor_u16_new(boncai_grid_u16_handle grid, boncai_accessor_u16_handle* accessor);
+BONCAI_EXPORT boncai_error_t boncai_accessor_u16_set(
+    boncai_accessor_u16_handle accessor, const boncai_coord_t* coord, uint16_t value);
+BONCAI_EXPORT boncai_error_t boncai_accessor_u16_get(
+    boncai_accessor_u16_handle accessor, const boncai_coord_t* coord,
+    boncai_bool_t create_if_missing, uint16_t** value);
+BONCAI_EXPORT void boncai_accessor_u16_delete(boncai_accessor_u16_handle accessor);
+BONCAI_EXPORT boncai_error_t
+boncai_serialize_u16(boncai_grid_u16_handle grid, boncai_output_stream_handle stream);
+BONCAI_EXPORT boncai_error_t
+boncai_deserialize_u16(boncai_input_stream_handle stream, boncai_grid_u16_handle* grid);
+
+BONCAI_EXPORT boncai_error_t boncai_grid_u32_new(double resolution, boncai_grid_u32_handle* grid);
+BONCAI_EXPORT boncai_error_t boncai_grid_u32_pos_to_coord(
+    boncai_grid_u32_handle grid, double x, double y, double z, boncai_coord_t* coord);
+BONCAI_EXPORT void boncai_grid_u32_delete(boncai_grid_u32_handle grid);
+BONCAI_EXPORT boncai_error_t
+boncai_accessor_u32_new(boncai_grid_u32_handle grid, boncai_accessor_u32_handle* accessor);
+BONCAI_EXPORT boncai_error_t boncai_accessor_u32_set(
+    boncai_accessor_u32_handle accessor, const boncai_coord_t* coord, uint32_t value);
+BONCAI_EXPORT boncai_error_t boncai_accessor_u32_get(
+    boncai_accessor_u32_handle accessor, const boncai_coord_t* coord,
+    boncai_bool_t create_if_missing, uint32_t** value);
+BONCAI_EXPORT void boncai_accessor_u32_delete(boncai_accessor_u32_handle accessor);
+BONCAI_EXPORT boncai_error_t
+boncai_serialize_u32(boncai_grid_u32_handle grid, boncai_output_stream_handle stream);
+BONCAI_EXPORT boncai_error_t
+boncai_deserialize_u32(boncai_input_stream_handle stream, boncai_grid_u32_handle* grid);
+
+BONCAI_EXPORT boncai_error_t boncai_grid_u64_new(double resolution, boncai_grid_u64_handle* grid);
+BONCAI_EXPORT boncai_error_t boncai_grid_u64_pos_to_coord(
+    boncai_grid_u64_handle grid, double x, double y, double z, boncai_coord_t* coord);
+BONCAI_EXPORT void boncai_grid_u64_delete(boncai_grid_u64_handle grid);
+BONCAI_EXPORT boncai_error_t
+boncai_accessor_u64_new(boncai_grid_u64_handle grid, boncai_accessor_u64_handle* accessor);
+BONCAI_EXPORT boncai_error_t boncai_accessor_u64_set(
+    boncai_accessor_u64_handle accessor, const boncai_coord_t* coord, uint64_t value);
+BONCAI_EXPORT boncai_error_t boncai_accessor_u64_get(
+    boncai_accessor_u64_handle accessor, const boncai_coord_t* coord,
+    boncai_bool_t create_if_missing, uint64_t** value);
+BONCAI_EXPORT void boncai_accessor_u64_delete(boncai_accessor_u64_handle accessor);
+BONCAI_EXPORT boncai_error_t
+boncai_serialize_u64(boncai_grid_u64_handle grid, boncai_output_stream_handle stream);
+BONCAI_EXPORT boncai_error_t
+boncai_deserialize_u64(boncai_input_stream_handle stream, boncai_grid_u64_handle* grid);
 
 BONCAI_API_END
 
