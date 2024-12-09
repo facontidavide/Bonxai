@@ -18,40 +18,40 @@
 #include "vector_output_stream.hpp"
 
 #define BONCAI_DEFINE_GRID_IMPL(t, T)                                                       \
-  BONCAI_EXPORT boncai_error_t boncai_grid_##t##_new(                                       \
+  BONCAI_API boncai_error_t boncai_grid_##t##_new(                                          \
       double resolution, boncai_grid_##t##_handle* grid) {                                  \
     return Boncai::grid_new<T, boncai_grid_##t##_handle>(resolution, grid);                 \
   }                                                                                         \
-  BONCAI_EXPORT boncai_error_t boncai_grid_##t##_pos_to_coord(                              \
+  BONCAI_API boncai_error_t boncai_grid_##t##_pos_to_coord(                                 \
       boncai_grid_##t##_handle grid, double x, double y, double z, boncai_coord_t* coord) { \
     return Boncai::grid_pos_to_coord<T, boncai_grid_##t##_handle>(grid, x, y, z, coord);    \
   }                                                                                         \
-  BONCAI_EXPORT void boncai_grid_##t##_delete(boncai_grid_##t##_handle grid) {              \
+  BONCAI_API void boncai_grid_##t##_delete(boncai_grid_##t##_handle grid) {                 \
     return Boncai::grid_delete<T, boncai_grid_##t##_handle>(grid);                          \
   }                                                                                         \
-  BONCAI_EXPORT boncai_error_t boncai_accessor_##t##_new(                                   \
+  BONCAI_API boncai_error_t boncai_accessor_##t##_new(                                      \
       boncai_grid_##t##_handle grid, boncai_accessor_##t##_handle* accessor) {              \
     return Boncai::accessor_new<T, boncai_accessor_##t##_handle, boncai_grid_##t##_handle>( \
         grid, accessor);                                                                    \
   }                                                                                         \
-  BONCAI_EXPORT boncai_error_t boncai_accessor_##t##_set(                                   \
+  BONCAI_API boncai_error_t boncai_accessor_##t##_set(                                      \
       boncai_accessor_##t##_handle accessor, const boncai_coord_t* coord, T value) {        \
     return Boncai::accessor_set<T, boncai_accessor_##t##_handle>(accessor, coord, value);   \
   }                                                                                         \
-  BONCAI_EXPORT boncai_error_t boncai_accessor_##t##_get(                                   \
+  BONCAI_API boncai_error_t boncai_accessor_##t##_get(                                      \
       boncai_accessor_##t##_handle accessor, const boncai_coord_t* coord,                   \
       boncai_bool_t create_if_missing, T** value) {                                         \
     return Boncai::accessor_get<T, boncai_accessor_##t##_handle>(                           \
         accessor, coord, create_if_missing, value);                                         \
   }                                                                                         \
-  BONCAI_EXPORT void boncai_accessor_##t##_delete(boncai_accessor_##t##_handle accessor) {  \
+  BONCAI_API void boncai_accessor_##t##_delete(boncai_accessor_##t##_handle accessor) {     \
     return Boncai::accessor_delete<T, boncai_accessor_##t##_handle>(accessor);              \
   }                                                                                         \
-  BONCAI_EXPORT boncai_error_t boncai_deserialize_##t(                                      \
+  BONCAI_API boncai_error_t boncai_deserialize_##t(                                         \
       boncai_input_stream_handle stream, boncai_grid_##t##_handle* grid) {                  \
     return Boncai::deserialize<T, boncai_grid_##t##_handle>(stream, grid);                  \
   }                                                                                         \
-  BONCAI_EXPORT boncai_error_t boncai_serialize_##t(                                        \
+  BONCAI_API boncai_error_t boncai_serialize_##t(                                           \
       boncai_grid_##t##_handle grid, boncai_output_stream_handle stream) {                  \
     return Boncai::serialize<T, boncai_grid_##t##_handle>(grid, stream);                    \
   }
@@ -148,9 +148,7 @@ template <typename T, typename HANDLE>
 }
 }  // namespace Boncai
 
-extern "C" {
-
-BONCAI_EXPORT boncai_error_t boncai_output_stream_new(boncai_output_stream_handle* stream) {
+BONCAI_API boncai_error_t boncai_output_stream_new(boncai_output_stream_handle* stream) {
   if (stream == nullptr) {
     return BONCAI_ERR_INV_ARG;
   }
@@ -158,7 +156,7 @@ BONCAI_EXPORT boncai_error_t boncai_output_stream_new(boncai_output_stream_handl
   return BONCAI_OK;
 }
 
-BONCAI_EXPORT boncai_error_t
+BONCAI_API boncai_error_t
 boncai_output_stream_get_data(boncai_output_stream_handle stream, const void** data) {
   if (stream == nullptr || data == nullptr) {
     return BONCAI_ERR_INV_ARG;
@@ -167,7 +165,7 @@ boncai_output_stream_get_data(boncai_output_stream_handle stream, const void** d
   return BONCAI_OK;
 }
 
-BONCAI_EXPORT boncai_error_t
+BONCAI_API boncai_error_t
 boncai_output_stream_get_size(boncai_output_stream_handle stream, size_t* size) {
   if (stream == nullptr || size == nullptr) {
     return BONCAI_ERR_INV_ARG;
@@ -176,11 +174,11 @@ boncai_output_stream_get_size(boncai_output_stream_handle stream, size_t* size) 
   return BONCAI_OK;
 }
 
-BONCAI_EXPORT void boncai_output_stream_delete(boncai_output_stream_handle stream) {
+BONCAI_API void boncai_output_stream_delete(boncai_output_stream_handle stream) {
   delete reinterpret_cast<Boncai::VectorOutputStream*>(stream);
 }
 
-BONCAI_EXPORT boncai_error_t
+BONCAI_API boncai_error_t
 boncai_input_stream_new(const void* data, size_t size, boncai_input_stream_handle* stream) {
   if (data == nullptr || stream == nullptr) {
     return BONCAI_ERR_INV_ARG;
@@ -190,7 +188,7 @@ boncai_input_stream_new(const void* data, size_t size, boncai_input_stream_handl
   return BONCAI_OK;
 }
 
-BONCAI_EXPORT void boncai_input_stream_delete(boncai_input_stream_handle stream) {
+BONCAI_API void boncai_input_stream_delete(boncai_input_stream_handle stream) {
   delete reinterpret_cast<Boncai::PointerInputStream*>(stream);
 }
 
@@ -198,4 +196,3 @@ BONCAI_DEFINE_GRID_IMPL(u8, uint8_t)
 BONCAI_DEFINE_GRID_IMPL(u16, uint16_t)
 BONCAI_DEFINE_GRID_IMPL(u32, uint32_t)
 BONCAI_DEFINE_GRID_IMPL(u64, uint64_t)
-}
