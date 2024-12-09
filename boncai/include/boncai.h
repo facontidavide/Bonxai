@@ -7,11 +7,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-#ifndef BONCAI_H
-#define BONCAI_H
-
-#include <stddef.h>
-#include <stdint.h>
+#pragma once
 
 #ifdef _MSC_VER
 #define BONCAI_EXPORT __declspec(dllexport)
@@ -19,7 +15,16 @@
 #define BONCAI_EXPORT __attribute__((visibility("default")))
 #endif
 
+#ifdef __cplusplus
+#include <cstddef>
+#include <cstdint>
 #define BONCAI_CALL extern "C"
+#else
+#include <stddef.h>
+#include <stdint.h>
+#define BONCAI_CALL
+#endif
+
 #define BONCAI_API BONCAI_EXPORT BONCAI_CALL
 
 #define BONCAI_OK 0
@@ -126,5 +131,3 @@ BONCAI_API boncai_error_t
 boncai_serialize_u64(boncai_grid_u64_handle grid, boncai_output_stream_handle stream);
 BONCAI_API boncai_error_t
 boncai_deserialize_u64(boncai_input_stream_handle stream, boncai_grid_u64_handle* grid);
-
-#endif  // BONCAI_H
