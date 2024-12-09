@@ -8,7 +8,7 @@
 
 #include "bonxai_map/pcl_utils.hpp"
 #include "bonxai_map/probabilistic_map.hpp"
-#include "cxxopt/cxxopts.hpp"
+#include "cxxopts.hpp"
 
 namespace fs = std::filesystem;
 

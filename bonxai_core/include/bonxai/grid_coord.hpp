@@ -79,16 +79,49 @@ struct CoordT {
 
 [[nodiscard]] inline CoordT PosToCoord(const Point3D& point, double inv_resolution) {
   return {
-      static_cast<int32_t>(std::floor(point.x * inv_resolution)),
-      static_cast<int32_t>(std::floor(point.y * inv_resolution)),
-      static_cast<int32_t>(std::floor(point.z * inv_resolution))};
+      static_cast<int32_t>(std::round(point.x * inv_resolution)),
+      static_cast<int32_t>(std::round(point.y * inv_resolution)),
+      static_cast<int32_t>(std::round(point.z * inv_resolution))};
 }
 
 [[nodiscard]] inline Point3D CoordToPos(const CoordT& coord, double resolution) {
   return {
-      (static_cast<double>(coord.x)) * resolution, (static_cast<double>(coord.y)) * resolution,
+      (static_cast<double>(coord.x)) * resolution,  //
+      (static_cast<double>(coord.y)) * resolution,  //
       (static_cast<double>(coord.z)) * resolution};
 }
+
+template <typename T = double>
+struct Range {
+  T min = std::numeric_limits<T>::lowest();
+  T max = std::numeric_limits<T>::max();
+
+  Range() = default;
+  Range(const Range&) = default;
+  Range(Range&&) = default;
+  Range& operator=(const Range&) = default;
+  Range& operator=(Range&&) = default;
+
+  Range(T _min, T _max)
+      : min(_min),
+        max(_max) {}
+
+  [[nodiscard]] bool contains(T value) const {
+    return value >= min && value <= max;
+  }
+};
+
+using CoordRange = Range<int32_t>;
+
+template <typename T>
+inline bool RangesOverlap(const Range<T>& a, const Range<T>& b) {
+  return a.min <= b.max && b.min <= a.max;
+}
+
+struct CoordROI {
+  CoordT minCoord;
+  CoordT maxCoord;
+};
 
 //----------------------------------------------------
 //----------------- Implementations ------------------

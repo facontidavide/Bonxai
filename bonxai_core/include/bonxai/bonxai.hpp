@@ -75,6 +75,10 @@ class Grid {
     }
   }
 
+  int activeCellsCount() const {
+    return mask_.countOn();
+  }
+
   [[nodiscard]] size_t memUsage() const;
 
   [[nodiscard]] size_t size() const {
@@ -187,23 +191,45 @@ class VoxelGrid {
   /**
    *  @brief forEachCell apply a function of type:
    *
-   *      void(const DataT&, const CoordT&)
+   *      void(DataT&, const CoordT&)
+   *  or
+   *      bool(DataT&, const CoordT&)
    *
    * to each active element of the grid.
    */
   template <class VisitorFunction>
-  void forEachCell(VisitorFunction func) const;
+  void forEachCell(VisitorFunction func) const {
+    forEachCellInROI<VisitorFunction, false>({}, func);
+  }
 
   /**
    *  @brief forEachCell apply a function of type:
    *
    *      void(DataT&, const CoordT&)
+   *  or
+   *      bool(DataT&, const CoordT&)
    *
    * to each active element of the grid.
    */
   template <class VisitorFunction>
   void forEachCell(VisitorFunction func) {
     static_cast<const VoxelGrid*>(this)->forEachCell(func);
+  }
+
+  /**
+   *  @brief forEachCellInROI, but it is more efficient than forEachCell when
+   *  you only want to iterate in a Region of Interest (ROI).
+   */
+  template <class VisitorFunction, bool CheckROI = true>
+  void forEachCellInROI(CoordROI roi, VisitorFunction func) const;
+
+  /**
+   *  @brief forEachCellInROI, but it is more efficient than forEachCell when
+   *  you only want to iterate in a Region of Interest (ROI).
+   */
+  template <class VisitorFunction, bool CheckROI = true>
+  void forEachCellInROI(CoordROI roi, VisitorFunction func) {
+    static_cast<const VoxelGrid*>(this)->forEachCellInROI<VisitorFunction, CheckROI>(roi, func);
   }
 
   void clear(ClearOption opt);
@@ -404,9 +430,9 @@ inline VoxelGrid<DataT>::VoxelGrid(double voxel_size, uint8_t inner_bits, uint8_
 template <typename DataT>
 inline CoordT VoxelGrid<DataT>::posToCoord(double x, double y, double z) const {
   return {
-      static_cast<int32_t>(std::floor(x * inv_resolution)),
-      static_cast<int32_t>(std::floor(y * inv_resolution)),
-      static_cast<int32_t>(std::floor(z * inv_resolution))};
+      static_cast<int32_t>(std::round(x * inv_resolution)),
+      static_cast<int32_t>(std::round(y * inv_resolution)),
+      static_cast<int32_t>(std::round(z * inv_resolution))};
 }
 
 template <typename DataT>
@@ -702,40 +728,98 @@ inline size_t VoxelGrid<DataT>::activeCellsCount() const {
 
 //----------------------------------
 template <typename DataT>
-template <class VisitorFunction>
-inline void VoxelGrid<DataT>::forEachCell(VisitorFunction func) const {
+template <class VisitorFunction, bool CheckROI>
+inline void VoxelGrid<DataT>::forEachCellInROI(CoordROI roi, VisitorFunction func) const {
+  static_assert(
+      std::is_same_v<bool, std::result_of_t<VisitorFunction(DataT&, const CoordT&)>> ||
+          std::is_same_v<void, std::result_of_t<VisitorFunction(DataT&, const CoordT&)>>,
+      "The visitor function should return a bool or void");
+
   const int32_t MASK_LEAF = ((1 << LEAF_BITS) - 1);
   const int32_t MASK_INNER = ((1 << INNER_BITS) - 1);
+  const int32_t INNER_BITS_2 = INNER_BITS * 2;
+  const int32_t LEAF_BITS_2 = LEAF_BITS * 2;
+  const int32_t CELLS_PER_INNER = 1 << (LEAF_BITS + INNER_BITS);
+  const int32_t CELLS_PER_LEAF = 1 << (LEAF_BITS);
+
+  const CoordRange roiRangeX(roi.minCoord.x, roi.maxCoord.x);
+  const CoordRange roiRangeY(roi.minCoord.y, roi.maxCoord.y);
+  const CoordRange roiRangeZ(roi.minCoord.z, roi.maxCoord.z);
 
   for (auto& map_it : root_map) {
     const auto& [xA, yA, zA] = (map_it.first);
+
+    if constexpr (CheckROI) {
+      if (!RangesOverlap(CoordRange(xA, xA + CELLS_PER_INNER - 1), roiRangeX) ||
+          !RangesOverlap(CoordRange(yA, yA + CELLS_PER_INNER - 1), roiRangeY) ||
+          !RangesOverlap(CoordRange(zA, zA + CELLS_PER_INNER - 1), roiRangeZ)) {
+        continue;
+      }
+    }
+
     const InnerGrid& inner_grid = map_it.second;
     const auto& mask2 = inner_grid.mask();
 
     for (auto inner_it = mask2.beginOn(); inner_it; ++inner_it) {
       const int32_t inner_index = *inner_it;
-      const int32_t INNER_BITS_2 = INNER_BITS * 2;
-      // clang-format off
-      int32_t xB = xA | ((inner_index & MASK_INNER) << LEAF_BITS);
-      int32_t yB = yA | (((inner_index >> INNER_BITS) & MASK_INNER) << LEAF_BITS);
-      int32_t zB = zA | (((inner_index >> (INNER_BITS_2)) & MASK_INNER) << LEAF_BITS);
-      // clang-format on
+
+      const int32_t xB = xA | ((inner_index & MASK_INNER) << LEAF_BITS);
+      if constexpr (CheckROI) {
+        if (!RangesOverlap(CoordRange(xB, xB + CELLS_PER_LEAF - 1), roiRangeX)) {
+          continue;
+        }
+      }
+      const int32_t yB = yA | (((inner_index >> INNER_BITS) & MASK_INNER) << LEAF_BITS);
+      if constexpr (CheckROI) {
+        if (!RangesOverlap(CoordRange(yB, yB + CELLS_PER_LEAF - 1), roiRangeY)) {
+          continue;
+        }
+      }
+      const int32_t zB = zA | ((inner_index >> INNER_BITS_2) << LEAF_BITS);
+      if constexpr (CheckROI) {
+        if (!RangesOverlap(CoordRange(zB, zB + CELLS_PER_LEAF - 1), roiRangeZ)) {
+          continue;
+        }
+      }
 
       const auto& leaf_grid = inner_grid.cell(inner_index);
-      const auto& mask1 = leaf_grid->mask();
 
-      for (auto leaf_it = mask1.beginOn(); leaf_it; ++leaf_it) {
+      for (auto leaf_it = leaf_grid->mask().beginOn(); leaf_it; ++leaf_it) {
         const int32_t leaf_index = *leaf_it;
-        const int32_t LEAF_BITS_2 = LEAF_BITS * 2;
-        CoordT pos = {
-            xB | (leaf_index & MASK_LEAF), yB | ((leaf_index >> LEAF_BITS) & MASK_LEAF),
-            zB | ((leaf_index >> (LEAF_BITS_2)) & MASK_LEAF)};
+        const int32_t xC = xB | (leaf_index & MASK_LEAF);
+        if (!roiRangeX.contains(xC)) {
+          continue;
+        }
+        const int32_t yC = yB | ((leaf_index >> LEAF_BITS) & MASK_LEAF);
+        if (!roiRangeY.contains(yC)) {
+          continue;
+        }
+        const int32_t zC = zB | ((leaf_index >> (LEAF_BITS_2)) & MASK_LEAF);
+        if (!roiRangeZ.contains(zC)) {
+          continue;
+        }
+        const CoordT pos = {xC, yC, zC};
+
         // apply the visitor
-        if constexpr (std::is_same_v<DataT, EmptyVoxel>) {
-          EmptyVoxel dummy{};
-          func(dummy, pos);
+        if constexpr (std::is_same_v<
+                          bool, std::result_of_t<VisitorFunction(DataT&, const CoordT&)>>) {
+          bool keep_looping = true;
+          if constexpr (std::is_same_v<DataT, EmptyVoxel>) {
+            EmptyVoxel dummy{};
+            keep_looping = func(dummy, pos);
+          } else {
+            keep_looping = func(leaf_grid->cell(leaf_index), pos);
+          }
+          if (!keep_looping) {
+            return;
+          }
         } else {
-          func(leaf_grid->cell(leaf_index), pos);
+          if constexpr (std::is_same_v<DataT, EmptyVoxel>) {
+            EmptyVoxel dummy{};
+            func(dummy, pos);
+          } else {
+            func(leaf_grid->cell(leaf_index), pos);
+          }
         }
       }
     }

@@ -14,18 +14,58 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 
-#---- Add the subdirectory cmake ----
-set(CMAKE_CONFIG_PATH ${CMAKE_MODULE_PATH}  "${CMAKE_CURRENT_LIST_DIR}/cmake")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CONFIG_PATH}")
+####### Add subdirectory cmake and dependencies ######
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 
-find_package(PCL QUIET COMPONENTS common io)
+if(CMAKE_COMPILER_IS_GNUCXX AND CODE_COVERAGE)
+  message(STATUS "Configuring for code coverage build...")
+  if (NOT CMAKE_BUILD_TYPE MATCHES Debug)
+    message(WARNING "Non debug build may produce odd results for code coverage")
+  endif()
+
+  include(CodeCoverage)
+  append_coverage_compiler_flags()
+endif()
+
+include(FetchContent)
+include(cmake/CPM.cmake)
 
 find_package(benchmark QUIET)
-find_package(octomap QUIET)
-find_package(LZ4 QUIET)
-find_package(Eigen3 QUIET)
+if(NOT benchmark_FOUND)
+  message(STATUS "Benchmark not found. Fetching it from GitHub")
+  CPMAddPackage(
+        NAME benchmark
+        GITHUB_REPOSITORY google/benchmark
+        VERSION 1.9.1
+        OPTIONS  "BENCHMARK_ENABLE_TESTING OFF" "CMAKE_BUILD_TYPE Release"
+  )
+endif()
 
-#---- Use Address sanitizer if compiled in Debug mode ----
+find_package(LZ4 QUIET)
+if(NOT LZ4_FOUND)
+  message(STATUS "Benchmark not found. Fetching it from GitHub")
+  CPMAddPackage(
+    NAME lz4
+    GITHUB_REPOSITORY lz4/lz4
+    GIT_TAG v1.10.0
+    OPTIONS "CMAKE_BUILD_TYPE Release"
+  )
+endif()
+
+CPMAddPackage(
+    NAME cxxopts
+    GITHUB_REPOSITORY jarro2783/cxxopts
+    GIT_TAG v3.2.0
+)
+
+
+# the following dependencies are larget and we expect them to be installed in the system
+find_package(octomap QUIET)
+find_package(Eigen3 QUIET)
+find_package(PCL QUIET COMPONENTS common io filters)
+
+####### Use Address sanitizer if compiled in Debug mode #######
+
 option(BONXAI_SANITIZE "Add address sanitizer when compiling in Debug mode" OFF)
 
 if(BONXAI_SANITIZE)
@@ -33,18 +73,23 @@ if(BONXAI_SANITIZE)
     set (CMAKE_LINKER_DEBUG_FLAGS "${CMAKE_LINKER_DEBUG_FLAGS}  -fsanitize=address")
 endif()
 
-
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic -fno-omit-frame-pointer)
 endif()
 
+option(BONXAI_BUILD_TESTS "Build tests" ON)
+
+if(BONXAI_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
 
 ####################################################
 add_subdirectory(bonxai_core)
 add_subdirectory(examples)
 
 if(Eigen_FOUND AND PCL_FOUND )
-    add_subdirectory(bonxai_map)
+  add_subdirectory(bonxai_map)
 endif()
 
 # Default behavior
@@ -59,8 +104,6 @@ if ( ament_cmake_FOUND )
 
     find_package(ament_cmake_auto REQUIRED)
     ament_auto_find_build_dependencies()
-
-    include_directories(bonxai_ros/include 3rdparty)
 
     ament_auto_add_library(bonxai_server SHARED
       bonxai_ros/src/bonxai_server.cpp
