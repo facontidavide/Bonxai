@@ -62,11 +62,11 @@ class VectorOutputStream final : public std::ostream {
         _buffer(initial_size) {}
 
   VectorOutputStream(const VectorOutputStream&) = delete;
-  VectorOutputStream(VectorOutputStream&&) noexcept = default;
+  VectorOutputStream(VectorOutputStream&&) = delete;
   ~VectorOutputStream() noexcept override = default;
 
   auto operator=(const VectorOutputStream&) -> VectorOutputStream& = delete;
-  auto operator=(VectorOutputStream&&) noexcept -> VectorOutputStream& = default;
+  auto operator=(VectorOutputStream&&) -> VectorOutputStream& = delete;
 
   [[nodiscard]] auto get_buffer() const noexcept -> const VectorStreamBuffer& {
     return _buffer;

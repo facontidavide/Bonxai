@@ -13,16 +13,16 @@
 
 namespace Boncai {
 struct PointerStreamBuffer final : public std::streambuf {
-  explicit PointerStreamBuffer(const void* data, size_t size) noexcept {
+  explicit PointerStreamBuffer(const void* data, const size_t size) noexcept {
     auto* base = const_cast<char*>(static_cast<const char*>(data));
     setg(base, base, base + size);
   }
 
-  PointerStreamBuffer(const PointerStreamBuffer&) = delete;
+  PointerStreamBuffer(const PointerStreamBuffer&) noexcept = default;
   PointerStreamBuffer(PointerStreamBuffer&&) noexcept = default;
   ~PointerStreamBuffer() noexcept override = default;
 
-  PointerStreamBuffer& operator=(const PointerStreamBuffer&) = delete;
+  PointerStreamBuffer& operator=(const PointerStreamBuffer&) noexcept = default;
   PointerStreamBuffer& operator=(PointerStreamBuffer&&) noexcept = default;
 
  protected:
@@ -43,10 +43,10 @@ class PointerInputStream final : public std::istream {
         _buffer(data, size) {}
 
   PointerInputStream(const PointerInputStream&) = delete;
-  PointerInputStream(PointerInputStream&&) noexcept = default;
+  PointerInputStream(PointerInputStream&&) = delete;
   ~PointerInputStream() noexcept override = default;
 
   PointerInputStream& operator=(const PointerInputStream&) = delete;
-  PointerInputStream& operator=(PointerInputStream&&) noexcept = default;
+  PointerInputStream& operator=(PointerInputStream&&) = delete;
 };
 }  // namespace Boncai
