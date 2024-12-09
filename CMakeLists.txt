@@ -42,6 +42,7 @@ endif()
 ####################################################
 add_subdirectory(bonxai_core)
 add_subdirectory(examples)
+add_subdirectory(boncai)
 
 if(Eigen_FOUND AND PCL_FOUND )
     add_subdirectory(bonxai_map)
