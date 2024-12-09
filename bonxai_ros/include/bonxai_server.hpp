@@ -81,6 +81,14 @@ class BonxaiServer : public rclcpp::Node {
   // octomap::OcTreeKey padded_min_key_;
   unsigned multires_2d_scale_;
   bool project_complete_map_;
+
+  double point_cloud_limit_min_;
+  double point_cloud_limit_max_;
+  pcl::PassThrough<PCLPoint> passthrough_filter_x_;
+  pcl::PassThrough<PCLPoint> passthrough_filter_y_;
+  pcl::PassThrough<PCLPoint> passthrough_filter_z_;
+
+
 };
 }  // namespace bonxai_server
 

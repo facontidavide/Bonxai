@@ -136,6 +136,20 @@ BonxaiServer::BonxaiServer(const rclcpp::NodeOptions& node_options)
   // set parameter callback
   set_param_res_ =
       this->add_on_set_parameters_callback(std::bind(&BonxaiServer::onParameter, this, _1));
+
+  // Initialize filter limits for point cloud filtering
+  point_cloud_limit_min_ = -std::numeric_limits<double>::max();
+  point_cloud_limit_max_ = std::numeric_limits<double>::max();
+
+  // Configure PassThrough filters for each axis (x, y, z)
+  passthrough_filter_x_.setFilterFieldName("x");
+  passthrough_filter_x_.setFilterLimits(point_cloud_limit_min_, point_cloud_limit_max_);
+
+  passthrough_filter_y_.setFilterFieldName("y");
+  passthrough_filter_y_.setFilterLimits(point_cloud_limit_min_, point_cloud_limit_max_);
+
+  passthrough_filter_z_.setFilterFieldName("z");
+  passthrough_filter_z_.setFilterLimits(point_cloud_limit_min_, point_cloud_limit_max_);
 }
 
 void BonxaiServer::insertCloudCallback(const PointCloud2::ConstSharedPtr cloud) {
@@ -160,6 +174,16 @@ void BonxaiServer::insertCloudCallback(const PointCloud2::ConstSharedPtr cloud) 
 
   // Transforming Points to Global Reference Frame
   pcl::transformPointCloud(pc, pc, sensor_to_world);
+
+  // Apply PassThrough filtering along each axis (x, y, z)
+  passthrough_filter_x_.setInputCloud(pc.makeShared());
+  passthrough_filter_x_.filter(pc);
+
+  passthrough_filter_y_.setInputCloud(pc.makeShared());
+  passthrough_filter_y_.filter(pc);
+
+  passthrough_filter_z_.setInputCloud(pc.makeShared());
+  passthrough_filter_z_.filter(pc);
 
   // Getting the Translation from the sensor to the Global Reference Frame
   const auto& t = sensor_to_world_transform_stamped.transform.translation;

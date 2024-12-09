@@ -18,7 +18,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CONFIG_PATH ${CMAKE_MODULE_PATH}  "${CMAKE_CURRENT_LIST_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CONFIG_PATH}")
 
-find_package(PCL QUIET COMPONENTS common io)
+find_package(PCL QUIET COMPONENTS common io filters)
 
 find_package(benchmark QUIET)
 find_package(octomap QUIET)
