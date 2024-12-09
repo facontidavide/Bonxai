@@ -27,19 +27,19 @@ class VectorStreamBuffer final : public std::streambuf {
   VectorStreamBuffer(VectorStreamBuffer&&) noexcept = default;
   ~VectorStreamBuffer() noexcept override = default;
 
-  auto operator=(const VectorStreamBuffer&) -> VectorStreamBuffer& = delete;
-  auto operator=(VectorStreamBuffer&&) noexcept -> VectorStreamBuffer& = default;
+  VectorStreamBuffer& operator=(const VectorStreamBuffer&) = delete;
+  VectorStreamBuffer& operator=(VectorStreamBuffer&&) noexcept = default;
 
-  [[nodiscard]] auto get_data() const noexcept -> const uint8_t* {
+  [[nodiscard]] const uint8_t* get_data() const noexcept {
     return _buffer.data();
   }
 
-  [[nodiscard]] auto get_size() const noexcept -> size_t {
+  [[nodiscard]] size_t get_size() const noexcept {
     return _buffer.size();
   }
 
  protected:
-  auto overflow(const int_type ch) -> int_type override {
+  int_type overflow(const int_type ch) override {
     if (ch != traits_type::eof()) {
       _buffer.push_back(static_cast<uint8_t>(ch));
       return ch;
@@ -47,7 +47,7 @@ class VectorStreamBuffer final : public std::streambuf {
     return traits_type::eof();
   }
 
-  auto xsputn(const char* data, const std::streamsize count) -> std::streamsize override {
+  std::streamsize xsputn(const char* data, const std::streamsize count) override {
     _buffer.insert(_buffer.end(), data, data + count);
     return count;
   }
@@ -65,10 +65,10 @@ class VectorOutputStream final : public std::ostream {
   VectorOutputStream(VectorOutputStream&&) = delete;
   ~VectorOutputStream() noexcept override = default;
 
-  auto operator=(const VectorOutputStream&) -> VectorOutputStream& = delete;
-  auto operator=(VectorOutputStream&&) -> VectorOutputStream& = delete;
+  VectorOutputStream& operator=(const VectorOutputStream&) = delete;
+  VectorOutputStream& operator=(VectorOutputStream&&) = delete;
 
-  [[nodiscard]] auto get_buffer() const noexcept -> const VectorStreamBuffer& {
+  [[nodiscard]] const VectorStreamBuffer& get_buffer() const noexcept {
     return _buffer;
   }
 };
