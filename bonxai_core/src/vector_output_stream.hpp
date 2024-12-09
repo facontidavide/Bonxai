@@ -15,6 +15,17 @@
 #include <vector>
 
 namespace Bonxai {
+/**
+ * A std::streambuf implementation which contains an std::vector
+ * as its backing memory and allows write-access to said memory
+ * through the standard APIs.
+ * In conjunction with {@link VectorOutputStream}, this allows
+ * buffering whatever operation that requires an std::ostream
+ * into memory and to access the underlying memory in a C-friendly manner.
+ *
+ * More information on std::streambuf can be found here:
+ * https://cplusplus.com/reference/streambuf/streambuf/
+ */
 class VectorStreamBuffer final : public std::streambuf {
   std::vector<uint8_t> _buffer;
 
@@ -53,6 +64,10 @@ class VectorStreamBuffer final : public std::streambuf {
   }
 };
 
+/**
+ * Allows buffering any operation that accepts an std::ostream
+ * to memory and to access the produced data in a C-friendly manner.
+ */
 class VectorOutputStream final : public std::ostream {
   VectorStreamBuffer _buffer;
 

@@ -12,6 +12,15 @@
 #include <streambuf>
 
 namespace Bonxai {
+/**
+ * An std::streambuf implementation that acts as a view into an
+ * existing block of memory specified by an address and a size.
+ * In conjunction with {@link PointerInputStream}, this allows
+ * passing any C-style slice of data to any function that accepts a std::istream.
+ *
+ * More information on std::streambuf can be found here:
+ * https://cplusplus.com/reference/streambuf/streambuf/
+ */
 struct PointerStreamBuffer final : public std::streambuf {
   explicit PointerStreamBuffer(const void* data, const size_t size) noexcept {
     auto* base = const_cast<char*>(static_cast<const char*>(data));
@@ -34,6 +43,10 @@ struct PointerStreamBuffer final : public std::streambuf {
   }
 };
 
+/**
+ * Allows passing a C-style slice of memory into any API
+ * that accepts an std::istream to read in data.
+ */
 class PointerInputStream final : public std::istream {
   PointerStreamBuffer _buffer;
 

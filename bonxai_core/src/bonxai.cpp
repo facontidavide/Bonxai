@@ -62,7 +62,7 @@ template <typename T, typename HANDLE>
   if (grid == nullptr) {
     return BONXAI_ERR_INV_ARG;
   }
-  *grid = reinterpret_cast<HANDLE>(new Bonxai::VoxelGrid<T>(resolution));
+  *grid = reinterpret_cast<HANDLE>(new VoxelGrid<T>(resolution));
   return BONXAI_OK;
 }
 
@@ -72,14 +72,14 @@ template <typename T, typename HANDLE>
   if (grid == nullptr || coord == nullptr) {
     return BONXAI_ERR_INV_ARG;
   }
-  const auto coord_impl = reinterpret_cast<Bonxai::VoxelGrid<T>*>(grid)->posToCoord(x, y, z);
+  const auto coord_impl = reinterpret_cast<VoxelGrid<T>*>(grid)->posToCoord(x, y, z);
   *coord = *reinterpret_cast<const bonxai_coord_t*>(&coord_impl);
   return BONXAI_OK;
 }
 
 template <typename T, typename HANDLE>
 void grid_delete(HANDLE grid) {
-  delete reinterpret_cast<Bonxai::VoxelGrid<T>*>(grid);
+  delete reinterpret_cast<VoxelGrid<T>*>(grid);
 }
 
 template <typename T, typename ACCESSOR, typename HANDLE>
@@ -88,7 +88,7 @@ template <typename T, typename ACCESSOR, typename HANDLE>
     return BONXAI_ERR_INV_ARG;
   }
   *accessor = reinterpret_cast<ACCESSOR>(
-      new typename Bonxai::VoxelGrid<T>::Accessor(*reinterpret_cast<Bonxai::VoxelGrid<T>*>(grid)));
+      new typename VoxelGrid<T>::Accessor(*reinterpret_cast<VoxelGrid<T>*>(grid)));
   return BONXAI_OK;
 }
 
@@ -97,8 +97,8 @@ template <typename T, typename ACCESSOR>
   if (accessor == nullptr || coord == nullptr) {
     return BONXAI_ERR_INV_ARG;
   }
-  reinterpret_cast<typename Bonxai::VoxelGrid<T>::Accessor*>(accessor)->setValue(
-      *reinterpret_cast<const Bonxai::CoordT*>(coord), value);
+  reinterpret_cast<typename VoxelGrid<T>::Accessor*>(accessor)->setValue(
+      *reinterpret_cast<const CoordT*>(coord), value);
   return BONXAI_OK;
 }
 
@@ -109,14 +109,14 @@ template <typename T, typename ACCESSOR>
   if (accessor == nullptr || coord == nullptr || value == nullptr) {
     return BONXAI_ERR_INV_ARG;
   }
-  *value = reinterpret_cast<typename Bonxai::VoxelGrid<T>::Accessor*>(accessor)->value(
-      *reinterpret_cast<const Bonxai::CoordT*>(coord), create_if_missing == BONXAI_TRUE);
+  *value = reinterpret_cast<typename VoxelGrid<T>::Accessor*>(accessor)->value(
+      *reinterpret_cast<const CoordT*>(coord), create_if_missing == BONXAI_TRUE);
   return BONXAI_OK;
 }
 
 template <typename T, typename ACCESSOR>
 void accessor_delete(ACCESSOR accessor) {
-  delete reinterpret_cast<typename Bonxai::VoxelGrid<T>::Accessor*>(accessor);
+  delete reinterpret_cast<typename VoxelGrid<T>::Accessor*>(accessor);
 }
 
 template <typename T, typename HANDLE>
@@ -128,11 +128,9 @@ template <typename T, typename HANDLE>
   std::string first_line{};
   std::getline(stream_impl, first_line);
   stream_impl.seekg(0);
-  const auto header_info = Bonxai::GetHeaderInfo(first_line);
-  *reinterpret_cast<Bonxai::VoxelGrid<T>**>(grid) =
-      new Bonxai::VoxelGrid<T>(header_info.resolution);
-  **reinterpret_cast<Bonxai::VoxelGrid<T>**>(grid) =
-      Bonxai::Deserialize<T>(stream_impl, header_info);
+  const auto header_info = GetHeaderInfo(first_line);
+  *reinterpret_cast<VoxelGrid<T>**>(grid) = new VoxelGrid<T>(header_info.resolution);
+  **reinterpret_cast<VoxelGrid<T>**>(grid) = Bonxai::Deserialize<T>(stream_impl, header_info);
   return BONXAI_OK;
 }
 
@@ -142,8 +140,7 @@ template <typename T, typename HANDLE>
     return BONXAI_ERR_INV_ARG;
   }
   Bonxai::Serialize(
-      *reinterpret_cast<VectorOutputStream*>(stream),
-      *reinterpret_cast<const Bonxai::VoxelGrid<T>*>(grid));
+      *reinterpret_cast<VectorOutputStream*>(stream), *reinterpret_cast<const VoxelGrid<T>*>(grid));
   return BONXAI_OK;
 }
 }  // namespace Bonxai
@@ -196,3 +193,11 @@ BONXAI_DEFINE_GRID_IMPL(u8, uint8_t)
 BONXAI_DEFINE_GRID_IMPL(u16, uint16_t)
 BONXAI_DEFINE_GRID_IMPL(u32, uint32_t)
 BONXAI_DEFINE_GRID_IMPL(u64, uint64_t)
+
+BONXAI_DEFINE_GRID_IMPL(i8, int8_t)
+BONXAI_DEFINE_GRID_IMPL(i16, int16_t)
+BONXAI_DEFINE_GRID_IMPL(i32, int32_t)
+BONXAI_DEFINE_GRID_IMPL(i64, int64_t)
+
+BONXAI_DEFINE_GRID_IMPL(f32, float)
+BONXAI_DEFINE_GRID_IMPL(f64, double)

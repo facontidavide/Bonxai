@@ -47,6 +47,20 @@ typedef struct bonxai_accessor_u32* bonxai_accessor_u32_handle;
 typedef struct bonxai_grid_u64* bonxai_grid_u64_handle;
 typedef struct bonxai_accessor_u64* bonxai_accessor_u64_handle;
 
+typedef struct bonxai_grid_i8* bonxai_grid_i8_handle;
+typedef struct bonxai_accessor_i8* bonxai_accessor_i8_handle;
+typedef struct bonxai_grid_i16* bonxai_grid_i16_handle;
+typedef struct bonxai_accessor_i16* bonxai_accessor_i16_handle;
+typedef struct bonxai_grid_i32* bonxai_grid_i32_handle;
+typedef struct bonxai_accessor_i32* bonxai_accessor_i32_handle;
+typedef struct bonxai_grid_i64* bonxai_grid_i64_handle;
+typedef struct bonxai_accessor_i64* bonxai_accessor_i64_handle;
+
+typedef struct bonxai_grid_f32* bonxai_grid_f32_handle;
+typedef struct bonxai_accessor_f32* bonxai_accessor_f32_handle;
+typedef struct bonxai_grid_f64* bonxai_grid_f64_handle;
+typedef struct bonxai_accessor_f64* bonxai_accessor_f64_handle;
+
 typedef struct bonxai_coord {
   int32_t x;
   int32_t y;
@@ -131,3 +145,105 @@ BONXAI_API bonxai_error_t
 bonxai_serialize_u64(bonxai_grid_u64_handle grid, bonxai_output_stream_handle stream);
 BONXAI_API bonxai_error_t
 bonxai_deserialize_u64(bonxai_input_stream_handle stream, bonxai_grid_u64_handle* grid);
+
+BONXAI_API bonxai_error_t bonxai_grid_i8_new(double resolution, bonxai_grid_i8_handle* grid);
+BONXAI_API bonxai_error_t bonxai_grid_i8_pos_to_coord(
+    bonxai_grid_i8_handle grid, double x, double y, double z, bonxai_coord_t* coord);
+BONXAI_API void bonxai_grid_i8_delete(bonxai_grid_i8_handle grid);
+BONXAI_API bonxai_error_t
+bonxai_accessor_i8_new(bonxai_grid_i8_handle grid, bonxai_accessor_i8_handle* accessor);
+BONXAI_API bonxai_error_t bonxai_accessor_i8_set(
+    bonxai_accessor_i8_handle accessor, const bonxai_coord_t* coord, uint8_t value);
+BONXAI_API bonxai_error_t bonxai_accessor_i8_get(
+    bonxai_accessor_i8_handle accessor, const bonxai_coord_t* coord,
+    bonxai_bool_t create_if_missing, uint8_t** value);
+BONXAI_API void bonxai_accessor_i8_delete(bonxai_accessor_i8_handle accessor);
+BONXAI_API bonxai_error_t
+bonxai_serialize_i8(bonxai_grid_i8_handle grid, bonxai_output_stream_handle stream);
+BONXAI_API bonxai_error_t
+bonxai_deserialize_i8(bonxai_input_stream_handle stream, bonxai_grid_i8_handle* grid);
+
+BONXAI_API bonxai_error_t bonxai_grid_i16_new(double resolution, bonxai_grid_i16_handle* grid);
+BONXAI_API bonxai_error_t bonxai_grid_i16_pos_to_coord(
+    bonxai_grid_i16_handle grid, double x, double y, double z, bonxai_coord_t* coord);
+BONXAI_API void bonxai_grid_i16_delete(bonxai_grid_i16_handle grid);
+BONXAI_API bonxai_error_t
+bonxai_accessor_i16_new(bonxai_grid_i16_handle grid, bonxai_accessor_i16_handle* accessor);
+BONXAI_API bonxai_error_t bonxai_accessor_i16_set(
+    bonxai_accessor_i16_handle accessor, const bonxai_coord_t* coord, uint16_t value);
+BONXAI_API bonxai_error_t bonxai_accessor_i16_get(
+    bonxai_accessor_i16_handle accessor, const bonxai_coord_t* coord,
+    bonxai_bool_t create_if_missing, uint16_t** value);
+BONXAI_API void bonxai_accessor_i16_delete(bonxai_accessor_i16_handle accessor);
+BONXAI_API bonxai_error_t
+bonxai_serialize_i16(bonxai_grid_i16_handle grid, bonxai_output_stream_handle stream);
+BONXAI_API bonxai_error_t
+bonxai_deserialize_i16(bonxai_input_stream_handle stream, bonxai_grid_i16_handle* grid);
+
+BONXAI_API bonxai_error_t bonxai_grid_i32_new(double resolution, bonxai_grid_i32_handle* grid);
+BONXAI_API bonxai_error_t bonxai_grid_i32_pos_to_coord(
+    bonxai_grid_i32_handle grid, double x, double y, double z, bonxai_coord_t* coord);
+BONXAI_API void bonxai_grid_i32_delete(bonxai_grid_i32_handle grid);
+BONXAI_API bonxai_error_t
+bonxai_accessor_i32_new(bonxai_grid_i32_handle grid, bonxai_accessor_i32_handle* accessor);
+BONXAI_API bonxai_error_t bonxai_accessor_i32_set(
+    bonxai_accessor_i32_handle accessor, const bonxai_coord_t* coord, uint32_t value);
+BONXAI_API bonxai_error_t bonxai_accessor_i32_get(
+    bonxai_accessor_i32_handle accessor, const bonxai_coord_t* coord,
+    bonxai_bool_t create_if_missing, uint32_t** value);
+BONXAI_API void bonxai_accessor_i32_delete(bonxai_accessor_i32_handle accessor);
+BONXAI_API bonxai_error_t
+bonxai_serialize_i32(bonxai_grid_i32_handle grid, bonxai_output_stream_handle stream);
+BONXAI_API bonxai_error_t
+bonxai_deserialize_i32(bonxai_input_stream_handle stream, bonxai_grid_i32_handle* grid);
+
+BONXAI_API bonxai_error_t bonxai_grid_i64_new(double resolution, bonxai_grid_i64_handle* grid);
+BONXAI_API bonxai_error_t bonxai_grid_i64_pos_to_coord(
+    bonxai_grid_i64_handle grid, double x, double y, double z, bonxai_coord_t* coord);
+BONXAI_API void bonxai_grid_i64_delete(bonxai_grid_i64_handle grid);
+BONXAI_API bonxai_error_t
+bonxai_accessor_i64_new(bonxai_grid_i64_handle grid, bonxai_accessor_i64_handle* accessor);
+BONXAI_API bonxai_error_t bonxai_accessor_i64_set(
+    bonxai_accessor_i64_handle accessor, const bonxai_coord_t* coord, uint64_t value);
+BONXAI_API bonxai_error_t bonxai_accessor_i64_get(
+    bonxai_accessor_i64_handle accessor, const bonxai_coord_t* coord,
+    bonxai_bool_t create_if_missing, uint64_t** value);
+BONXAI_API void bonxai_accessor_i64_delete(bonxai_accessor_i64_handle accessor);
+BONXAI_API bonxai_error_t
+bonxai_serialize_i64(bonxai_grid_i64_handle grid, bonxai_output_stream_handle stream);
+BONXAI_API bonxai_error_t
+bonxai_deserialize_i64(bonxai_input_stream_handle stream, bonxai_grid_i64_handle* grid);
+
+BONXAI_API bonxai_error_t bonxai_grid_f32_new(double resolution, bonxai_grid_f32_handle* grid);
+BONXAI_API bonxai_error_t bonxai_grid_f32_pos_to_coord(
+    bonxai_grid_f32_handle grid, double x, double y, double z, bonxai_coord_t* coord);
+BONXAI_API void bonxai_grid_f32_delete(bonxai_grid_f32_handle grid);
+BONXAI_API bonxai_error_t
+bonxai_accessor_f32_new(bonxai_grid_f32_handle grid, bonxai_accessor_f32_handle* accessor);
+BONXAI_API bonxai_error_t bonxai_accessor_f32_set(
+    bonxai_accessor_f32_handle accessor, const bonxai_coord_t* coord, uint32_t value);
+BONXAI_API bonxai_error_t bonxai_accessor_f32_get(
+    bonxai_accessor_f32_handle accessor, const bonxai_coord_t* coord,
+    bonxai_bool_t create_if_missing, uint32_t** value);
+BONXAI_API void bonxai_accessor_f32_delete(bonxai_accessor_f32_handle accessor);
+BONXAI_API bonxai_error_t
+bonxai_serialize_f32(bonxai_grid_f32_handle grid, bonxai_output_stream_handle stream);
+BONXAI_API bonxai_error_t
+bonxai_deserialize_f32(bonxai_input_stream_handle stream, bonxai_grid_f32_handle* grid);
+
+BONXAI_API bonxai_error_t bonxai_grid_f64_new(double resolution, bonxai_grid_f64_handle* grid);
+BONXAI_API bonxai_error_t bonxai_grid_f64_pos_to_coord(
+    bonxai_grid_f64_handle grid, double x, double y, double z, bonxai_coord_t* coord);
+BONXAI_API void bonxai_grid_f64_delete(bonxai_grid_f64_handle grid);
+BONXAI_API bonxai_error_t
+bonxai_accessor_f64_new(bonxai_grid_f64_handle grid, bonxai_accessor_f64_handle* accessor);
+BONXAI_API bonxai_error_t bonxai_accessor_f64_set(
+    bonxai_accessor_f64_handle accessor, const bonxai_coord_t* coord, uint64_t value);
+BONXAI_API bonxai_error_t bonxai_accessor_f64_get(
+    bonxai_accessor_f64_handle accessor, const bonxai_coord_t* coord,
+    bonxai_bool_t create_if_missing, uint64_t** value);
+BONXAI_API void bonxai_accessor_f64_delete(bonxai_accessor_f64_handle accessor);
+BONXAI_API bonxai_error_t
+bonxai_serialize_f64(bonxai_grid_f64_handle grid, bonxai_output_stream_handle stream);
+BONXAI_API bonxai_error_t
+bonxai_deserialize_f64(bonxai_input_stream_handle stream, bonxai_grid_f64_handle* grid);
