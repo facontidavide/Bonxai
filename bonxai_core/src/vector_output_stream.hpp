@@ -14,7 +14,7 @@
 #include <streambuf>
 #include <vector>
 
-namespace Boncai {
+namespace Bonxai {
 class VectorStreamBuffer final : public std::streambuf {
   std::vector<uint8_t> _buffer;
 

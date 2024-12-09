@@ -11,7 +11,7 @@
 
 #include <streambuf>
 
-namespace Boncai {
+namespace Bonxai {
 struct PointerStreamBuffer final : public std::streambuf {
   explicit PointerStreamBuffer(const void* data, const size_t size) noexcept {
     auto* base = const_cast<char*>(static_cast<const char*>(data));
