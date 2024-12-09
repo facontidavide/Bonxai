@@ -49,4 +49,4 @@ class PointerInputStream final : public std::istream {
   PointerInputStream& operator=(const PointerInputStream&) = delete;
   PointerInputStream& operator=(PointerInputStream&&) = delete;
 };
-}  // namespace Boncai
+}  // namespace Bonxai

@@ -72,4 +72,4 @@ class VectorOutputStream final : public std::ostream {
     return _buffer;
   }
 };
-}  // namespace Boncai
+}  // namespace Bonxai
