@@ -13,6 +13,7 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>pcl_conversions</depend>
+  <depend>std_srvs</depend>
   <depend>sensor_msgs</depend>
   <depend>tf2</depend>
   <depend>tf2_eigen</depend>
@@ -20,7 +21,10 @@
   <depend>tf2_ros</depend>
   <depend>visualization_msgs</depend>
   <depend>message_filters</depend>
-  <depend>std_srvs</depend>
+  <depend>pcl-common</depend>
+  <depend>pcl-io</depend>
+  <depend>pcl-segmentation</depend>
+  <depend>pcl-filters</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
