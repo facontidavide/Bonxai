@@ -21,10 +21,10 @@
   <depend>tf2_ros</depend>
   <depend>visualization_msgs</depend>
   <depend>message_filters</depend>
-  <depend>pcl-common</depend>
-  <depend>pcl-io</depend>
-  <depend>pcl-segmentation</depend>
-  <depend>pcl-filters</depend>
+  <depend>libpcl-common</depend>
+  <depend>libpcl-io</depend>
+  <depend>libpcl-segmentation</depend>
+  <depend>libpcl-filters</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
