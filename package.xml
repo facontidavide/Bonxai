@@ -23,7 +23,6 @@
   <depend>message_filters</depend>
   <depend>libpcl-common</depend>
   <depend>libpcl-io</depend>
-  <depend>libpcl-segmentation</depend>
   <depend>libpcl-filters</depend>
 
   <test_depend>ament_lint_auto</test_depend>
