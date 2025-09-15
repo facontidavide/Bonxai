@@ -105,6 +105,10 @@ Minimum and maximum height of points to consider for insertion in the callback. 
 
 Minimum and maximum height of occupied cells to be consider in the final map. This ignores all occupied voxels outside of the interval when sending out visualizations and collision maps, but will not affect the actual Bonxai map representation.
 
+`~publish_octomap (bool, default: false)`
+
+Publish the final map in Octomap format instead of PointCloud2. 
+
 ## 3.1.5 Required tf Transforms
 
 `sensor data frame → /map (static world frame, changeable with parameter frame_id)`

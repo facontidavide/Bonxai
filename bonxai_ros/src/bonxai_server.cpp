@@ -114,8 +114,17 @@ BonxaiServer::BonxaiServer(const rclcpp::NodeOptions& node_options)
   }
 
   auto qos = latched_topics_ ? rclcpp::QoS{1}.transient_local() : rclcpp::QoS{1};
-  point_cloud_pub_ = create_publisher<PointCloud2>("bonxai_point_cloud_centers", qos);
-
+  
+  octomap_topic_ = declare_parameter("publish_octomap", false);
+  if (octomap_topic_) {
+    octomap_pub_ = create_publisher<Octomap>("bonxai_point_cloud_centers", qos);
+    RCLCPP_INFO(
+        get_logger(),
+        "Publishing map as octomap");
+  } else {
+    point_cloud_pub_ = create_publisher<PointCloud2>("bonxai_point_cloud_centers", qos);
+  }
+  
   tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
       this->get_node_base_interface(), this->get_node_timers_interface());
@@ -225,28 +234,54 @@ void BonxaiServer::publishAll(const rclcpp::Time& rostime) {
     return;
   }
 
-  bool publish_point_cloud =
-      (latched_topics_ || point_cloud_pub_->get_subscription_count() +
-                                  point_cloud_pub_->get_intra_process_subscription_count() >
-                              0);
+  int subscription_count = octomap_topic_ 
+    ? octomap_pub_->get_subscription_count() + octomap_pub_->get_intra_process_subscription_count()
+    : point_cloud_pub_->get_subscription_count() + point_cloud_pub_->get_intra_process_subscription_count();
 
-  // init pointcloud for occupied space:
+  bool publish_point_cloud =
+      (latched_topics_ || subscription_count > 0);
+
   if (publish_point_cloud) {
+    std::unique_ptr<octomap::OcTree> tree = nullptr;
     thread_local pcl::PointCloud<PCLPoint> pcl_cloud;
     pcl_cloud.clear();
 
+    if (octomap_topic_) {
+        tree = std::make_unique<octomap::OcTree>(res_);
+    }
+
     for (const auto& voxel : bonxai_result) {
       if (voxel.z() >= occupancy_min_z_ && voxel.z() <= occupancy_max_z_) {
-        pcl_cloud.push_back(PCLPoint(voxel.x(), voxel.y(), voxel.z()));
+        if (octomap_topic_) {
+          tree->updateNode(octomap::point3d(voxel.x(), voxel.y(), voxel.z()), true);
+        } else {
+          pcl_cloud.push_back(PCLPoint(voxel.x(), voxel.y(), voxel.z()));
+        }
       }
     }
-    PointCloud2 cloud;
-    pcl::toROSMsg(pcl_cloud, cloud);
 
-    cloud.header.frame_id = world_frame_id_;
-    cloud.header.stamp = rostime;
-    point_cloud_pub_->publish(cloud);
-    RCLCPP_WARN(get_logger(), "Published occupancy grid with %ld voxels", pcl_cloud.points.size());
+    // Publish OctoMap
+    if (octomap_topic_ && tree) {
+      Octomap octomap_msg;
+      octomap_msg.header.frame_id = world_frame_id_;
+      octomap_msg.header.stamp = rostime;
+      octomap_msg.resolution = res_;
+      octomap_msgs::binaryMapToMsg(*tree, octomap_msg);
+
+      octomap_pub_->publish(octomap_msg);
+      RCLCPP_WARN(get_logger(), "Published OctoMap with %ld nodes", tree->size());
+    }
+
+    // Publish PointCloud2
+    else {
+      PointCloud2 cloud;
+      pcl::toROSMsg(pcl_cloud, cloud);
+
+      cloud.header.frame_id = world_frame_id_;
+      cloud.header.stamp = rostime;
+      point_cloud_pub_->publish(cloud);
+      RCLCPP_WARN(get_logger(), "Published occupancy grid with %ld voxels", pcl_cloud.points.size());
+    }
   }
 }
 

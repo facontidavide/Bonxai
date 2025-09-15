@@ -71,6 +71,7 @@ if ( ament_cmake_FOUND )
     target_link_libraries(bonxai_server
       bonxai_map
       ${PCL_LIBRARIES}
+      ${octomap_LIBRARIES}
     )
 
     ament_target_dependencies(bonxai_server std_srvs)
