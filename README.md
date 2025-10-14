@@ -29,7 +29,7 @@ an implementation of the original paper, with a couple of non-trivial changes:
 
 You can read the previous paper [here](http://www.museth.org/Ken/Publications_files/Museth_TOG13.pdf).
 
-There is also some overlap with this other paper, but their implementation is much** simpler,
+There is also some overlap with this other paper, but their implementation is **much** simpler,
 even if conceptually similar:
 
      Eurico Pedrosa, Artur Pereira, Nuno Lau
@@ -38,7 +38,7 @@ even if conceptually similar:
 
 
 **Bonxai** is currently under development and I am building this mostly for fun and for
-educational purposes. Don't expect any API stability for the time being.
+educational purposes.
 
 # Benchmark (preliminary)
 
@@ -73,7 +73,7 @@ and include like this:
 #include "bonxai/bonxai.hpp"
 ```
 
-To create a VoxelGrid, where each cell contains an integer value and has size 0.05.
+To create a VoxelGrid, where each cell contains an integer value and has a size of 0.05.
 
 ```c++
 double voxel_resolution = 0.05;
@@ -94,7 +94,7 @@ Bonxai::VoxelGrid<Foo> foo_grid( voxel_resolution );
 
 To insert values into a cell with coordinates x, y and z, use a
 `VoxelGrid::Accessor` object.
-In the next code sample, we will create a dense cube of cells with value 42:
+In the next code sample, we will create a dense cube of cells with the value 42:
 
 ```c++
 // Each cell will contain a `float` and it will have size 0.05
@@ -130,8 +130,7 @@ float* value_ptr = accessor.value( coord );
 `Bonxai::VoxelGrid` is **not** thread-safe, for write operations.
 
 If you want to access the grid in **read-only** mode, you can
-use multi-threading, but each thread should have its own
-`accessor`.
+use multi-threading, but each thread should have its own `accessor`.
 
 # Roadmap
 
@@ -141,7 +140,7 @@ use multi-threading, but each thread should have its own
 - [ ] RViz2 visualization messages.
 - [ ] integration with [FCL](https://github.com/flexible-collision-library/fcl) for collision detection (?)
 
-# Frequently Asked Question
+# Frequently Asked Questions
 
 **What is the point of reimplementing OpenVDB?**
 
@@ -155,5 +154,5 @@ use multi-threading, but each thread should have its own
 
 It is... complicated.
 
-If you need to store very sparse point clouds, you should expect Bonxai to use more memory (20-40% more).
-If the point cloud is relatively dense, Bonxai might use less memory than Octomap (less than half).
+If you need to store very sparse point clouds, Bonxai will probably use more memory (20-40% more).
+If the point cloud is relatively dense, Bonxai might use less memory than Octomap (even less than half).
