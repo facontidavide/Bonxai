@@ -71,9 +71,8 @@ if ( ament_cmake_FOUND )
     target_link_libraries(bonxai_server
       bonxai_map
       ${PCL_LIBRARIES}
+      ${std_srvs_TARGETS}
     )
-
-    ament_target_dependencies(bonxai_server std_srvs)
 
     rclcpp_components_register_node(bonxai_server
       PLUGIN "bonxai_server::BonxaiServer"
