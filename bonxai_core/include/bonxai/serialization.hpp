@@ -1,13 +1,13 @@
 #pragma once
 
-#include <stdio.h>
-
+#include <cstdio>
 #include <cstring>
 #include <exception>
 #include <fstream>
 #include <iostream>
 #include <type_traits>
 #include <typeinfo>
+#include <string>
 
 #include "bonxai/bonxai.hpp"
 
