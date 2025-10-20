@@ -15,17 +15,17 @@
 #include "bonxai/bonxai.hpp"
 #include "bonxai_map/pcl_utils.hpp"
 #include "bonxai_map/probabilistic_map.hpp"
-#include "message_filters/subscriber.h"
+#include "message_filters/subscriber.hpp"
 #include "pcl_conversions/pcl_conversions.h"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "std_msgs/msg/color_rgba.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "tf2_eigen/tf2_eigen.hpp"
-#include "tf2_ros/buffer.h"
-#include "tf2_ros/create_timer_ros.h"
-#include "tf2_ros/message_filter.h"
-#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/create_timer_ros.hpp"
+#include "tf2_ros/message_filter.hpp"
+#include "tf2_ros/transform_listener.hpp"
 
 namespace bonxai_server {
 
