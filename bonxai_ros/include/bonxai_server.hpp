@@ -18,6 +18,7 @@
 #include "message_filters/subscriber.hpp"
 #include "pcl_conversions/pcl_conversions.h"
 #include "rclcpp/rclcpp.hpp"
+#include "rmw/qos_profiles.h"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "std_msgs/msg/color_rgba.hpp"
 #include "std_srvs/srv/empty.hpp"
