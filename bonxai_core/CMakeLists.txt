@@ -13,3 +13,8 @@ target_include_directories(bonxai_core PUBLIC INTERFACE
 if(benchmark_FOUND)
     add_subdirectory(benchmark)
 endif()
+
+find_package(GTest QUIET)
+if(GTest_FOUND)
+    add_subdirectory(test)
+endif()
