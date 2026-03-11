@@ -475,7 +475,7 @@ inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord, bool create
 
   const CoordT inner_key = mutable_grid_.getInnerKey(coord);
 
-  if (inner_key != prev_inner_coord_) {
+  if (inner_key != prev_inner_coord_ || prev_leaf_ptr_ == nullptr) {
     prev_leaf_ptr_ = getLeafGrid(coord, create_if_missing);
     prev_inner_coord_ = inner_key;
   }
@@ -538,7 +538,7 @@ template <typename DataT>
 inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT& coord, const DataT& default_value) {
   const CoordT inner_key = mutable_grid_.getInnerKey(coord);
 
-  if (inner_key != prev_inner_coord_) {
+  if (inner_key != prev_inner_coord_ || prev_leaf_ptr_ == nullptr) {
     prev_leaf_ptr_ = getLeafGrid(coord, true);
     prev_inner_coord_ = inner_key;
   }
