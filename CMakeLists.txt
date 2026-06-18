@@ -65,6 +65,7 @@ if ( ament_cmake_FOUND )
 
     rosidl_generate_interfaces(${PROJECT_NAME}
       "bonxai_ros/msg/BonxaiVoxelMap.msg"
+      "bonxai_ros/msg/Voxel.msg"
       DEPENDENCIES std_msgs
     )
 

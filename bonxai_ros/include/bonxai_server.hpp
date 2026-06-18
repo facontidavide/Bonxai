@@ -16,6 +16,7 @@
 #include "bonxai_map/pcl_utils.hpp"
 #include "bonxai_map/probabilistic_map.hpp"
 #include "bonxai_ros/msg/bonxai_voxel_map.hpp"
+#include "bonxai_ros/msg/voxel.hpp"
 #include "message_filters/subscriber.hpp"
 #include "pcl_conversions/pcl_conversions.h"
 #include "rclcpp/rclcpp.hpp"

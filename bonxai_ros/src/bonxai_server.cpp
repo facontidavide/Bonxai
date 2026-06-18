@@ -217,18 +217,15 @@ rcl_interfaces::msg::SetParametersResult BonxaiServer::onParameter(
 
 void BonxaiServer::publishAll(const rclcpp::Time& rostime) {
   const auto start_time = rclcpp::Clock{}.now();
-  thread_local std::vector<Eigen::Vector3d> bonxai_result;
-  thread_local std::vector<Bonxai::CoordT> bonxai_coords;
-  bonxai_result.clear();
-  bonxai_coords.clear();
+  thread_local std::vector<Bonxai::CoordT> occupied_voxels;
+  thread_local std::vector<Bonxai::CoordT> free_voxels;
+  occupied_voxels.clear();
+  free_voxels.clear();
 
-  bonxai_->getOccupiedVoxels(bonxai_result);
-  bonxai_->getOccupiedVoxels(bonxai_coords);
 
-  if (bonxai_result.size() <= 1) {
-    RCLCPP_WARN(get_logger(), "Nothing to publish, bonxai is empty");
-    return;
-  }
+  bonxai_->getOccupiedVoxels(occupied_voxels);
+  bonxai_->getFreeVoxels(free_voxels);
+
 
   bool publish_point_cloud =
       (latched_topics_ || point_cloud_pub_->get_subscription_count() +
@@ -240,42 +237,33 @@ void BonxaiServer::publishAll(const rclcpp::Time& rostime) {
                                   voxel_map_pub_->get_intra_process_subscription_count() >
                               0);
 
-  // init pointcloud for occupied space:
-  if (publish_point_cloud) {
-    thread_local pcl::PointCloud<PCLPoint> pcl_cloud;
-    pcl_cloud.clear();
-
-    for (const auto& voxel : bonxai_result) {
-      if (voxel.z() >= occupancy_min_z_ && voxel.z() <= occupancy_max_z_) {
-        pcl_cloud.push_back(PCLPoint(voxel.x(), voxel.y(), voxel.z()));
-      }
-    }
-    PointCloud2 cloud;
-    pcl::toROSMsg(pcl_cloud, cloud);
-
-    cloud.header.frame_id = world_frame_id_;
-    cloud.header.stamp = rostime;
-    point_cloud_pub_->publish(cloud);
-    RCLCPP_WARN(get_logger(), "Published occupancy grid with %ld voxels", pcl_cloud.points.size());
-  }
-
   if (publish_voxel_map) {
     bonxai_ros::msg::BonxaiVoxelMap bonxai_voxel_map;
     bonxai_voxel_map.header.frame_id = world_frame_id_;
     bonxai_voxel_map.header.stamp = rostime;
     bonxai_voxel_map.voxel_resolution = res_;
-    bonxai_voxel_map.num_points = bonxai_coords.size();
 
-    bonxai_voxel_map.data.reserve(bonxai_coords.size() * 3);
-    for (const auto& voxel : bonxai_coords) {
-      bonxai_voxel_map.data.push_back(voxel.x);
-      bonxai_voxel_map.data.push_back(voxel.y);
-      bonxai_voxel_map.data.push_back(voxel.z);
+    bonxai_voxel_map.occupied_voxels.reserve(occupied_voxels.size());
+    for (const auto& voxel : occupied_voxels) {
+      bonxai_ros::msg::Voxel vox_msg;
+      vox_msg.x = voxel.x;
+      vox_msg.y = voxel.y;
+      vox_msg.z = voxel.z;
+      bonxai_voxel_map.occupied_voxels.push_back(vox_msg);
+    }
+
+    bonxai_voxel_map.free_voxels.reserve(free_voxels.size());
+    for (const auto& voxel : free_voxels) {
+      bonxai_ros::msg::Voxel vox_msg;
+      vox_msg.x = voxel.x;
+      vox_msg.y = voxel.y;
+      vox_msg.z = voxel.z;
+      bonxai_voxel_map.free_voxels.push_back(vox_msg);
     }
 
     voxel_map_pub_->publish(bonxai_voxel_map);
     RCLCPP_INFO(
-        get_logger(), "Published occupancy voxel map with %u voxels", bonxai_voxel_map.num_points);
+        get_logger(), "Published occupancy voxel map with %u voxels", bonxai_voxel_map.occupied_voxels.size());
   }
 }
 

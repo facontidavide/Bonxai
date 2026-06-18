@@ -5,5 +5,5 @@
 
 std_msgs/Header header
 float64 voxel_resolution
-uint32 num_points
-int32[] data #3 (xyz) * num_points 
+Voxel[] occupied_voxels
+Voxel[] free_voxels

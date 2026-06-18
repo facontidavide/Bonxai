@@ -50,7 +50,7 @@ void BonxaiDisplay::processMessage(bonxai_ros::msg::BonxaiVoxelMap::ConstSharedP
   scene_node_->setOrientation(orientation);
 
   double res = message->voxel_resolution;
-  uint32_t num_pts = message->num_points;
+  uint32_t num_pts = message->occupied_voxels.size();
 
   RCLCPP_DEBUG(rclcpp::get_logger("rviz2"), "BonxaiDisplay: Received %u points", num_pts);
   setStatus(
@@ -74,19 +74,21 @@ void BonxaiDisplay::processMessage(bonxai_ros::msg::BonxaiVoxelMap::ConstSharedP
   float min_val = min_value_property_->getFloat();
   float max_val = max_value_property_->getFloat();
 
+
   if (dynamic_range_property_->getBool() && num_pts > 0) {
-    float sensor_max_z = -std::numeric_limits<float>::infinity();
+    float sensor_max_z = std::numeric_limits<float>::min();
+    float sensor_min_z = std::numeric_limits<float>::max();
     for (uint32_t i = 0; i < num_pts; ++i) {
-      if (i * 3 + 2 >= message->data.size())
-        break;
-      float z = message->data[i * 3 + 2] * res;
+      float z = message->occupied_voxels[i].z * res;
       if (z > sensor_max_z)
         sensor_max_z = z;
+      if (z < sensor_min_z)
+        sensor_min_z = z;
     }
-    if (sensor_max_z > -std::numeric_limits<float>::infinity()) {
-      max_val = sensor_max_z;
-    }
+    max_val = sensor_max_z;
+    min_val = sensor_min_z;
   }
+  
 
   if (max_val == min_val)
     max_val = min_val + 0.001f;
@@ -95,12 +97,9 @@ void BonxaiDisplay::processMessage(bonxai_ros::msg::BonxaiVoxelMap::ConstSharedP
   points.reserve(num_pts);
 
   for (uint32_t i = 0; i < num_pts; ++i) {
-    if (i * 3 + 2 >= message->data.size())
-      break;
-
-    int32_t vx = message->data[i * 3 + 0];
-    int32_t vy = message->data[i * 3 + 1];
-    int32_t vz = message->data[i * 3 + 2];
+    int32_t vx = message->occupied_voxels[i].x;
+    int32_t vy = message->occupied_voxels[i].y;
+    int32_t vz = message->occupied_voxels[i].z;
 
     rviz_rendering::PointCloud::Point p;
     p.position = Ogre::Vector3(vx * res, vy * res, vz * res);
