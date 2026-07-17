@@ -1,7 +1,6 @@
 #include "bonxai_map/probabilistic_map.hpp"
 
 #include <eigen3/Eigen/Geometry>
-#include <unordered_set>
 
 namespace Bonxai {
 
@@ -31,25 +30,20 @@ void ProbabilisticMap::addHitPoint(const Vector3D& point) {
   const auto coord = _grid.posToCoord(point);
   CellT* cell = _accessor.value(coord, true);
 
-  if (cell->update_id != _update_count) {
-    cell->probability_log =
-        std::min(cell->probability_log + _options.prob_hit_log, _options.clamp_max_log);
-
-    cell->update_id = _update_count;
-    _hit_coords.push_back(coord);
+  if (cell->flags == CellT::kUnseen) {
+    _ray_targets.emplace_back(coord, cell);
   }
+  // a hit always wins over a miss within the same scan
+  cell->flags = CellT::kHit;
 }
 
 void ProbabilisticMap::addMissPoint(const Vector3D& point) {
   const auto coord = _grid.posToCoord(point);
   CellT* cell = _accessor.value(coord, true);
 
-  if (cell->update_id != _update_count) {
-    cell->probability_log =
-        std::max(cell->probability_log + _options.prob_miss_log, _options.clamp_min_log);
-
-    cell->update_id = _update_count;
-    _miss_coords.push_back(coord);
+  if (cell->flags == CellT::kUnseen) {
+    cell->flags = CellT::kFree;
+    _ray_targets.emplace_back(coord, cell);
   }
 }
 
@@ -77,32 +71,53 @@ bool ProbabilisticMap::isFree(const CoordT& coord) const {
 void Bonxai::ProbabilisticMap::updateFreeCells(const Vector3D& origin) {
   auto accessor = _grid.createAccessor();
 
-  // same as addMissPoint, but using lambda will force inlining
-  auto clearPoint = [this, &accessor](const CoordT& coord) {
+  auto applyHit = [this](CellT* cell) {
+    cell->probability_log =
+        std::min(cell->probability_log + _options.prob_hit_log, _options.clamp_max_log);
+    cell->flags = CellT::kUnseen;
+  };
+  auto applyMiss = [this](CellT* cell) {
+    cell->probability_log =
+        std::max(cell->probability_log + _options.prob_miss_log, _options.clamp_min_log);
+    cell->flags = CellT::kUnseen;
+  };
+
+  // mark the voxels traversed by the rays; endpoints keep their hit/miss state
+  auto visitFreeCell = [this, &accessor](const CoordT& coord) {
     CellT* cell = accessor.value(coord, true);
-    if (cell->update_id != _update_count) {
-      cell->probability_log =
-          std::max(cell->probability_log + _options.prob_miss_log, _options.clamp_min_log);
-      cell->update_id = _update_count;
+    if (cell->flags == CellT::kUnseen) {
+      cell->flags = CellT::kFree;
+      _traversed_cells.push_back(cell);
     }
     return true;
   };
 
   const auto coord_origin = _grid.posToCoord(origin);
+  const bool exact = (_options.ray_mode == Options::RayMode::Exact);
+  const double resolution = _grid.voxelSize();
 
-  for (const auto& coord_end : _hit_coords) {
-    RayIterator(coord_origin, coord_end, clearPoint);
+  for (const auto& [coord_end, cell] : _ray_targets) {
+    if (exact) {
+      ExactRayIterator(origin, coord_origin, coord_end, resolution, visitFreeCell);
+    } else {
+      RayIterator(coord_origin, coord_end, visitFreeCell);
+    }
   }
-  _hit_coords.clear();
 
-  for (const auto& coord_end : _miss_coords) {
-    RayIterator(coord_origin, coord_end, clearPoint);
+  // apply exactly one probability update per touched cell and clear its flag
+  for (const auto& [coord, cell] : _ray_targets) {
+    if (cell->flags == CellT::kHit) {
+      applyHit(cell);
+    } else {
+      applyMiss(cell);
+    }
   }
-  _miss_coords.clear();
+  _ray_targets.clear();
 
-  if (++_update_count == 4) {
-    _update_count = 1;
+  for (CellT* cell : _traversed_cells) {
+    applyMiss(cell);
   }
+  _traversed_cells.clear();
 }
 
 void ProbabilisticMap::getOccupiedVoxels(std::vector<CoordT>& coords) {
