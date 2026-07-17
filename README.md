@@ -137,7 +137,7 @@ use multi-threading, but each thread should have its own `accessor`.
 - [x] serialization to/from file.
 - [x] full implementation of the Octomap algorithm (ray casting + probability map).
 - [x] integration with ROS 2.
-- [ ] RViz2 visualization messages.
+- [x] RViz2 visualization messages.
 - [ ] integration with [FCL](https://github.com/flexible-collision-library/fcl) for collision detection (?)
 
 # Frequently Asked Questions

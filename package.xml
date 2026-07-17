@@ -3,9 +3,10 @@
 <package format="3">
   <name>bonxai_ros</name>
   <version>0.1.0</version>
-  <description>TODO: Package description</description>
+  <description>A bonxai package for ROS2 containing the original bonxai package and an rviz plugin.</description>
   <maintainer email="enrique.aleman1998@gmail.com">enrique</maintainer>
-  <license>TODO: License declaration</license>
+  <maintainer email="nathanroger314@gmail.com">Nathan</maintainer>
+  <license>MPL-2.0</license>
 
   <!-- <buildtool_depend>ament_cmake</buildtool_depend> -->
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
@@ -25,10 +26,20 @@
   <depend>libpcl-io</depend>
   <depend>libpcl-filters</depend>
 
+  <depend>pluginlib</depend>
+  <depend>rviz_common</depend>
+  <depend>rviz_rendering</depend>
+  <depend>std_msgs</depend>
+
+  <build_depend>rosidl_default_generators</build_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
+    <rviz_common plugin="${prefix}/bonxai_rviz_plugins.xml"/>
   </export>
 </package>

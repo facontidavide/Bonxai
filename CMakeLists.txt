@@ -61,14 +61,23 @@ if ( ament_cmake_FOUND )
     ament_auto_find_build_dependencies()
 
     find_package(std_srvs REQUIRED)
+    find_package(rosidl_default_generators REQUIRED)
+
+    rosidl_generate_interfaces(${PROJECT_NAME}
+      "bonxai_ros/msg/BonxaiVoxelMap.msg"
+      "bonxai_ros/msg/Voxel.msg"
+      DEPENDENCIES std_msgs
+    )
 
     include_directories(bonxai_ros/include 3rdparty)
 
     ament_auto_add_library(bonxai_server SHARED
       bonxai_ros/src/bonxai_server.cpp
     )
+    rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
 
     target_link_libraries(bonxai_server
+      "${cpp_typesupport_target}"
       bonxai_map
       ${PCL_LIBRARIES}
       ${std_srvs_TARGETS}
@@ -79,11 +88,30 @@ if ( ament_cmake_FOUND )
       EXECUTABLE bonxai_server_node
     )
 
+    # --- RViz Plugin ---
+    set(CMAKE_AUTOMOC ON)
+    find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
+
+    ament_auto_add_library(bonxai_display SHARED
+      bonxai_ros/include/bonxai_display.hpp
+      bonxai_ros/src/bonxai_display.cpp
+    )
+
+    rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
+
+    target_link_libraries(bonxai_display
+      "${cpp_typesupport_target}"
+      Qt5::Widgets
+    )
+
+    pluginlib_export_plugin_description_file(rviz_common bonxai_rviz_plugins.xml)
+
     ament_auto_package(
       INSTALL_TO_SHARE
       bonxai_ros/launch
       bonxai_ros/rviz
       bonxai_ros/params
+      bonxai_ros/icons
     )
 
 else()

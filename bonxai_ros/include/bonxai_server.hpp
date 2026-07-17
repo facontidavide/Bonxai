@@ -15,9 +15,12 @@
 #include "bonxai/bonxai.hpp"
 #include "bonxai_map/pcl_utils.hpp"
 #include "bonxai_map/probabilistic_map.hpp"
+#include "bonxai_ros/msg/bonxai_voxel_map.hpp"
+#include "bonxai_ros/msg/voxel.hpp"
 #include "message_filters/subscriber.hpp"
 #include "pcl_conversions/pcl_conversions.h"
 #include "rclcpp/rclcpp.hpp"
+#include "rmw/qos_profiles.h"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "std_msgs/msg/color_rgba.hpp"
 #include "std_srvs/srv/empty.hpp"
@@ -29,6 +32,7 @@
 
 namespace bonxai_server {
 
+using bonxai_ros::msg::BonxaiVoxelMap;
 using sensor_msgs::msg::PointCloud2;
 
 class BonxaiServer : public rclcpp::Node {
@@ -53,6 +57,7 @@ class BonxaiServer : public rclcpp::Node {
   rcl_interfaces::msg::SetParametersResult onParameter(
       const std::vector<rclcpp::Parameter>& parameters);
 
+  rclcpp::Publisher<BonxaiVoxelMap>::SharedPtr voxel_map_pub_;
   rclcpp::Publisher<PointCloud2>::SharedPtr point_cloud_pub_;
   message_filters::Subscriber<PointCloud2> point_cloud_sub_;
   std::shared_ptr<tf2_ros::MessageFilter<PointCloud2>> tf_point_cloud_sub_;
