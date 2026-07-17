@@ -1,18 +1,43 @@
 #pragma once
 
+#include <cmath>
 #include <eigen3/Eigen/Geometry>
-#include <unordered_set>
+#include <limits>
+#include <utility>
 
 #include "bonxai/bonxai.hpp"
 
 namespace Bonxai {
 
+// Integer Bresenham line between two voxels (one step per cell, 26-connected).
+// Fast, but it does NOT visit every voxel crossed by the continuous segment:
+// see ProbabilisticMap::Options::RayMode.
 template <class Functor>
 void RayIterator(const CoordT& key_origin, const CoordT& key_end, const Functor& func);
+
+// Exact voxel traversal (Amanatides & Woo, "A Fast Voxel Traversal Algorithm for
+// Ray Tracing", 1987). Visits every voxel crossed by the segment going from `from`
+// (continuous world coordinates, inside voxel `coord_from`) to the CENTER of voxel
+// `coord_to`; `coord_from` is included, `coord_to` is excluded. Voxels are the
+// half-open boxes [coord * resolution, (coord + 1) * resolution).
+template <class Functor>
+void ExactRayIterator(
+    const Eigen::Vector3d& from, const CoordT& coord_from, const CoordT& coord_to,
+    double resolution, const Functor& func);
 
 inline void ComputeRay(const CoordT& key_origin, const CoordT& key_end, std::vector<CoordT>& ray) {
   ray.clear();
   RayIterator(key_origin, key_end, [&ray](const CoordT& coord) {
+    ray.push_back(coord);
+    return true;
+  });
+}
+
+inline void ComputeExactRay(
+    const Eigen::Vector3d& from, const CoordT& coord_from, const CoordT& coord_to,
+    double resolution, std::vector<CoordT>& ray) {
+  ray.clear();
+  ExactRayIterator(from, coord_from, coord_to, resolution, [&ray](const CoordT& coord) {
     ray.push_back(coord);
     return true;
   });
@@ -42,13 +67,15 @@ class ProbabilisticMap {
   }
 
   struct CellT {
-    // variable used to check if a cell was already updated in this loop
-    int32_t update_id : 4;
+    // transient per-scan state of `flags`; always kUnseen outside updateFreeCells()
+    enum : int32_t { kUnseen = 0, kFree = 1, kHit = 2 };
+
+    int32_t flags : 4;
     // the probability of the cell to be occupied
     int32_t probability_log : 28;
 
     CellT()
-        : update_id(0),
+        : flags(kUnseen),
           probability_log(UnknownProbability){};
   };
 
@@ -61,6 +88,15 @@ class ProbabilisticMap {
     int32_t clamp_max_log = logods(0.97f);
 
     int32_t occupancy_threshold_log = logods(0.5);
+
+    // Ray traversal used for free-space carving.
+    // Exact (default, octomap-equivalent): visit every voxel crossed by the
+    // segment from the sensor origin to the center of the endpoint voxel.
+    // Approximate: the legacy integer Bresenham. Faster, but it skips part of
+    // the crossed voxels, so carving is weaker and depends on the direction of
+    // the ray relative to the grid axes.
+    enum class RayMode : uint8_t { Exact, Approximate };
+    RayMode ray_mode = RayMode::Exact;
   };
 
   static const int32_t UnknownProbability;
@@ -94,13 +130,21 @@ class ProbabilisticMap {
 
   // This function is usually called by insertPointCloud
   // We expose it here to add more control to the user.
-  // Once finished adding points, you must call updateFreeCells()
+  // The probability update is deferred: once finished adding points,
+  // you must call updateFreeCells()
   void addHitPoint(const Vector3D& point);
 
   // This function is usually called by insertPointCloud
   // We expose it here to add more control to the user.
-  // Once finished adding points, you must call updateFreeCells()
+  // The probability update is deferred: once finished adding points,
+  // you must call updateFreeCells()
   void addMissPoint(const Vector3D& point);
+
+  // Carves the free space between the origin and the endpoints added with
+  // addHitPoint / addMissPoint, then applies exactly one probability update
+  // per touched cell (a hit always wins over a miss within the same scan).
+  // Called automatically by insertPointCloud.
+  void updateFreeCells(const Vector3D& origin);
 
   [[nodiscard]] bool isOccupied(const Bonxai::CoordT& coord) const;
 
@@ -126,14 +170,15 @@ class ProbabilisticMap {
  private:
   VoxelGrid<CellT> _grid;
   Options _options;
-  uint8_t _update_count = 1;
 
-  std::vector<CoordT> _miss_coords;
-  std::vector<CoordT> _hit_coords;
+  // unique endpoint voxels (hits and misses) of the current scan: the targets of
+  // the free-space carving rays. Cell pointers stay valid for the whole scan
+  // (leaf blocks never move once allocated), so the update pass needs no lookups.
+  std::vector<std::pair<CoordT, CellT*>> _ray_targets;
+  // non-endpoint voxels traversed by the rays of the current scan
+  std::vector<CellT*> _traversed_cells;
 
   mutable Bonxai::VoxelGrid<CellT>::Accessor _accessor;
-
-  void updateFreeCells(const Vector3D& origin);
 };
 
 //--------------------------------------------------
@@ -195,6 +240,57 @@ inline void RayIterator(const CoordT& key_origin, const CoordT& key_end, const F
     if ((error.z << 1) >= max) {
       coord.z += step.z;
       error.z -= max;
+    }
+    if (!func(coord)) {
+      return;
+    }
+  }
+}
+
+template <class Functor>
+inline void ExactRayIterator(
+    const Eigen::Vector3d& from, const CoordT& coord_from, const CoordT& coord_to,
+    double resolution, const Functor& func) {
+  if (coord_from == coord_to) {
+    return;
+  }
+  if (!func(coord_from)) {
+    return;
+  }
+
+  const Eigen::Vector3d to(
+      (coord_to.x + 0.5) * resolution, (coord_to.y + 0.5) * resolution,
+      (coord_to.z + 0.5) * resolution);
+  const Eigen::Vector3d delta = to - from;
+
+  CoordT coord = coord_from;
+  int32_t step[3];
+  double t_max[3];
+  double t_delta[3];
+  // parametrized along the unnormalized segment: t = 1 at the endpoint center
+  for (int i = 0; i < 3; i++) {
+    if (delta[i] != 0.0) {
+      const double inv_delta = 1.0 / delta[i];
+      step[i] = (delta[i] > 0.0) ? 1 : -1;
+      const double boundary = (coord[i] + (step[i] > 0 ? 1 : 0)) * resolution;
+      t_max[i] = (boundary - from[i]) * inv_delta;
+      t_delta[i] = resolution * std::abs(inv_delta);
+    } else {
+      step[i] = 0;
+      t_max[i] = std::numeric_limits<double>::infinity();
+      t_delta[i] = std::numeric_limits<double>::infinity();
+    }
+  }
+  while (true) {
+    const int axis = (t_max[0] < t_max[1]) ? ((t_max[0] < t_max[2]) ? 0 : 2)
+                                           : ((t_max[1] < t_max[2]) ? 1 : 2);
+    if (t_max[axis] > 1.0) {
+      return;  // no boundary crossing left before the end of the segment
+    }
+    coord[axis] += step[axis];
+    t_max[axis] += t_delta[axis];
+    if (coord == coord_to) {
+      return;  // the endpoint voxel is excluded
     }
     if (!func(coord)) {
       return;

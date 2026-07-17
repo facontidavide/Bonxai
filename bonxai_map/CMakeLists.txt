@@ -21,3 +21,8 @@ target_link_libraries(bonxai_map PUBLIC
 if(benchmark_FOUND AND octomap_FOUND)
     add_subdirectory(benchmark)
 endif()
+
+find_package(GTest QUIET)
+if(GTest_FOUND)
+    add_subdirectory(test)
+endif()
