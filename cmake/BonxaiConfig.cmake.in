@@ -1,0 +1,16 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+set(Bonxai_core_FOUND TRUE)
+if(@BONXAI_WITH_MAP@)
+    set(Bonxai_map_FOUND TRUE)
+    find_dependency(MPI COMPONENTS CXX)
+    find_dependency(PCL REQUIRED COMPONENTS common filters io)
+else()
+    set(Bonxai_map_FOUND FALSE)
+endif()
+
+check_required_components(Bonxai)
+
+include("${CMAKE_CURRENT_LIST_DIR}/BonxaiTargets.cmake")

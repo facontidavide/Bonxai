@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(Bonxai)
+project(Bonxai VERSION 0.0.1 LANGUAGES CXX C)
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 
@@ -14,10 +14,13 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 
+include(GNUInstallDirs)
+
 #---- Add the subdirectory cmake ----
 set(CMAKE_CONFIG_PATH ${CMAKE_MODULE_PATH}  "${CMAKE_CURRENT_LIST_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CONFIG_PATH}")
 
+find_package(MPI QUIET COMPONENTS C)
 find_package(PCL QUIET COMPONENTS common filters io)
 
 find_package(benchmark QUIET)
@@ -46,6 +49,38 @@ add_subdirectory(examples)
 if(Eigen3_FOUND AND PCL_FOUND )
     add_subdirectory(bonxai_map)
 endif()
+
+include(CMakePackageConfigHelpers)
+
+set(BONXAI_WITH_MAP OFF)
+if(TARGET bonxai_map)
+    set(BONXAI_WITH_MAP ON)
+endif()
+
+set(BONXAI_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/Bonxai")
+
+install(EXPORT BonxaiTargets
+    FILE BonxaiTargets.cmake
+    NAMESPACE Bonxai::
+    DESTINATION ${BONXAI_INSTALL_CMAKEDIR})
+
+configure_package_config_file(
+    cmake/BonxaiConfig.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/BonxaiConfig.cmake"
+    INSTALL_DESTINATION ${BONXAI_INSTALL_CMAKEDIR}
+)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/BonxaiConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/BonxaiConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/BonxaiConfigVersion.cmake"
+    DESTINATION ${BONXAI_INSTALL_CMAKEDIR}
+)
 
 # Default behavior
 find_package(ament_cmake QUIET)
