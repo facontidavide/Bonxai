@@ -79,6 +79,21 @@ if ( ament_cmake_FOUND )
       EXECUTABLE bonxai_server_node
     )
 
+    ament_auto_add_library(color_bonxai_server SHARED
+      bonxai_ros/src/color_bonxai_server.cpp
+    )
+
+    target_link_libraries(color_bonxai_server
+      bonxai_map
+      ${PCL_LIBRARIES}
+      ${std_srvs_TARGETS}
+    )
+
+    rclcpp_components_register_node(color_bonxai_server
+      PLUGIN "bonxai_server::ColorBonxaiServer"
+      EXECUTABLE color_bonxai_server_node
+    )
+
     ament_auto_package(
       INSTALL_TO_SHARE
       bonxai_ros/launch
