@@ -79,6 +79,23 @@ if ( ament_cmake_FOUND )
       EXECUTABLE bonxai_server_node
     )
 
+    # bonxai_core/bonxai_map are plain CMake targets; export them so other ament
+    # packages in the workspace can link the probabilistic map
+    install(
+      TARGETS bonxai_core bonxai_map
+      EXPORT bonxai_ros_targets
+      ARCHIVE DESTINATION lib
+      LIBRARY DESTINATION lib
+      RUNTIME DESTINATION bin
+      INCLUDES DESTINATION include
+    )
+    install(
+      DIRECTORY bonxai_core/include/ bonxai_map/include/
+      DESTINATION include
+    )
+    ament_export_targets(bonxai_ros_targets HAS_LIBRARY_TARGET)
+    ament_export_dependencies(Eigen3 PCL)
+
     ament_auto_package(
       INSTALL_TO_SHARE
       bonxai_ros/launch
