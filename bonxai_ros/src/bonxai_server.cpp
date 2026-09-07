@@ -1,5 +1,7 @@
 #include "bonxai_server.hpp"
 
+#include <rclcpp/version.h>
+
 namespace {
 template <typename T>
 bool update_param(const std::vector<rclcpp::Parameter>& p, const std::string& name, T& value) {
@@ -123,7 +125,13 @@ BonxaiServer::BonxaiServer(const rclcpp::NodeOptions& node_options)
   tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
 
   using std::chrono_literals::operator""s;
+#if RCLCPP_VERSION_GTE(29, 0, 0)
+  // Kilted, Rolling's message_filters::Subscriber allows to take an rclcpp::QoS directly.
   point_cloud_sub_.subscribe(this, "cloud_in", rclcpp::SensorDataQoS());
+#else
+  // Humble, Jazzy's message_filters::Subscriber takes an rmw_qos_profile_t, not an rclcpp::QoS.
+  point_cloud_sub_.subscribe(this, "cloud_in", rclcpp::SensorDataQoS().get_rmw_qos_profile());
+#endif
   tf_point_cloud_sub_ = std::make_shared<tf2_ros::MessageFilter<PointCloud2>>(
       point_cloud_sub_, *tf2_buffer_, world_frame_id_, 5, this->get_node_logging_interface(),
       this->get_node_clock_interface(), 5s);
