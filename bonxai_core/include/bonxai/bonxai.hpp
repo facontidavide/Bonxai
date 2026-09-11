@@ -124,6 +124,10 @@ class VoxelGrid {
 
   GridBlockAllocator<DataT> leaf_block_allocator_;
 
+  // Bumped whenever inner/leaf nodes are released, so Accessors can tell that the pointers
+  // they cached no longer refer to live nodes.
+  uint32_t cache_epoch_ = 0;
+
  public:
   using LeafGrid = Grid<DataT>;
   using InnerGrid = Grid<std::shared_ptr<LeafGrid>>;
@@ -166,7 +170,7 @@ class VoxelGrid {
   /**
    *  Try freeing memory;  this will discard grids where all the cells are OFF.
    *  Note that the memory release is NOT guaranteed, since we are using a memory pool too.
-   *  CAREFULL: This will invalidate all the existing Accessors (you need to create new ones).
+   *  Existing Accessors detect this and drop their cache on the next access.
    */
   void releaseUnusedMemory();
 
@@ -215,7 +219,8 @@ class VoxelGrid {
   class ConstAccessor {
    public:
     ConstAccessor(const VoxelGrid& grid)
-        : grid_(grid) {}
+        : grid_(grid),
+          cache_epoch_(grid.cache_epoch_) {}
 
     /** @brief value getter.
      *
@@ -232,18 +237,33 @@ class VoxelGrid {
 
     /// @brief lastInnerGrid returns the pointer to the InnerGrid in the cache.
     [[nodiscard]] const InnerGrid* lastInnerGrid() const {
+      refreshCache();
       return prev_inner_ptr_;
     }
 
     /// @brief lastLeafGrid returns the pointer to the LeafGrid in the cache.
     [[nodiscard]] const LeafGrid* lastLeafGrid() const {
+      refreshCache();
       return prev_leaf_ptr_;
     }
 
     [[nodiscard]] const LeafGrid* getLeafGrid(const CoordT& coord) const;
 
    protected:
+    // Drops the cache when the grid released the nodes these pointers refer to.
+    void refreshCache() const {
+      if (cache_epoch_ == grid_.cache_epoch_) {
+        return;
+      }
+      cache_epoch_ = grid_.cache_epoch_;
+      prev_root_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
+      prev_inner_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
+      prev_inner_ptr_ = nullptr;
+      prev_leaf_ptr_ = nullptr;
+    }
+
     const VoxelGrid& grid_;
+    mutable uint32_t cache_epoch_;
     mutable CoordT prev_root_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
     mutable CoordT prev_inner_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
     mutable const InnerGrid* prev_inner_ptr_ = nullptr;
@@ -259,7 +279,8 @@ class VoxelGrid {
    public:
     Accessor(VoxelGrid& grid)
         : ConstAccessor(grid),
-          mutable_grid_(grid) {}
+          mutable_grid_(grid),
+          cache_epoch_(grid.cache_epoch_) {}
 
     /**
      * @brief setValue of a cell. If the cell did not exist, it is created.
@@ -305,7 +326,20 @@ class VoxelGrid {
     [[nodiscard]] LeafGrid* getLeafGrid(const CoordT& coord, bool create_if_missing = false);
 
    private:
+    // Accessor shadows the base cache with non-const pointers, so it tracks its own epoch.
+    void refreshCache() {
+      if (cache_epoch_ == mutable_grid_.cache_epoch_) {
+        return;
+      }
+      cache_epoch_ = mutable_grid_.cache_epoch_;
+      prev_root_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
+      prev_inner_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
+      prev_inner_ptr_ = nullptr;
+      prev_leaf_ptr_ = nullptr;
+    }
+
     VoxelGrid& mutable_grid_;
+    uint32_t cache_epoch_;
     CoordT prev_root_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
     CoordT prev_inner_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
     InnerGrid* prev_inner_ptr_ = nullptr;
@@ -384,6 +418,7 @@ inline void VoxelGrid<DataT>::releaseUnusedMemory() {
     root_map.erase(key);
   }
   leaf_block_allocator_.releaseUnusedMemory();
+  ++cache_epoch_;
 }
 
 template <typename DataT>
@@ -453,6 +488,7 @@ inline bool VoxelGrid<DataT>::Accessor::setValue(const CoordT& coord, const Data
       "You can not access a value when using type EmptyVoxel. Use "
       "setCellOn / setCellOff");
 
+  refreshCache();
   const CoordT inner_key = mutable_grid_.getInnerKey(coord);
   if (inner_key != prev_inner_coord_ || prev_leaf_ptr_ == nullptr) {
     prev_leaf_ptr_ = getLeafGrid(coord, true);
@@ -473,6 +509,7 @@ inline DataT* VoxelGrid<DataT>::Accessor::value(const CoordT& coord, bool create
       "You can not access a value when using type EmptyVoxel. Use "
       "isCellOn / setCellOn / setCellOff");
 
+  refreshCache();
   const CoordT inner_key = mutable_grid_.getInnerKey(coord);
 
   if (inner_key != prev_inner_coord_ || prev_leaf_ptr_ == nullptr) {
@@ -499,6 +536,7 @@ inline const DataT* VoxelGrid<DataT>::ConstAccessor::value(const CoordT& coord) 
       !std::is_same_v<DataT, EmptyVoxel>,
       "You can not access a value when using type EmptyVoxel. Use isCellOn");
 
+  refreshCache();
   const CoordT inner_key = grid_.getInnerKey(coord);
 
   if (inner_key != prev_inner_coord_) {
@@ -517,6 +555,7 @@ inline const DataT* VoxelGrid<DataT>::ConstAccessor::value(const CoordT& coord) 
 
 template <typename DataT>
 inline bool VoxelGrid<DataT>::ConstAccessor::isCellOn(const CoordT& coord) const {
+  refreshCache();
   const CoordT inner_key = grid_.getInnerKey(coord);
 
   if (inner_key != prev_inner_coord_) {
@@ -536,6 +575,7 @@ inline bool VoxelGrid<DataT>::ConstAccessor::isCellOn(const CoordT& coord) const
 //----------------------------------
 template <typename DataT>
 inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT& coord, const DataT& default_value) {
+  refreshCache();
   const CoordT inner_key = mutable_grid_.getInnerKey(coord);
 
   if (inner_key != prev_inner_coord_ || prev_leaf_ptr_ == nullptr) {
@@ -555,6 +595,7 @@ inline bool VoxelGrid<DataT>::Accessor::setCellOn(const CoordT& coord, const Dat
 //----------------------------------
 template <typename DataT>
 inline bool VoxelGrid<DataT>::Accessor::setCellOff(const CoordT& coord) {
+  refreshCache();
   const CoordT inner_key = mutable_grid_.getInnerKey(coord);
 
   if (inner_key != prev_inner_coord_) {
@@ -588,6 +629,7 @@ inline typename std::shared_ptr<Grid<DataT>> VoxelGrid<DataT>::allocateLeafGrid(
 template <typename DataT>
 inline typename VoxelGrid<DataT>::LeafGrid* VoxelGrid<DataT>::Accessor::getLeafGrid(
     const CoordT& coord, bool create_if_missing) {
+  refreshCache();
   InnerGrid* inner_ptr = prev_inner_ptr_;
   const CoordT root_key = mutable_grid_.getRootKey(coord);
 
@@ -623,6 +665,7 @@ inline typename VoxelGrid<DataT>::LeafGrid* VoxelGrid<DataT>::Accessor::getLeafG
 template <typename DataT>
 inline const typename VoxelGrid<DataT>::LeafGrid* VoxelGrid<DataT>::ConstAccessor::getLeafGrid(
     const CoordT& coord) const {
+  refreshCache();
   const InnerGrid* inner_ptr = prev_inner_ptr_;
   const CoordT root_key = grid_.getRootKey(coord);
 
@@ -680,6 +723,7 @@ inline void VoxelGrid<DataT>::clear(ClearOption opt) {
   if (opt == CLEAR_MEMORY) {
     root_map.clear();
     leaf_block_allocator_.clear();
+    ++cache_epoch_;
     return;
   }
   auto accessor = createAccessor();
