@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include "bonxai/bonxai.hpp"
 
 TEST(VoxelGridValueSegfaultTest, AccessWithNullPtrInitially) {
@@ -16,7 +17,8 @@ TEST(VoxelGridValueSegfaultTest, AccessWithNullPtrInitially) {
   // prev_leaf_ptr_ is nullptr now.
 
   Bonxai::CoordT coord2{11, 11, 11};
-  // Create if is missing should create the cell and return a valid pointer even if prev_leaf_ptr is currently null.
+  // Create if is missing should create the cell and return a valid pointer even if prev_leaf_ptr is
+  // currently null.
   int* ptr2 = accessor.value(coord2, true);
   ASSERT_NE(ptr2, nullptr);
   *ptr2 = 555;
@@ -45,4 +47,53 @@ TEST(VoxelGridSetCellOnTest, SetCellOnSegfaultWithNullPtrInitially) {
   int* ptr2 = accessor.value(coord2, false);
   ASSERT_NE(ptr2, nullptr);
   EXPECT_EQ(*ptr2, default_value);
+}
+
+TEST(VoxelGridStaleCacheTest, AccessorSurvivesClearMemory) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  auto accessor = grid.createAccessor();
+
+  const Bonxai::CoordT coord{7, 2, 3};
+  accessor.setValue(coord, 1);
+  ASSERT_EQ(grid.activeCellsCount(), 1u);
+
+  // Frees every inner and leaf node while the accessor still caches this coordinate.
+  grid.clear(Bonxai::CLEAR_MEMORY);
+  EXPECT_EQ(grid.activeCellsCount(), 0u);
+
+  accessor.setValue(coord, 42);
+  int* value = accessor.value(coord, false);
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(*value, 42);
+  EXPECT_EQ(grid.activeCellsCount(), 1u);
+}
+
+TEST(VoxelGridStaleCacheTest, AccessorSurvivesReleaseUnusedMemory) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  auto accessor = grid.createAccessor();
+
+  const Bonxai::CoordT coord{7, 2, 3};
+  accessor.setValue(coord, 1);
+  accessor.setCellOff(coord);
+  grid.releaseUnusedMemory();
+
+  accessor.setValue(coord, 42);
+  int* value = accessor.value(coord, false);
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(*value, 42);
+}
+
+TEST(VoxelGridStaleCacheTest, ConstAccessorSurvivesClearMemory) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  auto writer = grid.createAccessor();
+  const Bonxai::CoordT coord{7, 2, 3};
+  writer.setValue(coord, 1);
+
+  auto reader = grid.createConstAccessor();
+  ASSERT_NE(reader.value(coord), nullptr);
+
+  grid.clear(Bonxai::CLEAR_MEMORY);
+
+  EXPECT_EQ(reader.value(coord), nullptr);
+  EXPECT_FALSE(reader.isCellOn(coord));
 }
