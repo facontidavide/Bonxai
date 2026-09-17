@@ -1,9 +1,9 @@
+#include "bonxai_map/probabilistic_map.hpp"
+
 #include <gtest/gtest.h>
 
 #include <unordered_set>
 #include <vector>
-
-#include "bonxai_map/probabilistic_map.hpp"
 
 using Bonxai::CoordT;
 using Bonxai::ProbabilisticMap;
@@ -47,10 +47,10 @@ TEST(ProbabilisticMap, UpdatesSurviveGapOfThreeScans) {
   const Eigen::Vector3d far_origin(100.5, 0.5, 0.5);
   const std::vector<Eigen::Vector3d> far_scan = {{100.5, 10.5, 0.5}};
 
-  map.insertPointCloud(scan, origin, 999.0);           // scan 1: hit on (5,0,0)
-  map.insertPointCloud(far_scan, far_origin, 999.0);   // scan 2
-  map.insertPointCloud(far_scan, far_origin, 999.0);   // scan 3
-  map.insertPointCloud(scan, origin, 999.0);           // scan 4: (5,0,0) again, gap of 3
+  map.insertPointCloud(scan, origin, 999.0);          // scan 1: hit on (5,0,0)
+  map.insertPointCloud(far_scan, far_origin, 999.0);  // scan 2
+  map.insertPointCloud(far_scan, far_origin, 999.0);  // scan 3
+  map.insertPointCloud(scan, origin, 999.0);          // scan 4: (5,0,0) again, gap of 3
 
   // the endpoint must accumulate both hits ...
   EXPECT_EQ(cellLog(map, 5, 0, 0), 2 * kHitLog);

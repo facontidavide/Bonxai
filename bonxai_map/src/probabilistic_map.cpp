@@ -71,29 +71,31 @@ bool ProbabilisticMap::isFree(const CoordT& coord) const {
 void Bonxai::ProbabilisticMap::updateFreeCells(const Vector3D& origin) {
   auto accessor = _grid.createAccessor();
 
-  auto applyHit = [this](CellT* cell) {
+  const auto options = _options;
+  auto applyHit = [&options](CellT* cell) {
     cell->probability_log =
-        std::min(cell->probability_log + _options.prob_hit_log, _options.clamp_max_log);
-    cell->flags = CellT::kUnseen;
+        std::min(cell->probability_log + options.prob_hit_log, options.clamp_max_log);
   };
-  auto applyMiss = [this](CellT* cell) {
+  auto applyMiss = [&options](CellT* cell) {
     cell->probability_log =
-        std::max(cell->probability_log + _options.prob_miss_log, _options.clamp_min_log);
-    cell->flags = CellT::kUnseen;
+        std::max(cell->probability_log + options.prob_miss_log, options.clamp_min_log);
   };
 
-  // mark the voxels traversed by the rays; endpoints keep their hit/miss state
-  auto visitFreeCell = [this, &accessor](const CoordT& coord) {
+  // Mark the voxels traversed by the rays. Every endpoint was already flagged
+  // before carving started, so a cell still kUnseen cannot be one, and its miss
+  // can be applied here while the cache line is hot.
+  auto visitFreeCell = [this, &accessor, &applyMiss](const CoordT& coord) {
     CellT* cell = accessor.value(coord, true);
     if (cell->flags == CellT::kUnseen) {
       cell->flags = CellT::kFree;
+      applyMiss(cell);
       _traversed_cells.push_back(cell);
     }
     return true;
   };
 
   const auto coord_origin = _grid.posToCoord(origin);
-  const bool exact = (_options.ray_mode == Options::RayMode::Exact);
+  const bool exact = (options.ray_mode == Options::RayMode::Exact);
   const double resolution = _grid.voxelSize();
 
   for (const auto& [coord_end, cell] : _ray_targets) {
@@ -111,11 +113,13 @@ void Bonxai::ProbabilisticMap::updateFreeCells(const Vector3D& origin) {
     } else {
       applyMiss(cell);
     }
+    cell->flags = CellT::kUnseen;
   }
   _ray_targets.clear();
 
+  // probability already applied during the traversal; only reset the flag
   for (CellT* cell : _traversed_cells) {
-    applyMiss(cell);
+    cell->flags = CellT::kUnseen;
   }
   _traversed_cells.clear();
 }

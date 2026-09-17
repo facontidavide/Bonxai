@@ -22,8 +22,8 @@ namespace Bonxai {
 /**
  * Serialize a grid to ostream. Easy :)
  */
-template <typename DataT>
-inline void Serialize(std::ostream& out, const VoxelGrid<DataT>& grid);
+template <typename DataT, typename Shape>
+inline void Serialize(std::ostream& out, const VoxelGrid<DataT, Shape>& grid);
 
 struct HeaderInfo {
   std::string type_name;
@@ -43,9 +43,14 @@ inline HeaderInfo GetHeaderInfo(std::string header);
 /**
  * @brief Deserialize create a grid. Note that template arguments need to be
  * consistent with HeaderInfo
+ *
+ * The shape defaults to DynamicShape because the branching factors come from
+ * the header and need not be the compile-time defaults. Pass a StaticShape
+ * explicitly when the shape is known, to get the faster index arithmetic; the
+ * header is then checked against it and a mismatch throws.
  */
-template <typename DataT>
-inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info);
+template <typename DataT, typename Shape = DynamicShape>
+inline VoxelGrid<DataT, Shape> Deserialize(std::istream& input, HeaderInfo info);
 
 //---------------------------------------------------------
 namespace details {
@@ -74,8 +79,8 @@ inline void Write(std::ostream& out, const T& val) {
   out.write(reinterpret_cast<const char*>(&val), sizeof(T));
 }
 
-template <typename DataT>
-inline void Serialize(std::ostream& out, const VoxelGrid<DataT>& grid) {
+template <typename DataT, typename Shape>
+inline void Serialize(std::ostream& out, const VoxelGrid<DataT, Shape>& grid) {
   static_assert(std::is_trivially_copyable_v<DataT>, "DataT must be trivially copyable");
 
   char header[256];
@@ -150,8 +155,8 @@ inline HeaderInfo GetHeaderInfo(std::string header) {
   return info;
 }
 
-template <typename DataT>
-inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info) {
+template <typename DataT, typename Shape>
+inline VoxelGrid<DataT, Shape> Deserialize(std::istream& input, HeaderInfo info) {
   std::string type_name = details::demangle(typeid(DataT).name());
   if (type_name != info.type_name) {
     throw std::runtime_error("DataT does not match");
@@ -159,7 +164,7 @@ inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info) {
 
   //------------
 
-  VoxelGrid<DataT> grid(info.resolution, info.inner_bits, info.leaf_bits);
+  VoxelGrid<DataT, Shape> grid(info.resolution, info.inner_bits, info.leaf_bits);
 
   uint32_t root_count = Read<uint32_t>(input);
 
@@ -171,9 +176,10 @@ inline VoxelGrid<DataT> Deserialize(std::istream& input, HeaderInfo info) {
 
     auto inner_it = grid.rootMap().find(root_coord);
     if (inner_it == grid.rootMap().end()) {
-      inner_it = grid.rootMap()
-                     .insert({root_coord, typename VoxelGrid<DataT>::InnerGrid(info.inner_bits)})
-                     .first;
+      inner_it =
+          grid.rootMap()
+              .insert({root_coord, typename VoxelGrid<DataT, Shape>::InnerGrid(info.inner_bits)})
+              .first;
     }
     auto& inner_grid = inner_it->second;
 

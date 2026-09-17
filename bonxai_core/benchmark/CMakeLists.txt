@@ -39,3 +39,23 @@ if( octomap_FOUND )
         compile_benchmark(benchmark_compression)
     endif()
 endif()
+
+#############################################
+# Bonxai vs NanoVDB. Off by default because it downloads the OpenVDB release
+# tarball; enable with -DBONXAI_BENCHMARK_NANOVDB=ON, or point NANOVDB_ROOT at
+# headers that are already on disk.
+
+option(BONXAI_BENCHMARK_NANOVDB "Build the NanoVDB comparison benchmark" OFF)
+
+if(BONXAI_BENCHMARK_NANOVDB)
+    include(FetchNanoVDB)
+    if(NanoVDB_FOUND)
+        add_executable(benchmark_nanovdb benchmark_nanovdb.cpp)
+        target_link_libraries(benchmark_nanovdb PRIVATE
+            benchmark::benchmark
+            bonxai_core
+            nanovdb)
+        # this benchmark uses the synthetic scan generator, so it needs neither
+        # PCL nor the git-lfs .pcd files in data/
+    endif()
+endif()
