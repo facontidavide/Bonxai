@@ -25,12 +25,14 @@ find_package(octomap QUIET)
 find_package(LZ4 QUIET)
 find_package(Eigen3 QUIET)
 
-#---- Use Address sanitizer if compiled in Debug mode ----
-option(BONXAI_SANITIZE "Add address sanitizer when compiling in Debug mode" OFF)
+#---- Address and undefined behavior sanitizers ----
+# CMAKE_CXX_DEBUG_FLAGS / CMAKE_LINKER_DEBUG_FLAGS are not CMake variables, so
+# this option used to do nothing at all.
+option(BONXAI_SANITIZE "Build with the address and undefined behavior sanitizers" OFF)
 
 if(BONXAI_SANITIZE)
-    set (CMAKE_CXX_DEBUG_FLAGS "${CMAKE_CXX_DEBUG_FLAGS}  -fsanitize=address")
-    set (CMAKE_LINKER_DEBUG_FLAGS "${CMAKE_LINKER_DEBUG_FLAGS}  -fsanitize=address")
+    add_compile_options(-fsanitize=address,undefined -fno-sanitize-recover=all)
+    add_link_options(-fsanitize=address,undefined)
 endif()
 
 
