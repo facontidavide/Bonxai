@@ -36,13 +36,14 @@ jobs:
             -DBONXAI_SANITIZE=${{ matrix.sanitize }}
 
       - name: Build
-        run: cmake --build build --target voxel_grid_test
+        run: cmake --build build
 
-      - name: Run
+      - name: Test
+        working-directory: build
         env:
           ASAN_OPTIONS: detect_leaks=1:abort_on_error=1
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
-        run: ./build/bonxai_core/test/voxel_grid_test
+        run: ctest --output-on-failure
 
   pre-commit:
     runs-on: ubuntu-latest

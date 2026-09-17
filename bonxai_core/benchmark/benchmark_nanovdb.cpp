@@ -68,10 +68,11 @@ static nanovdb::Coord ToNano(const CoordT& c) {
 
 //---------------------------------------------------------------- create -----
 
+template <typename Shape>
 static void Bonxai_NV_Create(benchmark::State& state) {
   const auto& coords = ScanCoords();
   for (auto _ : state) {
-    VoxelGrid<float> grid(kVoxelSize);
+    VoxelGrid<float, Shape> grid(kVoxelSize);
     auto accessor = grid.createAccessor();
     for (const auto& coord : coords) {
       accessor.setValue(coord, 1.0f);
@@ -96,9 +97,10 @@ static void NanoVDB_Create(benchmark::State& state) {
 
 //---------------------------------------------------------------- update -----
 
+template <typename Shape>
 static void Bonxai_NV_Update(benchmark::State& state) {
   const auto& coords = ScanCoords();
-  VoxelGrid<float> grid(kVoxelSize);
+  VoxelGrid<float, Shape> grid(kVoxelSize);
   {
     auto accessor = grid.createAccessor();
     for (const auto& coord : coords) {
@@ -135,9 +137,10 @@ static void NanoVDB_Update(benchmark::State& state) {
 //----------------------------------------------------------------- query -----
 // Arg(0): scan order, spatially coherent.  Arg(1): shuffled.
 
+template <typename Shape>
 static void Bonxai_NV_Query(benchmark::State& state) {
   const auto& coords = state.range(0) ? ShuffledScanCoords() : ScanCoords();
-  VoxelGrid<float> grid(kVoxelSize);
+  VoxelGrid<float, Shape> grid(kVoxelSize);
   {
     auto accessor = grid.createAccessor();
     for (const auto& coord : ScanCoords()) {
@@ -201,8 +204,9 @@ static void NanoVDBReadOnly_Query(benchmark::State& state) {
 
 //--------------------------------------------------------------- iterate -----
 
+template <typename Shape>
 static void Bonxai_NV_Iterate(benchmark::State& state) {
-  VoxelGrid<float> grid(kVoxelSize);
+  VoxelGrid<float, Shape> grid(kVoxelSize);
   {
     auto accessor = grid.createAccessor();
     for (const auto& coord : ScanCoords()) {
@@ -284,14 +288,21 @@ static void MemoryUsage(benchmark::State& state) {
   state.counters["cells"] = double(bonxai_grid.activeCellsCount());
 }
 
-BENCHMARK(Bonxai_NV_Create)->MinTime(1);
+// StaticShape is the default: the branching factors are compile-time constants.
+// DynamicShape holds them as members, which is what a grid read back by
+// Deserialize() gets, and is the only behaviour available before this change.
+BENCHMARK_TEMPLATE(Bonxai_NV_Create, StaticShape<>)->MinTime(1);
+BENCHMARK_TEMPLATE(Bonxai_NV_Create, DynamicShape)->MinTime(1);
 BENCHMARK(NanoVDB_Create)->MinTime(1);
-BENCHMARK(Bonxai_NV_Update)->MinTime(1);
+BENCHMARK_TEMPLATE(Bonxai_NV_Update, StaticShape<>)->MinTime(1);
+BENCHMARK_TEMPLATE(Bonxai_NV_Update, DynamicShape)->MinTime(1);
 BENCHMARK(NanoVDB_Update)->MinTime(1);
-BENCHMARK(Bonxai_NV_Query)->Arg(0)->Arg(1)->MinTime(1);
+BENCHMARK_TEMPLATE(Bonxai_NV_Query, StaticShape<>)->Arg(0)->Arg(1)->MinTime(1);
+BENCHMARK_TEMPLATE(Bonxai_NV_Query, DynamicShape)->Arg(0)->Arg(1)->MinTime(1);
 BENCHMARK(NanoVDB_Query)->Arg(0)->Arg(1)->MinTime(1);
 BENCHMARK(NanoVDBReadOnly_Query)->Arg(0)->Arg(1)->MinTime(1);
-BENCHMARK(Bonxai_NV_Iterate)->MinTime(1);
+BENCHMARK_TEMPLATE(Bonxai_NV_Iterate, StaticShape<>)->MinTime(1);
+BENCHMARK_TEMPLATE(Bonxai_NV_Iterate, DynamicShape)->MinTime(1);
 BENCHMARK(NanoVDBReadOnly_Iterate)->MinTime(1);
 BENCHMARK(NanoVDB_Convert)->MinTime(1);
 BENCHMARK(MemoryUsage);

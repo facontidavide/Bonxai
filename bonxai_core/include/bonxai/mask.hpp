@@ -161,6 +161,9 @@ class Mask {
   }
 
  private:
+  /// bits of the last word that are inside SIZE
+  uint64_t lastWordMask() const;
+
   static uint32_t FindLowestOn(uint64_t v);
   static uint32_t CountOn(uint64_t v);
 
@@ -226,10 +229,15 @@ inline uint32_t Mask::CountOn(uint64_t v) {
   return static_cast<uint32_t>(v);
 }
 
+inline uint64_t Mask::lastWordMask() const {
+  // SIZE can be smaller than a word (log2dim == 1 gives 8 bits): the padding
+  // must stay off, or countOn() and isOn() would report bits that do not exist
+  const uint32_t bits = SIZE & 63u;
+  return bits == 0 ? ~uint64_t(0) : ((uint64_t(1) << bits) - 1);
+}
+
 inline void Mask::setOn() {
-  for (uint32_t i = 0; i < WORD_COUNT; ++i) {
-    words_[i] = ~uint64_t(0);
-  }
+  this->set(true);
 }
 
 inline void Mask::setOff() {
@@ -243,6 +251,7 @@ inline void Mask::set(bool on) {
   for (uint32_t i = 0; i < WORD_COUNT; ++i) {
     words_[i] = v;
   }
+  words_[WORD_COUNT - 1] &= lastWordMask();
 }
 
 inline void Mask::toggle() {
@@ -250,6 +259,7 @@ inline void Mask::toggle() {
   for (auto* w = words_; n--; ++w) {
     *w = ~*w;
   }
+  words_[WORD_COUNT - 1] &= lastWordMask();
 }
 
 inline void Mask::toggle(uint32_t n) {
@@ -280,11 +290,7 @@ inline Mask::Mask(size_t log2dim, bool on)
     : SIZE(1U << (3 * log2dim)),
       WORD_COUNT(std::max(SIZE >> 6, 1u)) {
   words_ = (WORD_COUNT <= 8) ? static_words_ : new uint64_t[WORD_COUNT];
-
-  const uint64_t v = on ? ~uint64_t(0) : uint64_t(0);
-  for (uint32_t i = 0; i < WORD_COUNT; ++i) {
-    words_[i] = v;
-  }
+  this->set(on);
 }
 
 inline Mask::Mask(const Mask& other)
@@ -345,12 +351,12 @@ inline bool Mask::isOn(uint32_t n) const {
 }
 
 inline bool Mask::isOn() const {
-  for (uint32_t i = 0; i < WORD_COUNT; ++i) {
+  for (uint32_t i = 0; i + 1 < WORD_COUNT; ++i) {
     if (words_[i] != ~uint64_t(0)) {
       return false;
     }
   }
-  return true;
+  return words_[WORD_COUNT - 1] == lastWordMask();
 }
 
 inline bool Mask::isOff() const {

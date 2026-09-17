@@ -42,6 +42,8 @@ endif()
 
 
 ####################################################
+enable_testing()
+
 add_subdirectory(bonxai_core)
 add_subdirectory(examples)
 
