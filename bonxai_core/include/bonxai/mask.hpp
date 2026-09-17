@@ -56,14 +56,37 @@ class Mask {
 
   uint32_t countOn() const;
 
+  /**
+   * Iterator over the ON bits.
+   *
+   * It keeps the not-yet-visited bits of the current word in a register and
+   * pops them with the usual `w &= w - 1` trick. The previous implementation
+   * re-loaded the word from memory and re-scanned it from the start on every
+   * single increment.
+   */
   class Iterator {
    public:
     Iterator(const Mask* parent)
         : pos_(parent->SIZE),
+          word_(0),
+          word_index_(parent->WORD_COUNT),
           parent_(parent) {}
+
     Iterator(uint32_t pos, const Mask* parent)
         : pos_(pos),
-          parent_(parent) {}
+          parent_(parent) {
+      if (pos >= parent->SIZE) {
+        pos_ = parent->SIZE;
+        word_ = 0;
+        word_index_ = parent->WORD_COUNT;
+        return;
+      }
+      const uint32_t bit = pos & 63u;
+      word_index_ = pos >> 6;
+      // the bits of this word still to be visited: strictly above `pos`
+      word_ = parent->words_[word_index_] & (~uint64_t(0) << bit) & ~(uint64_t(1) << bit);
+    }
+
     Iterator& operator=(const Iterator&) = default;
 
     uint32_t operator*() const {
@@ -75,12 +98,28 @@ class Mask {
     }
 
     Iterator& operator++() {
-      pos_ = parent_->findNextOn(pos_ + 1);
+      if (word_ != 0) {
+        pos_ = (word_index_ << 6) + FindLowestOn(word_);
+        word_ &= word_ - 1;  // pop the lowest ON bit
+        return *this;
+      }
+      const uint32_t word_count = parent_->WORD_COUNT;
+      while (++word_index_ < word_count) {
+        const uint64_t word = parent_->words_[word_index_];
+        if (word != 0) {
+          pos_ = (word_index_ << 6) + FindLowestOn(word);
+          word_ = word & (word - 1);
+          return *this;
+        }
+      }
+      pos_ = parent_->SIZE;
       return *this;
     }
 
    private:
     uint32_t pos_;
+    uint64_t word_;
+    uint32_t word_index_;
     const Mask* parent_;
   };
 
@@ -128,8 +167,6 @@ class Mask {
   }
 
  private:
-  uint32_t findNextOn(uint32_t start) const;
-
   static uint32_t FindLowestOn(uint64_t v);
   static uint32_t CountOn(uint64_t v);
 
@@ -233,23 +270,6 @@ inline uint32_t Mask::findFirstOn() const {
     ++n;
   }
   return n == WORD_COUNT ? SIZE : (n << 6) + FindLowestOn(*w);
-}
-
-inline uint32_t Mask::findNextOn(uint32_t start) const {
-  uint32_t n = start >> 6;  // initiate
-  if (n >= WORD_COUNT) {
-    return SIZE;  // check for out of bounds
-  }
-  uint32_t m = start & 63;
-  uint64_t b = words_[n];
-  if (b & (uint64_t(1) << m)) {
-    return start;  // simple case: start is on
-  }
-  b &= ~uint64_t(0) << m;  // mask out lower bits
-  while (!b && ++n < WORD_COUNT) {
-    b = words_[n];
-  }                                                 // find next non-zero word
-  return (!b ? SIZE : (n << 6) + FindLowestOn(b));  // catch last word=0
 }
 
 inline Mask::Mask(size_t log2dim)

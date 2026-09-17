@@ -13,7 +13,6 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
-#include <functional>
 
 #include "mask.hpp"
 
@@ -37,7 +36,47 @@ class GridBlockAllocator {
   GridBlockAllocator& operator=(const GridBlockAllocator& other) = delete;
   GridBlockAllocator& operator=(GridBlockAllocator&& other) = default;
 
-  using Deleter = std::function<void()>;
+  struct Chunk {
+    Chunk()
+        : mask(3, true) {}
+    Mask mask;
+    // Deliberately NOT a std::vector<char>: resize() would value-initialize,
+    // i.e. memset a whole chunk to zero on every allocation. Nothing reads a
+    // cell before it is written (Grid tracks validity with its Mask, and
+    // Accessor::value() assigns DataT{} when it turns a cell on), so the
+    // zeroing is pure waste. new char[] default-initializes, which is a no-op
+    // for scalars.
+    std::unique_ptr<char[]> data;
+  };
+
+  /**
+   * Returned by allocateBlock() to give a block back to the pool.
+   *
+   * This used to be a std::function<void()>. Its capture (allocator, chunk
+   * shared_ptr, index) does not fit the 16 byte small-object buffer of
+   * libstdc++, so every single leaf allocation went through an extra heap
+   * allocation. A concrete type is stored inline instead.
+   */
+  class Deleter {
+   public:
+    Deleter() = default;
+    Deleter(GridBlockAllocator* allocator, std::shared_ptr<Chunk> chunk, uint32_t index)
+        : allocator_(allocator),
+          chunk_(std::move(chunk)),
+          index_(index) {}
+
+    void operator()() const {
+      assert(index_ < blocks_per_chunk);
+      std::unique_lock lock(*allocator_->mutex_);
+      chunk_->mask.setOn(index_);
+      allocator_->size_--;
+    }
+
+   private:
+    GridBlockAllocator* allocator_ = nullptr;
+    std::shared_ptr<Chunk> chunk_;
+    uint32_t index_ = 0;
+  };
 
   std::pair<DataT*, Deleter> allocateBlock();
 
@@ -67,18 +106,10 @@ class GridBlockAllocator {
   size_t block_bytes_ = 0;
   size_t capacity_ = 0;
   size_t size_ = 0;
-  struct Chunk {
-    Chunk()
-        : mask(3, true) {}
-    Mask mask;
-    std::vector<char> data;
-  };
   std::vector<std::shared_ptr<Chunk>> chunks_;
   std::unique_ptr<std::mutex> mutex_;
 
   void addNewChunk();
-
-  Deleter createDeleter(std::shared_ptr<Chunk> chunk, uint32_t index);
 };
 
 //----------------------------------------------------
@@ -100,10 +131,10 @@ GridBlockAllocator<DataT>::allocateBlock() {
     addNewChunk();
     // first index of new chunk is available
     std::shared_ptr<Chunk> chunk = chunks_.back();
-    DataT* ptr = reinterpret_cast<DataT*>(chunk->data.data());
+    DataT* ptr = reinterpret_cast<DataT*>(chunk->data.get());
     chunk->mask.setOff(0);
     size_++;
-    return {ptr, createDeleter(chunk, 0)};
+    return {ptr, Deleter(this, chunk, 0)};
   }
 
   // There must be available memory, somewhere. Search in reverse order
@@ -112,11 +143,11 @@ GridBlockAllocator<DataT>::allocateBlock() {
     auto mask_index = chunk->mask.findFirstOn();
     if (mask_index < chunk->mask.size()) {
       // found in this chunk
-      uint32_t data_index = block_bytes_ * mask_index;
+      size_t data_index = block_bytes_ * mask_index;
       DataT* ptr = reinterpret_cast<DataT*>(&chunk->data[data_index]);
       chunk->mask.setOff(mask_index);
       size_++;
-      return {ptr, createDeleter(chunk, mask_index)};
+      return {ptr, Deleter(this, chunk, mask_index)};
     }
   }
   throw std::logic_error("Unexpected end of GridBlockAllocator::allocateBlock");
@@ -143,20 +174,9 @@ inline size_t GridBlockAllocator<DataT>::memUsage() const {
 template <typename DataT>
 inline void GridBlockAllocator<DataT>::addNewChunk() {
   auto chunk = std::make_shared<Chunk>();
-  chunk->data.resize(blocks_per_chunk * block_bytes_);
+  chunk->data.reset(new char[blocks_per_chunk * block_bytes_]);
   chunks_.push_back(chunk);
   capacity_ += blocks_per_chunk;
-}
-
-template <typename DataT>
-inline typename GridBlockAllocator<DataT>::Deleter GridBlockAllocator<DataT>::createDeleter(
-    std::shared_ptr<Chunk> chunk, uint32_t index) {
-  return [this, index, chunk] {
-    assert(index < blocks_per_chunk);
-    std::unique_lock lock(*mutex_);
-    chunk->mask.setOn(index);
-    size_--;
-  };
 }
 
 }  // namespace Bonxai

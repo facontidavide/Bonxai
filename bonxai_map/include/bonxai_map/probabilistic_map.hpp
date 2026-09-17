@@ -258,41 +258,71 @@ inline void ExactRayIterator(
     return;
   }
 
-  const Eigen::Vector3d to(
-      (coord_to.x + 0.5) * resolution, (coord_to.y + 0.5) * resolution,
-      (coord_to.z + 0.5) * resolution);
-  const Eigen::Vector3d delta = to - from;
+  constexpr double kInf = std::numeric_limits<double>::infinity();
 
-  CoordT coord = coord_from;
-  int32_t step[3];
-  double t_max[3];
-  double t_delta[3];
+  // Keep the DDA state in scalars, not arrays: a dynamic array index would force
+  // t_max/coord to stay in memory and round-trip through the stack every step.
+  int32_t cx = coord_from.x;
+  int32_t cy = coord_from.y;
+  int32_t cz = coord_from.z;
+  int32_t sx, sy, sz;
+  double tx, ty, tz;
+  double dx, dy, dz;
+
   // parametrized along the unnormalized segment: t = 1 at the endpoint center
-  for (int i = 0; i < 3; i++) {
-    if (delta[i] != 0.0) {
-      const double inv_delta = 1.0 / delta[i];
-      step[i] = (delta[i] > 0.0) ? 1 : -1;
-      const double boundary = (coord[i] + (step[i] > 0 ? 1 : 0)) * resolution;
-      t_max[i] = (boundary - from[i]) * inv_delta;
-      t_delta[i] = resolution * std::abs(inv_delta);
+  auto setup = [&](double delta, double origin, int32_t coord, int32_t& step, double& t_max,
+                   double& t_delta) {
+    if (delta != 0.0) {
+      const double inv_delta = 1.0 / delta;
+      step = (delta > 0.0) ? 1 : -1;
+      const double boundary = (coord + (delta > 0.0 ? 1 : 0)) * resolution;
+      t_max = (boundary - origin) * inv_delta;
+      t_delta = resolution * std::abs(inv_delta);
     } else {
-      step[i] = 0;
-      t_max[i] = std::numeric_limits<double>::infinity();
-      t_delta[i] = std::numeric_limits<double>::infinity();
+      step = 0;
+      t_max = kInf;
+      t_delta = kInf;
     }
-  }
+  };
+  setup((coord_to.x + 0.5) * resolution - from.x(), from.x(), cx, sx, tx, dx);
+  setup((coord_to.y + 0.5) * resolution - from.y(), from.y(), cy, sy, ty, dy);
+  setup((coord_to.z + 0.5) * resolution - from.z(), from.z(), cz, sz, tz, dz);
+
   while (true) {
-    const int axis = (t_max[0] < t_max[1]) ? ((t_max[0] < t_max[2]) ? 0 : 2)
-                                           : ((t_max[1] < t_max[2]) ? 1 : 2);
-    if (t_max[axis] > 1.0) {
-      return;  // no boundary crossing left before the end of the segment
+    // advance along the axis with the closest boundary crossing
+    if (tx < ty) {
+      if (tx < tz) {
+        if (tx > 1.0) {
+          return;  // no boundary crossing left before the end of the segment
+        }
+        cx += sx;
+        tx += dx;
+      } else {
+        if (tz > 1.0) {
+          return;
+        }
+        cz += sz;
+        tz += dz;
+      }
+    } else {
+      if (ty < tz) {
+        if (ty > 1.0) {
+          return;
+        }
+        cy += sy;
+        ty += dy;
+      } else {
+        if (tz > 1.0) {
+          return;
+        }
+        cz += sz;
+        tz += dz;
+      }
     }
-    coord[axis] += step[axis];
-    t_max[axis] += t_delta[axis];
-    if (coord == coord_to) {
+    if (cx == coord_to.x && cy == coord_to.y && cz == coord_to.z) {
       return;  // the endpoint voxel is excluded
     }
-    if (!func(coord)) {
+    if (!func(CoordT{cx, cy, cz})) {
       return;
     }
   }
