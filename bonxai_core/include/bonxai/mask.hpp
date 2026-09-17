@@ -56,14 +56,8 @@ class Mask {
 
   uint32_t countOn() const;
 
-  /**
-   * Iterator over the ON bits.
-   *
-   * It keeps the not-yet-visited bits of the current word in a register and
-   * pops them with the usual `w &= w - 1` trick. The previous implementation
-   * re-loaded the word from memory and re-scanned it from the start on every
-   * single increment.
-   */
+  /// Iterates the ON bits, keeping the rest of the current word in a register
+  /// and popping them with `w &= w - 1`.
   class Iterator {
    public:
     Iterator(const Mask* parent)
@@ -83,7 +77,7 @@ class Mask {
       }
       const uint32_t bit = pos & 63u;
       word_index_ = pos >> 6;
-      // the bits of this word still to be visited: strictly above `pos`
+      // bits still to visit: strictly above `pos`
       word_ = parent->words_[word_index_] & (~uint64_t(0) << bit) & ~(uint64_t(1) << bit);
     }
 
@@ -100,7 +94,7 @@ class Mask {
     Iterator& operator++() {
       if (word_ != 0) {
         pos_ = (word_index_ << 6) + FindLowestOn(word_);
-        word_ &= word_ - 1;  // pop the lowest ON bit
+        word_ &= word_ - 1;
         return *this;
       }
       const uint32_t word_count = parent_->WORD_COUNT;

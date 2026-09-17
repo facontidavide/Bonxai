@@ -40,23 +40,14 @@ class GridBlockAllocator {
     Chunk()
         : mask(3, true) {}
     Mask mask;
-    // Deliberately NOT a std::vector<char>: resize() would value-initialize,
-    // i.e. memset a whole chunk to zero on every allocation. Nothing reads a
-    // cell before it is written (Grid tracks validity with its Mask, and
-    // Accessor::value() assigns DataT{} when it turns a cell on), so the
-    // zeroing is pure waste. new char[] default-initializes, which is a no-op
-    // for scalars.
+    // not a std::vector: resize() would memset the whole chunk, and no cell is
+    // read before it is written
     std::unique_ptr<char[]> data;
   };
 
-  /**
-   * Returned by allocateBlock() to give a block back to the pool.
-   *
-   * This used to be a std::function<void()>. Its capture (allocator, chunk
-   * shared_ptr, index) does not fit the 16 byte small-object buffer of
-   * libstdc++, so every single leaf allocation went through an extra heap
-   * allocation. A concrete type is stored inline instead.
-   */
+  /// Gives a block back to the pool. A concrete type rather than a
+  /// std::function, whose capture would not fit the small-object buffer and so
+  /// cost one heap allocation per leaf.
   class Deleter {
    public:
     Deleter() = default;

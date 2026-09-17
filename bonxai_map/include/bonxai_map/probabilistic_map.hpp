@@ -260,8 +260,7 @@ inline void ExactRayIterator(
 
   constexpr double kInf = std::numeric_limits<double>::infinity();
 
-  // Keep the DDA state in scalars, not arrays: a dynamic array index would force
-  // t_max/coord to stay in memory and round-trip through the stack every step.
+  // scalars, not arrays: a dynamic index would keep t_max/coord in memory
   int32_t cx = coord_from.x;
   int32_t cy = coord_from.y;
   int32_t cz = coord_from.z;

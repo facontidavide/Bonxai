@@ -82,11 +82,9 @@ void Bonxai::ProbabilisticMap::updateFreeCells(const Vector3D& origin) {
     cell->flags = CellT::kUnseen;
   };
 
-  // Mark the voxels traversed by the rays; endpoints keep their hit/miss state.
-  // The miss is applied right here, while the cell line is still hot from the
-  // flag test: every endpoint of this scan was already flagged by
-  // addHitPoint/addMissPoint before carving started, so a cell still kUnseen
-  // cannot be an endpoint and will never need a hit instead.
+  // Mark the voxels traversed by the rays. Every endpoint was already flagged
+  // before carving started, so a cell still kUnseen cannot be one, and its miss
+  // can be applied here while the cache line is hot.
   auto visitFreeCell = [this, &accessor](const CoordT& coord) {
     CellT* cell = accessor.value(coord, true);
     if (cell->flags == CellT::kUnseen) {
@@ -120,8 +118,7 @@ void Bonxai::ProbabilisticMap::updateFreeCells(const Vector3D& origin) {
   }
   _ray_targets.clear();
 
-  // the probability was already updated during the traversal: only the
-  // per-scan flag is left to reset
+  // probability already applied during the traversal; only reset the flag
   for (CellT* cell : _traversed_cells) {
     cell->flags = CellT::kUnseen;
   }
