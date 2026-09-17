@@ -303,20 +303,18 @@ inline void ExactRayIterator(
         cz += sz;
         tz += dz;
       }
-    } else {
-      if (ty < tz) {
-        if (ty > 1.0) {
-          return;
-        }
-        cy += sy;
-        ty += dy;
-      } else {
-        if (tz > 1.0) {
-          return;
-        }
-        cz += sz;
-        tz += dz;
+    } else if (ty < tz) {
+      if (ty > 1.0) {
+        return;
       }
+      cy += sy;
+      ty += dy;
+    } else {
+      if (tz > 1.0) {
+        return;
+      }
+      cz += sz;
+      tz += dz;
     }
     if (cx == coord_to.x && cy == coord_to.y && cz == coord_to.z) {
       return;  // the endpoint voxel is excluded

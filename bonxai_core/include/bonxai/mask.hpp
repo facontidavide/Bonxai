@@ -51,7 +51,7 @@ class Mask {
   }
 
   void setWord(size_t n, uint64_t v) {
-    words_[n] = v;
+    words_[n] = (n + 1 == WORD_COUNT) ? (v & lastWordMask()) : v;
   }
 
   uint32_t countOn() const;
@@ -67,18 +67,13 @@ class Mask {
           parent_(parent) {}
 
     Iterator(uint32_t pos, const Mask* parent)
-        : pos_(pos),
-          parent_(parent) {
-      if (pos >= parent->SIZE) {
-        pos_ = parent->SIZE;
-        word_ = 0;
-        word_index_ = parent->WORD_COUNT;
-        return;
+        : Iterator(parent) {
+      if (pos < parent->SIZE) {
+        pos_ = pos;
+        word_index_ = pos >> 6;
+        // bits still to visit: strictly above `pos`
+        word_ = parent->words_[word_index_] & (~uint64_t(1) << (pos & 63u));
       }
-      const uint32_t bit = pos & 63u;
-      word_index_ = pos >> 6;
-      // bits still to visit: strictly above `pos`
-      word_ = parent->words_[word_index_] & (~uint64_t(0) << bit) & ~(uint64_t(1) << bit);
     }
 
     Iterator& operator=(const Iterator&) = default;
@@ -92,21 +87,15 @@ class Mask {
     }
 
     Iterator& operator++() {
-      if (word_ != 0) {
-        pos_ = (word_index_ << 6) + FindLowestOn(word_);
-        word_ &= word_ - 1;
-        return *this;
-      }
-      const uint32_t word_count = parent_->WORD_COUNT;
-      while (++word_index_ < word_count) {
-        const uint64_t word = parent_->words_[word_index_];
-        if (word != 0) {
-          pos_ = (word_index_ << 6) + FindLowestOn(word);
-          word_ = word & (word - 1);
+      while (word_ == 0) {
+        if (++word_index_ >= parent_->WORD_COUNT) {
+          pos_ = parent_->SIZE;
           return *this;
         }
+        word_ = parent_->words_[word_index_];
       }
-      pos_ = parent_->SIZE;
+      pos_ = (word_index_ << 6) + FindLowestOn(word_);
+      word_ &= word_ - 1;
       return *this;
     }
 
@@ -241,9 +230,7 @@ inline void Mask::setOn() {
 }
 
 inline void Mask::setOff() {
-  for (uint32_t i = 0; i < WORD_COUNT; ++i) {
-    words_[i] = uint64_t(0);
-  }
+  this->set(false);
 }
 
 inline void Mask::set(bool on) {
@@ -277,14 +264,7 @@ inline uint32_t Mask::findFirstOn() const {
 }
 
 inline Mask::Mask(size_t log2dim)
-    : SIZE(1U << (3 * log2dim)),
-      WORD_COUNT(std::max(SIZE >> 6, 1u)) {
-  words_ = (WORD_COUNT <= 8) ? static_words_ : new uint64_t[WORD_COUNT];
-
-  for (uint32_t i = 0; i < WORD_COUNT; ++i) {
-    words_[i] = 0;
-  }
-}
+    : Mask(log2dim, false) {}
 
 inline Mask::Mask(size_t log2dim, bool on)
     : SIZE(1U << (3 * log2dim)),

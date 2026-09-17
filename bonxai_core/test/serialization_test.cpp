@@ -56,6 +56,12 @@ std::string ToString(const GridT& grid) {
   return out.str();
 }
 
+Bonxai::HeaderInfo ReadHeader(std::istream& input) {
+  char header[256];
+  input.getline(header, 256);
+  return Bonxai::GetHeaderInfo(header);
+}
+
 }  // namespace
 
 TEST(Serialization, RoundTripWithTheDefaultShape) {
@@ -64,9 +70,7 @@ TEST(Serialization, RoundTripWithTheDefaultShape) {
   Fill(grid, samples);
 
   std::istringstream input(ToString(grid), std::ios::binary);
-  char header[256];
-  input.getline(header, 256);
-  const auto info = Bonxai::GetHeaderInfo(header);
+  const auto info = ReadHeader(input);
   EXPECT_EQ(info.inner_bits, grid.innetBits());
   EXPECT_EQ(info.leaf_bits, grid.leafBits());
   EXPECT_DOUBLE_EQ(info.resolution, grid.voxelSize());
@@ -86,9 +90,7 @@ TEST(Serialization, RoundTripWithANonDefaultShape) {
     Fill(grid, samples);
 
     std::istringstream input(ToString(grid), std::ios::binary);
-    char header[256];
-    input.getline(header, 256);
-    const auto info = Bonxai::GetHeaderInfo(header);
+    const auto info = ReadHeader(input);
     EXPECT_EQ(int(info.inner_bits), inner_bits);
     EXPECT_EQ(int(info.leaf_bits), leaf_bits);
 
@@ -105,23 +107,16 @@ TEST(Serialization, ReadingIntoAMatchingStaticShapeWorks) {
   Fill(grid, samples);
 
   std::istringstream input(ToString(grid), std::ios::binary);
-  char header[256];
-  input.getline(header, 256);
-  auto restored =
-      Bonxai::Deserialize<int, Bonxai::StaticShape<3, 4>>(input, Bonxai::GetHeaderInfo(header));
+  auto restored = Bonxai::Deserialize<int, Bonxai::StaticShape<3, 4>>(input, ReadHeader(input));
   ExpectHolds(restored, samples);
 }
 
 TEST(Serialization, ReadingIntoAContradictoryStaticShapeThrows) {
   Bonxai::VoxelGrid<int, Bonxai::DynamicShape> grid(0.1, 3, 4);
   Fill(grid, MakeSamples());
-  const std::string blob = ToString(grid);
-
-  std::istringstream input(blob, std::ios::binary);
-  char header[256];
-  input.getline(header, 256);
+  std::istringstream input(ToString(grid), std::ios::binary);
   EXPECT_THROW(
-      (Bonxai::Deserialize<int, Bonxai::StaticShape<2, 3>>(input, Bonxai::GetHeaderInfo(header))),
+      (Bonxai::Deserialize<int, Bonxai::StaticShape<2, 3>>(input, ReadHeader(input))),
       std::runtime_error);
 }
 
@@ -130,17 +125,12 @@ TEST(Serialization, TheDataTypeIsChecked) {
   Fill(grid, MakeSamples());
 
   std::istringstream input(ToString(grid), std::ios::binary);
-  char header[256];
-  input.getline(header, 256);
-  EXPECT_THROW(
-      Bonxai::Deserialize<float>(input, Bonxai::GetHeaderInfo(header)), std::runtime_error);
+  EXPECT_THROW(Bonxai::Deserialize<float>(input, ReadHeader(input)), std::runtime_error);
 }
 
 TEST(Serialization, AnEmptyGridRoundTrips) {
   Bonxai::VoxelGrid<int> grid(0.25);
   std::istringstream input(ToString(grid), std::ios::binary);
-  char header[256];
-  input.getline(header, 256);
-  auto restored = Bonxai::Deserialize<int>(input, Bonxai::GetHeaderInfo(header));
+  auto restored = Bonxai::Deserialize<int>(input, ReadHeader(input));
   EXPECT_EQ(restored.activeCellsCount(), 0u);
 }

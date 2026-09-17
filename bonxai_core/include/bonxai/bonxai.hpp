@@ -114,7 +114,9 @@ struct StaticShape {
 
   static constexpr uint32_t INNER_BITS = INNER;
   static constexpr uint32_t LEAF_BITS = LEAF;
-  static constexpr bool is_static = true;
+  static constexpr uint32_t LOG2_N = INNER_BITS + LEAF_BITS;
+  static constexpr uint32_t INNER_MASK = (uint32_t(1) << INNER_BITS) - 1;
+  static constexpr uint32_t LEAF_MASK = (uint32_t(1) << LEAF_BITS) - 1;
 
   StaticShape() = default;
 
@@ -131,13 +133,18 @@ struct StaticShape {
 struct DynamicShape {
   uint32_t INNER_BITS = 2;
   uint32_t LEAF_BITS = 3;
-  static constexpr bool is_static = false;
+  uint32_t LOG2_N = INNER_BITS + LEAF_BITS;
+  uint32_t INNER_MASK = (uint32_t(1) << INNER_BITS) - 1;
+  uint32_t LEAF_MASK = (uint32_t(1) << LEAF_BITS) - 1;
 
   DynamicShape() = default;
 
   DynamicShape(uint32_t inner_bits, uint32_t leaf_bits)
       : INNER_BITS(inner_bits),
-        LEAF_BITS(leaf_bits) {
+        LEAF_BITS(leaf_bits),
+        LOG2_N(inner_bits + leaf_bits),
+        INNER_MASK((uint32_t(1) << inner_bits) - 1),
+        LEAF_MASK((uint32_t(1) << leaf_bits) - 1) {
     if (INNER_BITS < 1 || LEAF_BITS < 1) {
       throw std::runtime_error("The minimum value of the inner_bits and leaf_bits should be 1");
     }
@@ -162,26 +169,7 @@ class VoxelGrid {
 
   GridBlockAllocator<DataT> leaf_block_allocator_;
 
-  // constant-folded when Shape is a StaticShape
-  uint32_t innerBits_() const {
-    return shape_.INNER_BITS;
-  }
-  uint32_t leafBits_() const {
-    return shape_.LEAF_BITS;
-  }
-  uint32_t log2N_() const {
-    return shape_.INNER_BITS + shape_.LEAF_BITS;
-  }
-  uint32_t innerMask_() const {
-    return (uint32_t(1) << shape_.INNER_BITS) - 1;
-  }
-  uint32_t leafMask_() const {
-    return (uint32_t(1) << shape_.LEAF_BITS) - 1;
-  }
-
  public:
-  using ShapeType = Shape;
-
   using LeafGrid = Grid<DataT>;
   using InnerGrid = Grid<std::shared_ptr<LeafGrid>>;
   using RootMap = std::unordered_map<CoordT, InnerGrid>;
@@ -448,41 +436,36 @@ inline VoxelGrid<DataT, Shape>::VoxelGrid(double voxel_size, uint8_t inner_bits,
     : shape_(inner_bits, leaf_bits),
       resolution(voxel_size),
       inv_resolution(1.0 / resolution),
-      leaf_block_allocator_(leaf_bits) {}
+      leaf_block_allocator_(shape_.LEAF_BITS) {}
 
 template <typename DataT, typename Shape>
 inline CoordT VoxelGrid<DataT, Shape>::posToCoord(double x, double y, double z) const {
-  return {
-      static_cast<int32_t>(std::floor(x * inv_resolution)),
-      static_cast<int32_t>(std::floor(y * inv_resolution)),
-      static_cast<int32_t>(std::floor(z * inv_resolution))};
+  return PosToCoord({x, y, z}, inv_resolution);
 }
 
 template <typename DataT, typename Shape>
 inline Point3D VoxelGrid<DataT, Shape>::coordToPos(const CoordT& coord) const {
-  return {
-      (static_cast<double>(coord.x)) * resolution, (static_cast<double>(coord.y)) * resolution,
-      (static_cast<double>(coord.z)) * resolution};
+  return CoordToPos(coord, resolution);
 }
 
 template <typename DataT, typename Shape>
 inline CoordT VoxelGrid<DataT, Shape>::getRootKey(const CoordT& coord) const {
-  const int32_t MASK = ~((1 << log2N_()) - 1);
+  const int32_t MASK = ~((1 << shape_.LOG2_N) - 1);
   return {coord.x & MASK, coord.y & MASK, coord.z & MASK};
 }
 
 template <typename DataT, typename Shape>
 inline CoordT VoxelGrid<DataT, Shape>::getInnerKey(const CoordT& coord) const {
-  const int32_t MASK = ~((1 << leafBits_()) - 1);
+  const int32_t MASK = ~((1 << shape_.LEAF_BITS) - 1);
   return {coord.x & MASK, coord.y & MASK, coord.z & MASK};
 }
 
 template <typename DataT, typename Shape>
 inline uint32_t VoxelGrid<DataT, Shape>::getInnerIndex(const CoordT& coord) const {
   // clang-format off
-  const uint32_t leaf_bits = leafBits_();
-  const uint32_t inner_bits = innerBits_();
-  const uint32_t inner_mask = innerMask_();
+  const uint32_t leaf_bits = shape_.LEAF_BITS;
+  const uint32_t inner_bits = shape_.INNER_BITS;
+  const uint32_t inner_mask = shape_.INNER_MASK;
   return ((coord.x >> leaf_bits) & inner_mask) |
          (((coord.y >> leaf_bits) & inner_mask) << inner_bits) |
          (((coord.z >> leaf_bits) & inner_mask) << (inner_bits * 2));
@@ -492,8 +475,8 @@ inline uint32_t VoxelGrid<DataT, Shape>::getInnerIndex(const CoordT& coord) cons
 template <typename DataT, typename Shape>
 inline uint32_t VoxelGrid<DataT, Shape>::getLeafIndex(const CoordT& coord) const {
   // clang-format off
-  const uint32_t leaf_bits = leafBits_();
-  const uint32_t leaf_mask = leafMask_();
+  const uint32_t leaf_bits = shape_.LEAF_BITS;
+  const uint32_t leaf_mask = shape_.LEAF_MASK;
   return (coord.x & leaf_mask) |
          ((coord.y & leaf_mask) << leaf_bits) |
          ((coord.z & leaf_mask) << (leaf_bits * 2));
@@ -636,9 +619,10 @@ inline typename std::shared_ptr<Grid<DataT>> VoxelGrid<DataT, Shape>::allocateLe
       deleter_impl();
       delete ptr;
     };
-    return std::shared_ptr<LeafGrid>(new LeafGrid(leafBits_(), memory_block), deleter);
+    return std::shared_ptr<LeafGrid>(
+        new LeafGrid(shape_.LEAF_BITS, memory_block), std::move(deleter));
   } else {
-    return std::make_shared<LeafGrid>(leafBits_());
+    return std::make_shared<LeafGrid>(shape_.LEAF_BITS);
   }
 }
 
@@ -654,7 +638,8 @@ inline typename VoxelGrid<DataT, Shape>::LeafGrid* VoxelGrid<DataT, Shape>::Acce
       if (!create_if_missing) {
         return nullptr;
       }
-      it = mutable_grid_.root_map.insert({root_key, InnerGrid(mutable_grid_.innerBits_())}).first;
+      it = mutable_grid_.root_map.insert({root_key, InnerGrid(mutable_grid_.shape_.INNER_BITS)})
+               .first;
     }
     inner_ptr = &(it->second);
     // update the cache
@@ -761,8 +746,8 @@ inline size_t VoxelGrid<DataT, Shape>::activeCellsCount() const {
 template <typename DataT, typename Shape>
 template <class VisitorFunction>
 inline void VoxelGrid<DataT, Shape>::forEachCell(VisitorFunction func) const {
-  const int32_t LEAF_BITS = int32_t(leafBits_());
-  const int32_t INNER_BITS = int32_t(innerBits_());
+  const int32_t LEAF_BITS = int32_t(shape_.LEAF_BITS);
+  const int32_t INNER_BITS = int32_t(shape_.INNER_BITS);
   const int32_t MASK_LEAF = ((1 << LEAF_BITS) - 1);
   const int32_t MASK_INNER = ((1 << INNER_BITS) - 1);
 

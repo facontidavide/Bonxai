@@ -66,6 +66,26 @@ static nanovdb::Coord ToNano(const CoordT& c) {
   return nanovdb::Coord(c.x, c.y, c.z);
 }
 
+/// Both libraries are filled from the same coordinates by these two helpers, so
+/// the workload can only ever drift in one place.
+template <typename Shape>
+static VoxelGrid<float, Shape> MakeBonxaiGrid() {
+  VoxelGrid<float, Shape> grid(kVoxelSize);
+  auto accessor = grid.createAccessor();
+  for (const auto& coord : ScanCoords()) {
+    accessor.setValue(coord, 1.0f);
+  }
+  return grid;
+}
+
+// build::Grid is neither copyable nor movable, so it is filled in place
+static void FillFromScan(nanovdb::tools::build::Grid<float>& builder) {
+  auto accessor = builder.getAccessor();
+  for (const auto& coord : ScanCoords()) {
+    accessor.setValue(ToNano(coord), 1.0f);
+  }
+}
+
 //---------------------------------------------------------------- create -----
 
 template <typename Shape>
@@ -140,13 +160,7 @@ static void NanoVDB_Update(benchmark::State& state) {
 template <typename Shape>
 static void Bonxai_NV_Query(benchmark::State& state) {
   const auto& coords = state.range(0) ? ShuffledScanCoords() : ScanCoords();
-  VoxelGrid<float, Shape> grid(kVoxelSize);
-  {
-    auto accessor = grid.createAccessor();
-    for (const auto& coord : ScanCoords()) {
-      accessor.setValue(coord, 1.0f);
-    }
-  }
+  auto grid = MakeBonxaiGrid<Shape>();
   float sum = 0;
   for (auto _ : state) {
     auto accessor = grid.createConstAccessor();
@@ -163,12 +177,7 @@ static void Bonxai_NV_Query(benchmark::State& state) {
 static void NanoVDB_Query(benchmark::State& state) {
   const auto& coords = state.range(0) ? ShuffledScanCoords() : ScanCoords();
   nanovdb::tools::build::Grid<float> grid(0.0f);
-  {
-    auto accessor = grid.getAccessor();
-    for (const auto& coord : ScanCoords()) {
-      accessor.setValue(ToNano(coord), 1.0f);
-    }
-  }
+  FillFromScan(grid);
   float sum = 0;
   for (auto _ : state) {
     auto accessor = grid.getAccessor();
@@ -183,12 +192,7 @@ static void NanoVDB_Query(benchmark::State& state) {
 static void NanoVDBReadOnly_Query(benchmark::State& state) {
   const auto& coords = state.range(0) ? ShuffledScanCoords() : ScanCoords();
   nanovdb::tools::build::Grid<float> builder(0.0f);
-  {
-    auto accessor = builder.getAccessor();
-    for (const auto& coord : ScanCoords()) {
-      accessor.setValue(ToNano(coord), 1.0f);
-    }
-  }
+  FillFromScan(builder);
   auto handle = nanovdb::tools::createNanoGrid(builder);
   const auto* grid = handle.grid<float>();
   float sum = 0;
@@ -206,13 +210,7 @@ static void NanoVDBReadOnly_Query(benchmark::State& state) {
 
 template <typename Shape>
 static void Bonxai_NV_Iterate(benchmark::State& state) {
-  VoxelGrid<float, Shape> grid(kVoxelSize);
-  {
-    auto accessor = grid.createAccessor();
-    for (const auto& coord : ScanCoords()) {
-      accessor.setValue(coord, 1.0f);
-    }
-  }
+  auto grid = MakeBonxaiGrid<Shape>();
   double sum = 0;
   for (auto _ : state) {
     grid.forEachCell([&](float& value, const CoordT& coord) { sum += value + coord.x; });
@@ -223,12 +221,7 @@ static void Bonxai_NV_Iterate(benchmark::State& state) {
 
 static void NanoVDBReadOnly_Iterate(benchmark::State& state) {
   nanovdb::tools::build::Grid<float> builder(0.0f);
-  {
-    auto accessor = builder.getAccessor();
-    for (const auto& coord : ScanCoords()) {
-      accessor.setValue(ToNano(coord), 1.0f);
-    }
-  }
+  FillFromScan(builder);
   auto handle = nanovdb::tools::createNanoGrid(builder);
   const auto* grid = handle.grid<float>();
   const auto& tree = grid->tree();
@@ -254,12 +247,7 @@ static void NanoVDBReadOnly_Iterate(benchmark::State& state) {
 /// no equivalent step, so this is what the NanoVDB lookup numbers cost up front.
 static void NanoVDB_Convert(benchmark::State& state) {
   nanovdb::tools::build::Grid<float> builder(0.0f);
-  {
-    auto accessor = builder.getAccessor();
-    for (const auto& coord : ScanCoords()) {
-      accessor.setValue(ToNano(coord), 1.0f);
-    }
-  }
+  FillFromScan(builder);
   for (auto _ : state) {
     auto handle = nanovdb::tools::createNanoGrid(builder);
     benchmark::DoNotOptimize(handle);
@@ -267,20 +255,9 @@ static void NanoVDB_Convert(benchmark::State& state) {
 }
 
 static void MemoryUsage(benchmark::State& state) {
-  VoxelGrid<float> bonxai_grid(kVoxelSize);
-  {
-    auto accessor = bonxai_grid.createAccessor();
-    for (const auto& coord : ScanCoords()) {
-      accessor.setValue(coord, 1.0f);
-    }
-  }
+  auto bonxai_grid = MakeBonxaiGrid<StaticShape<>>();
   nanovdb::tools::build::Grid<float> builder(0.0f);
-  {
-    auto accessor = builder.getAccessor();
-    for (const auto& coord : ScanCoords()) {
-      accessor.setValue(ToNano(coord), 1.0f);
-    }
-  }
+  FillFromScan(builder);
   auto handle = nanovdb::tools::createNanoGrid(builder);
   for (auto _ : state) {}
   state.counters["Bonxai_MB"] = double(bonxai_grid.memUsage()) / 1e6;

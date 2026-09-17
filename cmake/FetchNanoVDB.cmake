@@ -51,6 +51,10 @@ else()
       set(NANOVDB_TAG "${NANOVDB_FALLBACK_TAG}")
       message(STATUS "NanoVDB: could not resolve the latest tag, falling back to ${NANOVDB_TAG}")
     endif()
+
+    # cache it, so re-configuring does not hit the API again and so the build
+    # keeps using the version it was configured with
+    set(NANOVDB_TAG "${NANOVDB_TAG}" CACHE STRING "OpenVDB release providing the NanoVDB headers")
   endif()
 
   set(_nanovdb_dir "${CMAKE_CURRENT_BINARY_DIR}/nanovdb-${NANOVDB_TAG}")
