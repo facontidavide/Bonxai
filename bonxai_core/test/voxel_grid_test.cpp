@@ -268,3 +268,116 @@ TEST(VoxelGrid, PosToCoordAndBack) {
   EXPECT_DOUBLE_EQ(pos.y, -4 * resolution);
   EXPECT_DOUBLE_EQ(pos.z, 5 * resolution);
 }
+
+//----------------------------------------------------------------
+// Accessors cache the inner/leaf nodes they visited last. clear(CLEAR_MEMORY)
+// and releaseUnusedMemory() free those nodes, so the cache must be dropped:
+// otherwise the accessor dereferences freed memory. See issue #52.
+//----------------------------------------------------------------
+
+TEST(VoxelGridStaleCache, AccessorSurvivesClearMemory) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  auto accessor = grid.createAccessor();
+
+  const Bonxai::CoordT coord{7, 2, 3};
+  accessor.setValue(coord, 1);
+  ASSERT_EQ(grid.activeCellsCount(), 1u);
+
+  // frees every inner and leaf node, while the accessor still caches this coordinate
+  grid.clear(Bonxai::CLEAR_MEMORY);
+  ASSERT_EQ(grid.activeCellsCount(), 0u);
+
+  accessor.setValue(coord, 42);
+  int* value = accessor.value(coord, false);
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(*value, 42);
+  EXPECT_EQ(grid.activeCellsCount(), 1u);
+}
+
+TEST(VoxelGridStaleCache, AccessorSurvivesReleaseUnusedMemory) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  auto accessor = grid.createAccessor();
+
+  const Bonxai::CoordT coord{7, 2, 3};
+  accessor.setValue(coord, 1);
+  accessor.setCellOff(coord);
+  // the leaf is entirely OFF now, so it is released
+  grid.releaseUnusedMemory();
+
+  accessor.setValue(coord, 42);
+  int* value = accessor.value(coord, false);
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(*value, 42);
+  EXPECT_EQ(grid.activeCellsCount(), 1u);
+}
+
+TEST(VoxelGridStaleCache, AccessorSetCellOnSurvivesClearMemory) {
+  Bonxai::BinaryVoxelGrid grid(1.0);
+  auto accessor = grid.createAccessor();
+
+  const Bonxai::CoordT coord{7, 2, 3};
+  accessor.setCellOn(coord);
+  grid.clear(Bonxai::CLEAR_MEMORY);
+
+  EXPECT_FALSE(accessor.isCellOn(coord));
+  accessor.setCellOn(coord);
+  EXPECT_TRUE(accessor.isCellOn(coord));
+  EXPECT_EQ(grid.activeCellsCount(), 1u);
+}
+
+TEST(VoxelGridStaleCache, ConstAccessorSurvivesClearMemory) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  auto writer = grid.createAccessor();
+  const Bonxai::CoordT coord{7, 2, 3};
+  writer.setValue(coord, 1);
+
+  auto reader = grid.createConstAccessor();
+  ASSERT_NE(reader.value(coord), nullptr);
+
+  grid.clear(Bonxai::CLEAR_MEMORY);
+
+  EXPECT_EQ(reader.value(coord), nullptr);
+  EXPECT_FALSE(reader.isCellOn(coord));
+  EXPECT_EQ(reader.getLeafGrid(coord), nullptr);
+  EXPECT_EQ(reader.lastInnerGrid(), nullptr);
+  EXPECT_EQ(reader.lastLeafGrid(), nullptr);
+}
+
+TEST(VoxelGridStaleCache, ConstAccessorDoesNotCacheAMiss) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  const Bonxai::CoordT coord{7, 2, 3};
+
+  auto reader = grid.createConstAccessor();
+  // the cell does not exist yet: the miss must not be cached
+  EXPECT_EQ(reader.value(coord), nullptr);
+  EXPECT_FALSE(reader.isCellOn(coord));
+
+  auto writer = grid.createAccessor();
+  writer.setValue(coord, 42);
+
+  const int* value = reader.value(coord);
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(*value, 42);
+  EXPECT_TRUE(reader.isCellOn(coord));
+}
+
+TEST(VoxelGridStaleCache, AccessorReadAfterWriteIsConsistent) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  auto accessor = grid.createAccessor();
+  const Bonxai::CoordT coord{7, 2, 3};
+
+  // the read-only methods are inherited from ConstAccessor, which keeps its own cache
+  const Bonxai::VoxelGrid<int>::ConstAccessor& reader = accessor;
+
+  // read of a missing cell, through the ConstAccessor part of the cache
+  EXPECT_FALSE(accessor.isCellOn(coord));
+  EXPECT_EQ(reader.value(coord), nullptr);
+
+  // ... then a write through the Accessor part of the cache
+  accessor.setValue(coord, 42);
+
+  EXPECT_TRUE(accessor.isCellOn(coord));
+  const int* value = reader.value(coord);
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(*value, 42);
+}
