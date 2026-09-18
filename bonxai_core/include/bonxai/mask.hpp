@@ -31,6 +31,10 @@ class Mask {
   Mask(const Mask& other);
   Mask(Mask&& other);
 
+  /// Declaring the move constructor suppressed the implicit assignment operators;
+  /// without this one, Grid::operator=(Grid&&) does not compile when instantiated.
+  Mask& operator=(Mask&& other);
+
   ~Mask();
 
   /// Return the memory footprint in bytes of this Mask
@@ -294,6 +298,29 @@ inline Mask::Mask(Mask&& other)
   } else {
     std::swap(words_, other.words_);
   }
+}
+
+inline Mask& Mask::operator=(Mask&& other) {
+  if (this == &other) {
+    return *this;
+  }
+  if (WORD_COUNT > 8) {
+    delete[] words_;
+  }
+  SIZE = other.SIZE;
+  WORD_COUNT = other.WORD_COUNT;
+
+  if (WORD_COUNT <= 8) {
+    // the words of the other Mask live inside the other Mask: they must be copied
+    words_ = static_words_;
+    for (uint32_t i = 0; i < WORD_COUNT; ++i) {
+      words_[i] = other.words_[i];
+    }
+  } else {
+    words_ = other.words_;
+    other.words_ = nullptr;
+  }
+  return *this;
 }
 
 inline Mask::~Mask() {
