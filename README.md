@@ -125,6 +125,10 @@ Bonxai::CoordT coord = grid.posToCoord(x, y, z);
 float* value_ptr = accessor.value( coord );
 ```
 
+An accessor caches the last nodes it visited, but it remains valid for the entire
+lifetime of the grid: `VoxelGrid::clear()` and `VoxelGrid::releaseUnusedMemory()`
+free nodes, and the accessors detect it and refresh their cache transparently.
+
 ## Note about multi-threading
 
 `Bonxai::VoxelGrid` is **not** thread-safe, for write operations.
