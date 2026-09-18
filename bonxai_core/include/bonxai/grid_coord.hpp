@@ -210,10 +210,14 @@ namespace std {
 template <>
 struct hash<Bonxai::CoordT> {
   std::size_t operator()(const Bonxai::CoordT& p) const {
-    // same as OpenVDB
-    return ((1 << 20) - 1) & (static_cast<int64_t>(p.x) * 73856093 ^  //
-                              static_cast<int64_t>(p.y) * 19349669 ^  //
-                              static_cast<int64_t>(p.z) * 83492791);
+    // same as OpenVDB. Note that this used to end with a `((1 << 20) - 1) &`, which
+    // capped the number of distinct hashes to 1M: harmless for a small grid, but from
+    // ~100k root nodes on it made every lookup in VoxelGrid::root_map walk a chain of
+    // colliding keys.
+    return (
+        static_cast<int64_t>(p.x) * 73856093 ^  //
+        static_cast<int64_t>(p.y) * 19349669 ^  //
+        static_cast<int64_t>(p.z) * 83492791);
   }
 };
 

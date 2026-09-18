@@ -5,6 +5,8 @@
 #include <random>
 #include <vector>
 
+#include "bonxai/bonxai.hpp"
+
 namespace {
 
 // Reference: the ON positions, found by testing every bit one at a time.
@@ -177,4 +179,50 @@ TEST(Mask, PaddingBitsStayOff) {
   EXPECT_TRUE(mask.isOff());
 
   EXPECT_EQ(Bonxai::Mask(1, true).countOn(), 8u);
+}
+
+// Mask declares a move constructor, which suppresses the implicit assignment
+// operators. Without an explicit one, Grid<T>::operator=(Grid&&) fails to compile as
+// soon as it is instantiated, which is what any container storing the InnerGrid by
+// value ends up doing when it erases an element.
+TEST(MaskTest, MoveAssignmentStaticWords) {
+  Bonxai::Mask source(3);  // 512 bits: stored inside the object
+  source.setOn(5);
+  source.setOn(500);
+
+  Bonxai::Mask destination(3);
+  destination.setOn(1);
+  destination = std::move(source);
+
+  EXPECT_FALSE(destination.isOn(1));
+  EXPECT_TRUE(destination.isOn(5));
+  EXPECT_TRUE(destination.isOn(500));
+  EXPECT_EQ(destination.countOn(), 2u);
+}
+
+TEST(MaskTest, MoveAssignmentHeapWords) {
+  Bonxai::Mask source(4);  // 4096 bits: allocated on the heap
+  source.setOn(7);
+  source.setOn(4000);
+
+  Bonxai::Mask destination(4);
+  destination.setOn(1);
+  destination = std::move(source);
+
+  EXPECT_FALSE(destination.isOn(1));
+  EXPECT_TRUE(destination.isOn(7));
+  EXPECT_TRUE(destination.isOn(4000));
+  EXPECT_EQ(destination.countOn(), 2u);
+}
+
+TEST(MaskTest, GridMoveAssignment) {
+  Bonxai::Grid<int> source(3);
+  source.mask().setOn(9);
+  source.cell(9) = 42;
+
+  Bonxai::Grid<int> destination(3);
+  destination = std::move(source);
+
+  EXPECT_TRUE(destination.mask().isOn(9));
+  EXPECT_EQ(destination.cell(9), 42);
 }

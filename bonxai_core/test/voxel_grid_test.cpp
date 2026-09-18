@@ -2,6 +2,7 @@
 
 #include <map>
 #include <tuple>
+#include <unordered_set>
 #include <vector>
 
 #include "bonxai/bonxai.hpp"
@@ -380,4 +381,57 @@ TEST(VoxelGridStaleCache, AccessorReadAfterWriteIsConsistent) {
   const int* value = reader.value(coord);
   ASSERT_NE(value, nullptr);
   EXPECT_EQ(*value, 42);
+}
+
+// The accessors cache a raw pointer to the InnerGrid stored in the root map, so the
+// container must not move its elements when a new root is inserted. std::unordered_map
+// is node based and does not, but this is worth pinning: it rules out replacing it with
+// any of the flat hash maps, whose whole point is to move their values around.
+TEST(VoxelGridRootMap, InnerGridsAreNotMovedByInsertion) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  auto accessor = grid.createAccessor();
+
+  const Bonxai::CoordT first{0, 0, 0};
+  accessor.setValue(first, 42);
+  // this is exactly the pointer that an Accessor caches
+  const auto* first_inner = &(grid.rootMap().find(grid.getRootKey(first))->second);
+
+  // enough roots to force the container to grow several times
+  for (int i = 1; i < 10000; ++i) {
+    accessor.setValue({i * 32, 0, 0}, i);
+  }
+
+  const auto* first_inner_now = &(grid.rootMap().find(grid.getRootKey(first))->second);
+  EXPECT_EQ(first_inner, first_inner_now) << "the root map moved an InnerGrid on insertion";
+
+  // and every value is still readable
+  auto reader = grid.createConstAccessor();
+  const int* value = reader.value(first);
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(*value, 42);
+  for (int i = 1; i < 10000; ++i) {
+    const int* cell = reader.value({i * 32, 0, 0});
+    ASSERT_NE(cell, nullptr) << "missing cell for i = " << i;
+    EXPECT_EQ(*cell, i);
+  }
+}
+
+// The hash must keep enough entropy to address a large number of root nodes.
+TEST(VoxelGridRootMap, HashDoesNotCollapseOnLargeGrids) {
+  const std::hash<Bonxai::CoordT> hasher;
+  std::unordered_set<size_t> hashes;
+  size_t count = 0;
+
+  // the root keys of a 100 x 100 x 30 grid of root nodes: 300k of them
+  for (int32_t x = 0; x < 100; ++x) {
+    for (int32_t y = 0; y < 100; ++y) {
+      for (int32_t z = 0; z < 30; ++z) {
+        hashes.insert(hasher({x * 32, y * 32, z * 32}));
+        ++count;
+      }
+    }
+  }
+  // the truncated hash used to collapse these 300k keys onto ~4k distinct values
+  EXPECT_GT(hashes.size(), count * 9 / 10)
+      << hashes.size() << " distinct hashes for " << count << " root keys";
 }

@@ -241,6 +241,117 @@ static void NanoVDBReadOnly_Iterate(benchmark::State& state) {
   state.counters["cells"] = double(count);
 }
 
+//----------------------------------------------- a large, sparse map --------
+// The scan above fits in a room, that is, a handful of root nodes. Mapping a
+// building or an outdoor area gives the root map hundreds of thousands of
+// entries, which is the regime where its hash function matters.
+//
+// The two libraries are not built the same way below the root, so both shapes
+// worth comparing are measured:
+//
+//   NanoVDB            root map -> upper 32^3 -> lower 16^3 -> leaf 8^3
+//   StaticShape<2, 3>  root map ->               inner  4^3 -> leaf 8^3
+//   StaticShape<4, 3>  root map ->               inner 16^3 -> leaf 8^3
+//
+// StaticShape<4, 3> is the fair comparison: same 8^3 leaf and same 16^3 node
+// above it as NanoVDB, the only difference being NanoVDB's extra 32^3 level,
+// whose job the root map does in Bonxai. It covers 128 voxels per side instead
+// of the default's 32, so it needs far fewer roots, and pays for it with dense
+// 16^3 inner nodes.
+
+static const std::vector<CoordT>& WideCoords() {
+  static const std::vector<CoordT> coords = [] {
+    std::mt19937 rng(42);
+    std::uniform_real_distribution<double> spread(-100.0, 100.0);
+    std::vector<CoordT> out;
+    out.reserve(300000);
+    for (size_t i = 0; i < out.capacity(); ++i) {
+      out.push_back(PosToCoord({spread(rng), spread(rng), spread(rng)}, 1.0 / kVoxelSize));
+    }
+    return out;
+  }();
+  return coords;
+}
+
+template <typename Shape>
+static void Bonxai_NV_WideCreate(benchmark::State& state) {
+  const auto& coords = WideCoords();
+  size_t roots = 0;
+  double megabytes = 0;
+  for (auto _ : state) {
+    // the bits must be passed explicitly: the constructor defaults to 2 and 3, which
+    // a StaticShape with different branching factors rejects
+    VoxelGrid<float, Shape> grid(kVoxelSize, Shape::INNER_BITS, Shape::LEAF_BITS);
+    auto accessor = grid.createAccessor();
+    for (const auto& coord : coords) {
+      accessor.setValue(coord, 1.0f);
+    }
+    roots = grid.rootMap().size();
+    megabytes = double(grid.memUsage()) / 1e6;
+    benchmark::DoNotOptimize(grid);
+  }
+  state.counters["roots"] = double(roots);
+  state.counters["MB"] = megabytes;
+  state.SetItemsProcessed(state.iterations() * coords.size());
+}
+
+static void NanoVDB_WideCreate(benchmark::State& state) {
+  const auto& coords = WideCoords();
+  for (auto _ : state) {
+    nanovdb::tools::build::Grid<float> grid(0.0f);
+    auto accessor = grid.getAccessor();
+    for (const auto& coord : coords) {
+      accessor.setValue(ToNano(coord), 1.0f);
+    }
+    benchmark::DoNotOptimize(grid);
+  }
+  state.SetItemsProcessed(state.iterations() * coords.size());
+}
+
+template <typename Shape>
+static void Bonxai_NV_WideQuery(benchmark::State& state) {
+  const auto& coords = WideCoords();
+  VoxelGrid<float, Shape> grid(kVoxelSize, Shape::INNER_BITS, Shape::LEAF_BITS);
+  {
+    auto accessor = grid.createAccessor();
+    for (const auto& coord : coords) {
+      accessor.setValue(coord, 1.0f);
+    }
+  }
+  float sum = 0;
+  for (auto _ : state) {
+    auto accessor = grid.createConstAccessor();
+    for (const auto& coord : coords) {
+      if (const float* value = accessor.value(coord)) {
+        sum += *value;
+      }
+    }
+    benchmark::DoNotOptimize(sum);
+  }
+  state.counters["roots"] = double(grid.rootMap().size());
+  state.SetItemsProcessed(state.iterations() * coords.size());
+}
+
+static void NanoVDB_WideQuery(benchmark::State& state) {
+  const auto& coords = WideCoords();
+  nanovdb::tools::build::Grid<float> grid(0.0f);
+  {
+    auto accessor = grid.getAccessor();
+    for (const auto& coord : coords) {
+      accessor.setValue(ToNano(coord), 1.0f);
+    }
+  }
+  float sum = 0;
+  for (auto _ : state) {
+    auto accessor = grid.getAccessor();
+    for (const auto& coord : coords) {
+      sum += accessor.getValue(ToNano(coord));
+    }
+    benchmark::DoNotOptimize(sum);
+  }
+  state.SetItemsProcessed(state.iterations() * coords.size());
+}
+
 //------------------------------------------------------------ one-offs -------
 
 /// Cost of linearising the mutable tree into the read-only NanoGrid. Bonxai has
@@ -281,6 +392,12 @@ BENCHMARK(NanoVDBReadOnly_Query)->Arg(0)->Arg(1)->MinTime(1);
 BENCHMARK_TEMPLATE(Bonxai_NV_Iterate, StaticShape<>)->MinTime(1);
 BENCHMARK_TEMPLATE(Bonxai_NV_Iterate, DynamicShape)->MinTime(1);
 BENCHMARK(NanoVDBReadOnly_Iterate)->MinTime(1);
+BENCHMARK_TEMPLATE(Bonxai_NV_WideCreate, StaticShape<>)->MinTime(1);
+BENCHMARK_TEMPLATE(Bonxai_NV_WideCreate, StaticShape<4, 3>)->MinTime(1);
+BENCHMARK(NanoVDB_WideCreate)->MinTime(1);
+BENCHMARK_TEMPLATE(Bonxai_NV_WideQuery, StaticShape<>)->MinTime(1);
+BENCHMARK_TEMPLATE(Bonxai_NV_WideQuery, StaticShape<4, 3>)->MinTime(1);
+BENCHMARK(NanoVDB_WideQuery)->MinTime(1);
 BENCHMARK(NanoVDB_Convert)->MinTime(1);
 BENCHMARK(MemoryUsage);
 
