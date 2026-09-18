@@ -325,8 +325,7 @@ class VoxelGrid {
    public:
     Accessor(VoxelGrid& grid)
         : ConstAccessor(grid),
-          mutable_grid_(grid),
-          cache_epoch_(grid.cache_epoch_) {}
+          mutable_grid_(grid) {}
 
     /**
      * @brief setValue of a cell. If the cell did not exist, it is created.
@@ -372,25 +371,20 @@ class VoxelGrid {
     [[nodiscard]] LeafGrid* getLeafGrid(const CoordT& coord, bool create_if_missing = false);
 
    private:
-    // Accessor shadows the cache of the base class with non-const pointers,
-    // therefore it must track its own epoch.
-    void refreshCache() {
-      if (cache_epoch_ == mutable_grid_.cache_epoch_) {
-        return;
-      }
-      cache_epoch_ = mutable_grid_.cache_epoch_;
-      prev_root_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
-      prev_inner_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
-      prev_inner_ptr_ = nullptr;
-      prev_leaf_ptr_ = nullptr;
+    // The cache lives in ConstAccessor, which is a dependent base class.
+    using ConstAccessor::prev_inner_coord_;
+    using ConstAccessor::prev_inner_ptr_;
+    using ConstAccessor::prev_leaf_ptr_;
+    using ConstAccessor::prev_root_coord_;
+    using ConstAccessor::refreshCache;
+
+    // Since this class is built from a non-const VoxelGrid, the nodes that the cache
+    // points to are not const either.
+    [[nodiscard]] static LeafGrid* mutableLeaf(const LeafGrid* leaf) {
+      return const_cast<LeafGrid*>(leaf);
     }
 
     VoxelGrid& mutable_grid_;
-    uint32_t cache_epoch_;
-    CoordT prev_root_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
-    CoordT prev_inner_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
-    InnerGrid* prev_inner_ptr_ = nullptr;
-    LeafGrid* prev_leaf_ptr_ = nullptr;
   };
 
   Accessor createAccessor() {
@@ -535,8 +529,9 @@ inline bool VoxelGrid<DataT, Shape>::Accessor::setValue(const CoordT& coord, con
   }
 
   const uint32_t index = mutable_grid_.getLeafIndex(coord);
-  const bool was_on = prev_leaf_ptr_->mask().setOn(index);
-  prev_leaf_ptr_->cell(index) = value;
+  LeafGrid* leaf_ptr = mutableLeaf(prev_leaf_ptr_);
+  const bool was_on = leaf_ptr->mask().setOn(index);
+  leaf_ptr->cell(index) = value;
   return was_on;
 }
 
@@ -558,13 +553,14 @@ inline DataT* VoxelGrid<DataT, Shape>::Accessor::value(
   }
 
   if (prev_leaf_ptr_) {
+    LeafGrid* leaf_ptr = mutableLeaf(prev_leaf_ptr_);
     const uint32_t index = mutable_grid_.getLeafIndex(coord);
-    if (prev_leaf_ptr_->mask().isOn(index)) {
-      return &(prev_leaf_ptr_->cell(index));
+    if (leaf_ptr->mask().isOn(index)) {
+      return &(leaf_ptr->cell(index));
     } else if (create_if_missing) {
-      prev_leaf_ptr_->mask().setOn(index);
-      prev_leaf_ptr_->cell(index) = {};
-      return &(prev_leaf_ptr_->cell(index));
+      leaf_ptr->mask().setOn(index);
+      leaf_ptr->cell(index) = {};
+      return &(leaf_ptr->cell(index));
     }
   }
   return nullptr;
@@ -625,11 +621,12 @@ inline bool VoxelGrid<DataT, Shape>::Accessor::setCellOn(
     prev_leaf_ptr_ = getLeafGrid(coord, true);
     prev_inner_coord_ = inner_key;
   }
+  LeafGrid* leaf_ptr = mutableLeaf(prev_leaf_ptr_);
   uint32_t index = mutable_grid_.getLeafIndex(coord);
-  bool was_on = prev_leaf_ptr_->mask().setOn(index);
+  bool was_on = leaf_ptr->mask().setOn(index);
   if constexpr (!std::is_same_v<DataT, EmptyVoxel>) {
     if (!was_on) {
-      prev_leaf_ptr_->cell(index) = default_value;
+      leaf_ptr->cell(index) = default_value;
     }
   }
   return was_on;
@@ -647,7 +644,7 @@ inline bool VoxelGrid<DataT, Shape>::Accessor::setCellOff(const CoordT& coord) {
   }
   if (prev_leaf_ptr_) {
     uint32_t index = mutable_grid_.getLeafIndex(coord);
-    return prev_leaf_ptr_->mask().setOff(index);
+    return mutableLeaf(prev_leaf_ptr_)->mask().setOff(index);
   }
   return false;
 }
@@ -675,7 +672,7 @@ template <typename DataT, typename Shape>
 inline typename VoxelGrid<DataT, Shape>::LeafGrid* VoxelGrid<DataT, Shape>::Accessor::getLeafGrid(
     const CoordT& coord, bool create_if_missing) {
   refreshCache();
-  InnerGrid* inner_ptr = prev_inner_ptr_;
+  auto* inner_ptr = const_cast<InnerGrid*>(prev_inner_ptr_);
   const CoordT root_key = mutable_grid_.getRootKey(coord);
 
   if (root_key != prev_root_coord_ || !inner_ptr) {
