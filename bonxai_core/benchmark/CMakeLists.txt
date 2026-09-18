@@ -20,24 +20,27 @@ endfunction()
 
 ############################################
 
-set(BENCHMARK_SRC benchmark_bonxai.cpp)
-if(octomap_FOUND)
-    list(APPEND BENCHMARK_SRC benchmark_octomap.cpp)
-endif()
-
-add_executable(benchmark_bonxai ${BENCHMARK_SRC})
-compile_benchmark(benchmark_bonxai)
-
-#############################################
-
-if( octomap_FOUND )
-    add_executable(bonxai_memory get_memory.cpp )
-    compile_benchmark(bonxai_memory)
-
-    if( LZ4_FOUND )
-        add_executable(benchmark_compression benchmark_compression.cpp )
-        compile_benchmark(benchmark_compression)
+# these read the .pcd files in data/ through benchmark_utils.hpp, so they need PCL
+if(PCL_FOUND)
+    set(BENCHMARK_SRC benchmark_bonxai.cpp)
+    if(octomap_FOUND)
+        list(APPEND BENCHMARK_SRC benchmark_octomap.cpp)
     endif()
+
+    add_executable(benchmark_bonxai ${BENCHMARK_SRC})
+    compile_benchmark(benchmark_bonxai)
+
+    if( octomap_FOUND )
+        add_executable(bonxai_memory get_memory.cpp )
+        compile_benchmark(bonxai_memory)
+
+        if( LZ4_FOUND )
+            add_executable(benchmark_compression benchmark_compression.cpp )
+            compile_benchmark(benchmark_compression)
+        endif()
+    endif()
+else()
+    message("Missing PCL. Skipping the benchmarks that read the clouds in data/")
 endif()
 
 #############################################
