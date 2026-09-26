@@ -211,18 +211,24 @@ namespace std {
 template <>
 struct hash<Bonxai::CoordT> {
   std::size_t operator()(const Bonxai::CoordT& p) const {
-    // same as OpenVDB, with two differences:
+    // For the containers of the users: VoxelGrid's root map, a CoordMap, has its own hash.
     //
-    // - the coordinates are taken as unsigned before being widened: sign extending a
-    //   negative one made the hash collide heavily on any grid crossing zero (the 46656
-    //   root keys of a 36^3 grid centred on the origin gave only 29226 distinct values).
-    // - it used to end with a `((1 << 20) - 1) &`, which capped the number of distinct
-    //   hashes to 1M: from ~100k root nodes on, every lookup in VoxelGrid::root_map
-    //   walked a chain of colliding keys.
-    return (
-        static_cast<uint64_t>(static_cast<uint32_t>(p.x)) * 73856093 ^  //
-        static_cast<uint64_t>(static_cast<uint32_t>(p.y)) * 19349669 ^  //
-        static_cast<uint64_t>(static_cast<uint32_t>(p.z)) * 83492791);
+    // x and y are packed in one 64 bits word, z is folded in with a multiplication by the
+    // golden ratio, and murmur3's finalizer mixes the lot: every bit of the result is good,
+    // whatever the container does with them. This replaced OpenVDB's
+    // `x * 73856093 ^ y * 19349669 ^ z * 83492791`, which collided heavily on any grid
+    // crossing zero once the coordinates were sign extended (the 46656 root keys of a 36^3
+    // grid centred on the origin gave 29226 distinct values), was truncated to 20 bits on
+    // top of that, and left its low bits at zero when the coordinates shared theirs, as
+    // root keys do.
+    uint64_t k = (uint64_t(uint32_t(p.x)) | (uint64_t(uint32_t(p.y)) << 32)) ^
+                 (uint64_t(uint32_t(p.z)) * UINT64_C(0x9e3779b97f4a7c15));
+    k ^= k >> 33;
+    k *= UINT64_C(0xff51afd7ed558ccd);
+    k ^= k >> 33;
+    k *= UINT64_C(0xc4ceb9fe1a85ec53);
+    k ^= k >> 33;
+    return static_cast<std::size_t>(k);
   }
 };
 

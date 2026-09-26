@@ -1,4 +1,4 @@
-foreach(TEST_NAME voxel_grid_test mask_test serialization_test)
+foreach(TEST_NAME voxel_grid_test mask_test serialization_test coord_map_test)
     add_executable(${TEST_NAME} ${TEST_NAME}.cpp)
     target_link_libraries(${TEST_NAME} PRIVATE
         bonxai_core

@@ -384,9 +384,9 @@ TEST(VoxelGridStaleCache, AccessorReadAfterWriteIsConsistent) {
 }
 
 // The accessors cache a raw pointer to the InnerGrid stored in the root map, so the
-// container must not move its elements when a new root is inserted. std::unordered_map
-// is node based and does not, but this is worth pinning: it rules out replacing it with
-// any of the flat hash maps, whose whole point is to move their values around.
+// container must not move its elements when a new root is inserted. CoordMap allocates
+// every value on its own and does not, but this is worth pinning: it rules out the flat
+// hash maps, whose whole point is to move their values around.
 TEST(VoxelGridRootMap, InnerGridsAreNotMovedByInsertion) {
   Bonxai::VoxelGrid<int> grid(1.0);
   auto accessor = grid.createAccessor();
@@ -416,16 +416,18 @@ TEST(VoxelGridRootMap, InnerGridsAreNotMovedByInsertion) {
   }
 }
 
-// The hash must keep enough entropy to address a large number of root nodes.
-TEST(VoxelGridRootMap, HashDoesNotCollapseOnLargeGrids) {
+// std::hash<CoordT>, for the containers of the users: VoxelGrid's root map has its own.
+// It must keep enough entropy to address a large number of root nodes.
+TEST(CoordHash, DoesNotCollapseOnLargeGrids) {
   const std::hash<Bonxai::CoordT> hasher;
 
-  const auto distinct_hashes = [&](int32_t min, int32_t max, int32_t min_z, int32_t max_z) {
+  const auto distinct_hashes = [&](int32_t min, int32_t max, int32_t min_z, int32_t max_z,
+                                   size_t mask = ~size_t(0)) {
     std::unordered_set<size_t> hashes;
     for (int32_t x = min; x < max; ++x) {
       for (int32_t y = min; y < max; ++y) {
         for (int32_t z = min_z; z < max_z; ++z) {
-          hashes.insert(hasher({x * 32, y * 32, z * 32}));
+          hashes.insert(hasher({x * 32, y * 32, z * 32}) & mask);
         }
       }
     }
@@ -442,4 +444,9 @@ TEST(VoxelGridRootMap, HashDoesNotCollapseOnLargeGrids) {
   // values for the first one
   EXPECT_GE(distinct_hashes(-18, 18, -18, 18), almost_all(46656));
   EXPECT_GE(distinct_hashes(-50, 50, -15, 15), almost_all(300000));
+
+  // and the low bits alone are as good as the rest: a container with a power of two
+  // buckets may use nothing else. Random values would give 261k distinct ones out of
+  // 2^20 here; OpenVDB's hash left the lowest 5 bits of root keys at zero, and gave 32768
+  EXPECT_GE(distinct_hashes(-50, 50, -15, 15, (size_t(1) << 20) - 1), 250000u);
 }

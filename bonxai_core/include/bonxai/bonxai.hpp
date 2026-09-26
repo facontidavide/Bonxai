@@ -16,10 +16,10 @@
 #include <memory>
 #include <stdexcept>
 #include <type_traits>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include "coord_map.hpp"
 #include "grid_allocator.hpp"
 #include "grid_coord.hpp"
 #include "mask.hpp"
@@ -176,7 +176,7 @@ class VoxelGrid {
  public:
   using LeafGrid = Grid<DataT>;
   using InnerGrid = Grid<std::shared_ptr<LeafGrid>>;
-  using RootMap = std::unordered_map<CoordT, InnerGrid>;
+  using RootMap = CoordMap<InnerGrid>;
 
   /**
    * @brief VoxelGrid constructor
@@ -293,9 +293,28 @@ class VoxelGrid {
       return prev_leaf_ptr_;
     }
 
-    [[nodiscard]] const LeafGrid* getLeafGrid(const CoordT& coord) const;
+    [[nodiscard]] const LeafGrid* getLeafGrid(const CoordT& coord) const {
+      return findLeaf(coord.x, coord.y, coord.z);
+    }
 
    protected:
+    /// The slow path of the methods above, taken when the coordinates leave the cached
+    /// leaf: it goes through the root map. It takes three integers rather than a CoordT,
+    /// so that Accessor::findOrCreateLeaf, which must stay out of line, gets them in
+    /// registers: see cacheKey() for what a CoordT going through memory costs.
+    const LeafGrid* findLeaf(int32_t x, int32_t y, int32_t z) const;
+
+    /// Copies a key into the cache field by field. Copied whole, a CoordT computed in
+    /// registers goes through the stack instead: three 32 bits stores, read back with a
+    /// 64 bits load for x and y, which cannot be forwarded from those stores and has to
+    /// wait for them to retire, that is, for the previous lookup to finish. Random queries
+    /// were up to 20% slower that way.
+    static void cacheKey(CoordT& cached, const CoordT& key) {
+      cached.x = key.x;
+      cached.y = key.y;
+      cached.z = key.z;
+    }
+
     /// Drop the cache if the grid released the nodes that these pointers refer to.
     void refreshCache() const {
       if (cache_epoch_ == grid_.cache_epoch_) {
@@ -368,10 +387,19 @@ class VoxelGrid {
      * @param create_if_missing   if true, create the Root, Inner and Leaf, if not
      * present.
      */
-    [[nodiscard]] LeafGrid* getLeafGrid(const CoordT& coord, bool create_if_missing = false);
+    [[nodiscard]] LeafGrid* getLeafGrid(const CoordT& coord, bool create_if_missing = false) {
+      return findOrCreateLeaf(coord.x, coord.y, coord.z, create_if_missing);
+    }
 
    private:
+    /// ConstAccessor::findLeaf, creating the leaf if it is missing and create_if_missing.
+    /// Never inlined: creating roots and leaves takes a lot of code, which would make
+    /// setValue() and the others too big to be inlined into the loops that call them.
+    BONXAI_NOINLINE LeafGrid* findOrCreateLeaf(
+        int32_t x, int32_t y, int32_t z, bool create_if_missing);
+
     // The cache lives in ConstAccessor, which is a dependent base class.
+    using ConstAccessor::cacheKey;
     using ConstAccessor::prev_inner_coord_;
     using ConstAccessor::prev_inner_ptr_;
     using ConstAccessor::prev_leaf_ptr_;
@@ -525,7 +553,7 @@ inline bool VoxelGrid<DataT, Shape>::Accessor::setValue(const CoordT& coord, con
   const CoordT inner_key = mutable_grid_.getInnerKey(coord);
   if (inner_key != prev_inner_coord_ || prev_leaf_ptr_ == nullptr) {
     prev_leaf_ptr_ = getLeafGrid(coord, true);
-    prev_inner_coord_ = inner_key;
+    cacheKey(prev_inner_coord_, inner_key);
   }
 
   const uint32_t index = mutable_grid_.getLeafIndex(coord);
@@ -549,7 +577,7 @@ inline DataT* VoxelGrid<DataT, Shape>::Accessor::value(
 
   if (inner_key != prev_inner_coord_ || prev_leaf_ptr_ == nullptr) {
     prev_leaf_ptr_ = getLeafGrid(coord, create_if_missing);
-    prev_inner_coord_ = inner_key;
+    cacheKey(prev_inner_coord_, inner_key);
   }
 
   if (prev_leaf_ptr_) {
@@ -578,7 +606,7 @@ inline const DataT* VoxelGrid<DataT, Shape>::ConstAccessor::value(const CoordT& 
   // a cached nullptr must not be trusted: the leaf may have been created since then
   if (inner_key != prev_inner_coord_ || prev_leaf_ptr_ == nullptr) {
     prev_leaf_ptr_ = getLeafGrid(coord);
-    prev_inner_coord_ = inner_key;
+    cacheKey(prev_inner_coord_, inner_key);
   }
 
   if (prev_leaf_ptr_) {
@@ -598,7 +626,7 @@ inline bool VoxelGrid<DataT, Shape>::ConstAccessor::isCellOn(const CoordT& coord
   // a cached nullptr must not be trusted: the leaf may have been created since then
   if (inner_key != prev_inner_coord_ || prev_leaf_ptr_ == nullptr) {
     prev_leaf_ptr_ = getLeafGrid(coord);
-    prev_inner_coord_ = inner_key;
+    cacheKey(prev_inner_coord_, inner_key);
   }
 
   if (prev_leaf_ptr_) {
@@ -619,7 +647,7 @@ inline bool VoxelGrid<DataT, Shape>::Accessor::setCellOn(
 
   if (inner_key != prev_inner_coord_ || prev_leaf_ptr_ == nullptr) {
     prev_leaf_ptr_ = getLeafGrid(coord, true);
-    prev_inner_coord_ = inner_key;
+    cacheKey(prev_inner_coord_, inner_key);
   }
   LeafGrid* leaf_ptr = mutableLeaf(prev_leaf_ptr_);
   uint32_t index = mutable_grid_.getLeafIndex(coord);
@@ -640,7 +668,7 @@ inline bool VoxelGrid<DataT, Shape>::Accessor::setCellOff(const CoordT& coord) {
 
   if (inner_key != prev_inner_coord_) {
     prev_leaf_ptr_ = getLeafGrid(coord, false);
-    prev_inner_coord_ = inner_key;
+    cacheKey(prev_inner_coord_, inner_key);
   }
   if (prev_leaf_ptr_) {
     uint32_t index = mutable_grid_.getLeafIndex(coord);
@@ -668,25 +696,27 @@ inline typename std::shared_ptr<Grid<DataT>> VoxelGrid<DataT, Shape>::allocateLe
   }
 }
 
+// not declared inline, which would contradict BONXAI_NOINLINE: a template needs none
 template <typename DataT, typename Shape>
-inline typename VoxelGrid<DataT, Shape>::LeafGrid* VoxelGrid<DataT, Shape>::Accessor::getLeafGrid(
-    const CoordT& coord, bool create_if_missing) {
+typename VoxelGrid<DataT, Shape>::LeafGrid* VoxelGrid<DataT, Shape>::Accessor::findOrCreateLeaf(
+    int32_t x, int32_t y, int32_t z, bool create_if_missing) {
   refreshCache();
+  const CoordT coord{x, y, z};
   auto* inner_ptr = const_cast<InnerGrid*>(prev_inner_ptr_);
   const CoordT root_key = mutable_grid_.getRootKey(coord);
 
   if (root_key != prev_root_coord_ || !inner_ptr) {
-    auto it = mutable_grid_.root_map.find(root_key);
-    if (it == mutable_grid_.root_map.end()) {
+    auto& root_map = mutable_grid_.root_map;
+    auto it = root_map.find(root_key);
+    if (it == root_map.end()) {
       if (!create_if_missing) {
         return nullptr;
       }
-      it = mutable_grid_.root_map.insert({root_key, InnerGrid(mutable_grid_.shape_.INNER_BITS)})
-               .first;
+      it = root_map.try_emplace(root_key, mutable_grid_.shape_.INNER_BITS).first;
     }
     inner_ptr = &(it->second);
     // update the cache
-    prev_root_coord_ = root_key;
+    cacheKey(prev_root_coord_, root_key);
     prev_inner_ptr_ = inner_ptr;
   }
 
@@ -707,8 +737,9 @@ inline typename VoxelGrid<DataT, Shape>::LeafGrid* VoxelGrid<DataT, Shape>::Acce
 
 template <typename DataT, typename Shape>
 inline const typename VoxelGrid<DataT, Shape>::LeafGrid*
-VoxelGrid<DataT, Shape>::ConstAccessor::getLeafGrid(const CoordT& coord) const {
+VoxelGrid<DataT, Shape>::ConstAccessor::findLeaf(int32_t x, int32_t y, int32_t z) const {
   refreshCache();
+  const CoordT coord{x, y, z};
   const InnerGrid* inner_ptr = prev_inner_ptr_;
   const CoordT root_key = grid_.getRootKey(coord);
 
@@ -719,7 +750,7 @@ VoxelGrid<DataT, Shape>::ConstAccessor::getLeafGrid(const CoordT& coord) const {
     }
     inner_ptr = &(it->second);
     // update the cache
-    prev_root_coord_ = root_key;
+    cacheKey(prev_root_coord_, root_key);
     prev_inner_ptr_ = inner_ptr;
   }
 
@@ -734,18 +765,9 @@ VoxelGrid<DataT, Shape>::ConstAccessor::getLeafGrid(const CoordT& coord) const {
 
 template <typename DataT, typename Shape>
 inline size_t VoxelGrid<DataT, Shape>::memUsage() const {
-  size_t total_size = 0;
-
-  for (unsigned i = 0; i < root_map.bucket_count(); ++i) {
-    size_t bucket_size = root_map.bucket_size(i);
-    if (bucket_size == 0) {
-      total_size++;
-    } else {
-      total_size += bucket_size;
-    }
-  }
-
-  total_size += root_map.size() * (sizeof(CoordT) + sizeof(void*));
+  // the index of the root map, and the key of each root: inner_grid.memUsage() below
+  // counts the rest of each node
+  size_t total_size = root_map.memUsage() + root_map.size() * sizeof(CoordT);
 
   for (const auto& [key, inner_grid] : root_map) {
     total_size += inner_grid.memUsage();
