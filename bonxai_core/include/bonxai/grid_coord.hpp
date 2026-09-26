@@ -12,6 +12,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
@@ -210,14 +211,18 @@ namespace std {
 template <>
 struct hash<Bonxai::CoordT> {
   std::size_t operator()(const Bonxai::CoordT& p) const {
-    // same as OpenVDB. Note that this used to end with a `((1 << 20) - 1) &`, which
-    // capped the number of distinct hashes to 1M: harmless for a small grid, but from
-    // ~100k root nodes on it made every lookup in VoxelGrid::root_map walk a chain of
-    // colliding keys.
+    // same as OpenVDB, with two differences:
+    //
+    // - the coordinates are taken as unsigned before being widened: sign extending a
+    //   negative one made the hash collide heavily on any grid crossing zero (the 46656
+    //   root keys of a 36^3 grid centred on the origin gave only 29226 distinct values).
+    // - it used to end with a `((1 << 20) - 1) &`, which capped the number of distinct
+    //   hashes to 1M: from ~100k root nodes on, every lookup in VoxelGrid::root_map
+    //   walked a chain of colliding keys.
     return (
-        static_cast<int64_t>(p.x) * 73856093 ^  //
-        static_cast<int64_t>(p.y) * 19349669 ^  //
-        static_cast<int64_t>(p.z) * 83492791);
+        static_cast<uint64_t>(static_cast<uint32_t>(p.x)) * 73856093 ^  //
+        static_cast<uint64_t>(static_cast<uint32_t>(p.y)) * 19349669 ^  //
+        static_cast<uint64_t>(static_cast<uint32_t>(p.z)) * 83492791);
   }
 };
 

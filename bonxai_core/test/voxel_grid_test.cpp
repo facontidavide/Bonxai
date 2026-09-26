@@ -419,19 +419,27 @@ TEST(VoxelGridRootMap, InnerGridsAreNotMovedByInsertion) {
 // The hash must keep enough entropy to address a large number of root nodes.
 TEST(VoxelGridRootMap, HashDoesNotCollapseOnLargeGrids) {
   const std::hash<Bonxai::CoordT> hasher;
-  std::unordered_set<size_t> hashes;
-  size_t count = 0;
 
-  // the root keys of a 100 x 100 x 30 grid of root nodes: 300k of them
-  for (int32_t x = 0; x < 100; ++x) {
-    for (int32_t y = 0; y < 100; ++y) {
-      for (int32_t z = 0; z < 30; ++z) {
-        hashes.insert(hasher({x * 32, y * 32, z * 32}));
-        ++count;
+  const auto distinct_hashes = [&](int32_t min, int32_t max, int32_t min_z, int32_t max_z) {
+    std::unordered_set<size_t> hashes;
+    for (int32_t x = min; x < max; ++x) {
+      for (int32_t y = min; y < max; ++y) {
+        for (int32_t z = min_z; z < max_z; ++z) {
+          hashes.insert(hasher({x * 32, y * 32, z * 32}));
+        }
       }
     }
-  }
-  // the truncated hash used to collapse these 300k keys onto ~4k distinct values
-  EXPECT_GT(hashes.size(), count * 9 / 10)
-      << hashes.size() << " distinct hashes for " << count << " root keys";
+    return hashes.size();
+  };
+  // not exactly n: a 32 bits size_t can't avoid a few birthday collisions
+  const auto almost_all = [](size_t n) { return n - n / 1000; };
+
+  // the root keys of a 100 x 100 x 30 grid of root nodes: 300k of them.
+  // The truncated hash used to collapse them onto ~4k distinct values
+  EXPECT_GE(distinct_hashes(0, 100, 0, 30), almost_all(300000));
+
+  // a grid that crosses zero: sign extending the coordinates gave only 29226 distinct
+  // values for the first one
+  EXPECT_GE(distinct_hashes(-18, 18, -18, 18), almost_all(46656));
+  EXPECT_GE(distinct_hashes(-50, 50, -15, 15), almost_all(300000));
 }

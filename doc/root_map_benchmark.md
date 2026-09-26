@@ -14,6 +14,36 @@ roots the truncation makes keys collide, and every root lookup starts walking a 
 Dropping the truncation costs nothing to compute — the multiplications are the same —
 and removes the ceiling. `VoxelGridRootMap.HashDoesNotCollapseOnLargeGrids` pins it.
 
+## Grids that cross zero
+
+The hash also collided on any grid crossing zero: each coordinate was sign extended to
+64 bits before being multiplied, and the 46656 root keys of a 36³ grid centred on the
+origin gave only 29226 distinct values. Robot maps nearly always cross zero, since the
+origin is usually where the robot started. Martin Ankerl found this while looking at
+`segmented_map` (see below). Taking the coordinates as `uint32_t` before widening them
+keeps the same multiplications and removes the collisions: 1 key in ~10⁵ still
+collides on grids of up to 8M roots, which is harmless.
+
+A fully mixed hash (x and y packed in one word, z folded in, murmur3's `fmix64`) was
+measured too. It has no collisions at all, but `std::unordered_map` is faster with the
+plain multiplications. On a lattice, a linear hash taken modulo libstdc++'s prime bucket
+count fills the buckets more evenly than a random-looking hash, so chains are shorter.
+Root keys only, `std::unordered_map<CoordT, int>`, 4M random finds, gcc 13, mean of
+7, build / find in ms:
+
+| root keys | sign extended | `fmix64` | **`uint32_t`** |
+|---|---|---|---|
+| 36³, centred | 4.6 / 122 | 3.9 / 85 | **3.5 / 78** |
+| 36³, positive | 3.7 / 79 | 3.8 / 86 | **3.4 / 77** |
+| 100×100×30, centred | 55 / 236 | 40 / 189 | **40 / 192** |
+| 100×100×30, positive | 46 / 196 | 48 / 230 | **45 / 188** |
+| 200×200×20, centred | 362 / 421 | 287 / 376 | **261 / 325** |
+
+`HashDoesNotCollapseOnLargeGrids` now covers grids centred on the origin too.
+
+The benchmarks below were run before this change, with the sign extended hash, on
+positive coordinates only.
+
 ## Bonxai against NanoVDB
 
 `benchmark_nanovdb` gives both libraries the exact same integer coordinates. Build it
@@ -112,3 +142,11 @@ It only draws level in the very sparse regime, where the plain map with a workin
 is already there, and it is clearly worse at the sizes a robot actually maps — 480 ms
 against 261 ms to build the 46k-root map. Those rows are kept as a record; the vendored
 header is not in the tree.
+
+Martin Ankerl, the author of `unordered_dense`, later tracked `segmented_map`'s poor
+showing at 46k roots down to the order in which it destroyed its values: front to back,
+which made glibc hand the heap back to the kernel on every teardown, so each rebuild in
+the benchmark paged everything in again. Release 5.1.0 fixes it. On his reconstruction
+of this benchmark, with a collision free hash, `segmented_map` ties with
+`std::unordered_map` at 46k roots and builds 1.9x faster at 787k roots. That makes it
+worth measuring again if very large maps become the target.
