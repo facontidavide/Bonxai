@@ -416,6 +416,43 @@ TEST(VoxelGridRootMap, InnerGridsAreNotMovedByInsertion) {
   }
 }
 
+// releaseUnusedMemory() erases the empty roots, and a root map may fill the holes with
+// other roots, as unordered_dense's maps do: every accessor must drop the pointers it
+// cached, and then find exactly what is left.
+TEST(VoxelGridRootMap, AccessorsSurviveReleasingManyRoots) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  auto writer = grid.createAccessor();
+  // one cell in each of 100 roots, 32 voxels apart
+  for (int i = 0; i < 100; ++i) {
+    writer.setValue({i * 32, 0, 0}, i);
+  }
+  // a reader that caches the last root: the one that such a map would move first
+  auto reader = grid.createConstAccessor();
+  ASSERT_NE(reader.value({99 * 32, 0, 0}), nullptr);
+
+  // empty every even root, then release them
+  for (int i = 0; i < 100; i += 2) {
+    writer.setCellOff({i * 32, 0, 0});
+  }
+  grid.releaseUnusedMemory();
+  ASSERT_EQ(grid.rootMap().size(), 50u);
+
+  for (int i = 0; i < 100; ++i) {
+    const int* value = reader.value({i * 32, 0, 0});
+    if (i % 2 == 0) {
+      EXPECT_EQ(value, nullptr) << "released root " << i;
+    } else {
+      ASSERT_NE(value, nullptr) << "missing root " << i;
+      EXPECT_EQ(*value, i);
+    }
+  }
+  // and writing through the old accessors reaches the same cells
+  writer.setValue({99 * 32, 0, 0}, 1000);
+  const int* updated = reader.value({99 * 32, 0, 0});
+  ASSERT_NE(updated, nullptr);
+  EXPECT_EQ(*updated, 1000);
+}
+
 // std::hash<CoordT>, for the containers of the users: VoxelGrid's root map has its own.
 // It must keep enough entropy to address a large number of root nodes.
 TEST(CoordHash, DoesNotCollapseOnLargeGrids) {
