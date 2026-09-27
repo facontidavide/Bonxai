@@ -211,7 +211,7 @@ namespace std {
 template <>
 struct hash<Bonxai::CoordT> {
   std::size_t operator()(const Bonxai::CoordT& p) const {
-    // For the containers of the users: VoxelGrid's root map, a CoordMap, has its own hash.
+    // For the containers of the users: VoxelGrid's root map has its own hash.
     //
     // Each coordinate is multiplied by its own odd constant and murmur3's finalizer mixes
     // the lot: every bit of the result is good, whatever the container does with them.
