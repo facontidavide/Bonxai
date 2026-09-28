@@ -363,6 +363,20 @@ TEST(VoxelGridStaleCache, ConstAccessorDoesNotCacheAMiss) {
   EXPECT_TRUE(reader.isCellOn(coord));
 }
 
+// An accessor that cached a missing leaf must see it once another accessor creates it: it
+// used to keep the miss, and setCellOff() did nothing.
+TEST(VoxelGridStaleCache, AccessorSetCellOffSeesALeafCreatedByAnother) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  auto first = grid.createAccessor();
+  auto second = grid.createAccessor();
+  const Bonxai::CoordT coord{0, 0, 0};
+
+  EXPECT_EQ(first.value(coord), nullptr);
+  second.setValue(coord, 5);
+  EXPECT_TRUE(first.setCellOff(coord));
+  EXPECT_FALSE(grid.createConstAccessor().isCellOn(coord));
+}
+
 TEST(VoxelGridStaleCache, AccessorReadAfterWriteIsConsistent) {
   Bonxai::VoxelGrid<int> grid(1.0);
   auto accessor = grid.createAccessor();
@@ -385,9 +399,9 @@ TEST(VoxelGridStaleCache, AccessorReadAfterWriteIsConsistent) {
 }
 
 // The accessors cache a raw pointer to the InnerGrid stored in the root map, so the
-// container must not move its elements when a new root is inserted. std::unordered_map
-// is node based and does not, but this is worth pinning: it rules out replacing it with
-// any of the flat hash maps, whose whole point is to move their values around.
+// container must not move its elements when a new root is inserted. CoordMap allocates
+// every value on its own and does not, but this is worth pinning: it rules out the flat
+// hash maps, whose whole point is to move their values around.
 TEST(VoxelGridRootMap, InnerGridsAreNotMovedByInsertion) {
   Bonxai::VoxelGrid<int> grid(1.0);
   auto accessor = grid.createAccessor();
@@ -417,24 +431,112 @@ TEST(VoxelGridRootMap, InnerGridsAreNotMovedByInsertion) {
   }
 }
 
-// The hash must keep enough entropy to address a large number of root nodes.
-TEST(VoxelGridRootMap, HashDoesNotCollapseOnLargeGrids) {
-  const std::hash<Bonxai::CoordT> hasher;
-  std::unordered_set<size_t> hashes;
-  size_t count = 0;
+// Code that goes through rootMap() changes the map behind the accessors' back, erasing
+// and inserting roots other than the ones they cached: they must find what is left. Erasing
+// a root that an accessor cached is not supported, see VoxelGrid::rootMap().
+TEST(VoxelGridRootMap, AccessorsSurviveChangesToOtherRoots) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  auto writer = grid.createAccessor();
+  for (int i = 0; i < 10; ++i) {
+    writer.setValue({i * 32, 0, 0}, i);
+  }
+  // a reader that caches the last root
+  auto reader = grid.createConstAccessor();
+  ASSERT_NE(reader.value({9 * 32, 0, 0}), nullptr);
 
-  // the root keys of a 100 x 100 x 30 grid of root nodes: 300k of them
-  for (int32_t x = 0; x < 100; ++x) {
-    for (int32_t y = 0; y < 100; ++y) {
-      for (int32_t z = 0; z < 30; ++z) {
-        hashes.insert(hasher({x * 32, y * 32, z * 32}));
-        ++count;
-      }
+  ASSERT_EQ(grid.rootMap().erase(grid.getRootKey({0, 0, 0})), 1u);
+  // another leaf of the last root
+  writer.setValue({9 * 32 + 8, 0, 0}, 90);
+  const int* value = reader.value({9 * 32 + 8, 0, 0});
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(*value, 90);
+
+  // a new root
+  const Bonxai::CoordT new_root{-32, 0, 0};
+  grid.rootMap().try_emplace(grid.getRootKey(new_root), grid.innetBits());
+  EXPECT_EQ(reader.value({9 * 32 + 16, 0, 0}), nullptr);
+  writer.setValue({9 * 32 + 16, 0, 0}, 91);
+  value = reader.value({9 * 32 + 16, 0, 0});
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(*value, 91);
+  for (int i = 1; i < 10; ++i) {
+    const int* cell = reader.value({i * 32, 0, 0});
+    ASSERT_NE(cell, nullptr) << "missing cell for i = " << i;
+    EXPECT_EQ(*cell, i);
+  }
+  EXPECT_EQ(reader.value({0, 0, 0}), nullptr);
+}
+
+// releaseUnusedMemory() erases the empty roots, and a root map may fill the holes with
+// other roots, as unordered_dense's maps do: every accessor must drop the pointers it
+// cached, and then find exactly what is left.
+TEST(VoxelGridRootMap, AccessorsSurviveReleasingManyRoots) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  auto writer = grid.createAccessor();
+  // one cell in each of 100 roots, 32 voxels apart
+  for (int i = 0; i < 100; ++i) {
+    writer.setValue({i * 32, 0, 0}, i);
+  }
+  // a reader that caches the last root: the one that such a map would move first
+  auto reader = grid.createConstAccessor();
+  ASSERT_NE(reader.value({99 * 32, 0, 0}), nullptr);
+
+  // empty every even root, then release them
+  for (int i = 0; i < 100; i += 2) {
+    writer.setCellOff({i * 32, 0, 0});
+  }
+  grid.releaseUnusedMemory();
+  ASSERT_EQ(grid.rootMap().size(), 50u);
+
+  for (int i = 0; i < 100; ++i) {
+    const int* value = reader.value({i * 32, 0, 0});
+    if (i % 2 == 0) {
+      EXPECT_EQ(value, nullptr) << "released root " << i;
+    } else {
+      ASSERT_NE(value, nullptr) << "missing root " << i;
+      EXPECT_EQ(*value, i);
     }
   }
-  // the truncated hash used to collapse these 300k keys onto ~4k distinct values
-  EXPECT_GT(hashes.size(), count * 9 / 10)
-      << hashes.size() << " distinct hashes for " << count << " root keys";
+  // and writing through the old accessors reaches the same cells
+  writer.setValue({99 * 32, 0, 0}, 1000);
+  const int* updated = reader.value({99 * 32, 0, 0});
+  ASSERT_NE(updated, nullptr);
+  EXPECT_EQ(*updated, 1000);
+}
+
+// std::hash<CoordT>, for the containers of the users: VoxelGrid's root map has its own.
+// It must keep enough entropy to address a large number of root nodes.
+TEST(CoordHash, DoesNotCollapseOnLargeGrids) {
+  const std::hash<Bonxai::CoordT> hasher;
+
+  const auto distinct_hashes = [&](int32_t min, int32_t max, int32_t min_z, int32_t max_z,
+                                   size_t mask = ~size_t(0)) {
+    std::unordered_set<size_t> hashes;
+    for (int32_t x = min; x < max; ++x) {
+      for (int32_t y = min; y < max; ++y) {
+        for (int32_t z = min_z; z < max_z; ++z) {
+          hashes.insert(hasher({x * 32, y * 32, z * 32}) & mask);
+        }
+      }
+    }
+    return hashes.size();
+  };
+  // not exactly n: a 32 bits size_t can't avoid a few birthday collisions
+  const auto almost_all = [](size_t n) { return n - n / 1000; };
+
+  // the root keys of a 100 x 100 x 30 grid of root nodes: 300k of them.
+  // The truncated hash used to collapse them onto ~4k distinct values
+  EXPECT_GE(distinct_hashes(0, 100, 0, 30), almost_all(300000));
+
+  // a grid that crosses zero: sign extending the coordinates gave only 29226 distinct
+  // values for the first one
+  EXPECT_GE(distinct_hashes(-18, 18, -18, 18), almost_all(46656));
+  EXPECT_GE(distinct_hashes(-50, 50, -15, 15), almost_all(300000));
+
+  // and the low bits alone are as good as the rest: a container with a power of two
+  // buckets may use nothing else. Random values would give 261k distinct ones out of
+  // 2^20 here; OpenVDB's hash left the lowest 5 bits of root keys at zero, and gave 32768
+  EXPECT_GE(distinct_hashes(-50, 50, -15, 15, (size_t(1) << 20) - 1), 250000u);
 }
 
 // The leaves of a grid of trivial cells come from its pool, and give their block back to it

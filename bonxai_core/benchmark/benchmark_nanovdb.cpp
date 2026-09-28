@@ -259,17 +259,26 @@ static void NanoVDBReadOnly_Iterate(benchmark::State& state) {
 // of the default's 32, so it needs far fewer roots, and pays for it with dense
 // 16^3 inner nodes.
 
+static std::vector<CoordT> RandomWideCoords(uint32_t seed) {
+  std::mt19937 rng(seed);
+  std::uniform_real_distribution<double> spread(-100.0, 100.0);
+  std::vector<CoordT> out;
+  out.reserve(300000);
+  for (size_t i = 0; i < out.capacity(); ++i) {
+    out.push_back(PosToCoord({spread(rng), spread(rng), spread(rng)}, 1.0 / kVoxelSize));
+  }
+  return out;
+}
+
 static const std::vector<CoordT>& WideCoords() {
-  static const std::vector<CoordT> coords = [] {
-    std::mt19937 rng(42);
-    std::uniform_real_distribution<double> spread(-100.0, 100.0);
-    std::vector<CoordT> out;
-    out.reserve(300000);
-    for (size_t i = 0; i < out.capacity(); ++i) {
-      out.push_back(PosToCoord({spread(rng), spread(rng), spread(rng)}, 1.0 / kVoxelSize));
-    }
-    return out;
-  }();
+  static const std::vector<CoordT> coords = RandomWideCoords(42);
+  return coords;
+}
+
+/// Other random coordinates in the same volume: nearly all of them fall in a root
+/// that does not exist, which is what a query of unknown space costs.
+static const std::vector<CoordT>& WideMissCoords() {
+  static const std::vector<CoordT> coords = RandomWideCoords(4242);
   return coords;
 }
 
@@ -308,13 +317,14 @@ static void NanoVDB_WideCreate(benchmark::State& state) {
   state.SetItemsProcessed(state.iterations() * coords.size());
 }
 
+// Arg(0): coordinates that are in the grid.  Arg(1): coordinates that are not.
 template <typename Shape>
 static void Bonxai_NV_WideQuery(benchmark::State& state) {
-  const auto& coords = WideCoords();
+  const auto& coords = state.range(0) ? WideMissCoords() : WideCoords();
   VoxelGrid<float, Shape> grid(kVoxelSize, Shape::INNER_BITS, Shape::LEAF_BITS);
   {
     auto accessor = grid.createAccessor();
-    for (const auto& coord : coords) {
+    for (const auto& coord : WideCoords()) {
       accessor.setValue(coord, 1.0f);
     }
   }
@@ -333,11 +343,11 @@ static void Bonxai_NV_WideQuery(benchmark::State& state) {
 }
 
 static void NanoVDB_WideQuery(benchmark::State& state) {
-  const auto& coords = WideCoords();
+  const auto& coords = state.range(0) ? WideMissCoords() : WideCoords();
   nanovdb::tools::build::Grid<float> grid(0.0f);
   {
     auto accessor = grid.getAccessor();
-    for (const auto& coord : coords) {
+    for (const auto& coord : WideCoords()) {
       accessor.setValue(ToNano(coord), 1.0f);
     }
   }
@@ -395,9 +405,9 @@ BENCHMARK(NanoVDBReadOnly_Iterate)->MinTime(1);
 BENCHMARK_TEMPLATE(Bonxai_NV_WideCreate, StaticShape<>)->MinTime(1);
 BENCHMARK_TEMPLATE(Bonxai_NV_WideCreate, StaticShape<4, 3>)->MinTime(1);
 BENCHMARK(NanoVDB_WideCreate)->MinTime(1);
-BENCHMARK_TEMPLATE(Bonxai_NV_WideQuery, StaticShape<>)->MinTime(1);
-BENCHMARK_TEMPLATE(Bonxai_NV_WideQuery, StaticShape<4, 3>)->MinTime(1);
-BENCHMARK(NanoVDB_WideQuery)->MinTime(1);
+BENCHMARK_TEMPLATE(Bonxai_NV_WideQuery, StaticShape<>)->Arg(0)->Arg(1)->MinTime(1);
+BENCHMARK_TEMPLATE(Bonxai_NV_WideQuery, StaticShape<4, 3>)->Arg(0)->Arg(1)->MinTime(1);
+BENCHMARK(NanoVDB_WideQuery)->Arg(0)->Arg(1)->MinTime(1);
 BENCHMARK(NanoVDB_Convert)->MinTime(1);
 BENCHMARK(MemoryUsage);
 
