@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <map>
+#include <memory>
 #include <tuple>
 #include <unordered_set>
 #include <vector>
@@ -434,4 +435,59 @@ TEST(VoxelGridRootMap, HashDoesNotCollapseOnLargeGrids) {
   // the truncated hash used to collapse these 300k keys onto ~4k distinct values
   EXPECT_GT(hashes.size(), count * 9 / 10)
       << hashes.size() << " distinct hashes for " << count << " root keys";
+}
+
+// The leaves of a grid of trivial cells come from its pool, and give their block back to it
+// when freed: after the grid moved, the pool is elsewhere (#71).
+TEST(VoxelGridMove, MovedGridFreesItsLeaves) {
+  auto a = std::make_unique<Bonxai::VoxelGrid<int>>(1.0);
+  {
+    auto accessor = a->createAccessor();
+    for (int i = 0; i < 1000; ++i) {
+      accessor.setValue({i * 8, 0, 0}, i);
+    }
+  }
+  Bonxai::VoxelGrid<int> b = std::move(*a);
+  a.reset();  // the moved-from grid is gone before b frees anything
+  b.releaseUnusedMemory();
+  auto accessor = b.createAccessor();
+  for (int i = 0; i < 500; ++i) {
+    accessor.setCellOff({i * 8, 0, 0});
+  }
+  b.releaseUnusedMemory();
+  EXPECT_EQ(b.activeCellsCount(), 500u);
+
+  Bonxai::VoxelGrid<int> c(1.0);
+  c = std::move(b);
+  c.clear(Bonxai::CLEAR_MEMORY);
+  EXPECT_EQ(c.activeCellsCount(), 0u);
+}
+
+// A move assignment destroys the nodes of the destination, which its accessors may have
+// cached, and gives the source's nodes away from under its own accessors.
+TEST(VoxelGridMove, AccessorsDropTheirCacheWhenTheGridMoves) {
+  Bonxai::VoxelGrid<int> a(1.0);
+  Bonxai::VoxelGrid<int> b(1.0);
+  const Bonxai::CoordT coord{3, 4, 5};
+  a.createAccessor().setValue(coord, 1);
+  b.createAccessor().setValue(coord, 2);
+
+  auto reader_a = a.createConstAccessor();
+  auto reader_b = b.createConstAccessor();
+  ASSERT_EQ(*reader_a.value(coord), 1);
+  ASSERT_EQ(*reader_b.value(coord), 2);
+
+  b = std::move(a);
+  // b's own leaf is gone: its reader must find a's
+  const int* value = reader_b.value(coord);
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(*value, 1);
+  // a no longer owns that leaf: its reader must not reach it
+  EXPECT_EQ(reader_a.value(coord), nullptr);
+
+  auto reader_c = b.createConstAccessor();
+  ASSERT_NE(reader_c.value(coord), nullptr);
+  Bonxai::VoxelGrid<int> c = std::move(b);
+  EXPECT_EQ(reader_c.value(coord), nullptr);
+  EXPECT_EQ(*c.createConstAccessor().value(coord), 1);
 }
