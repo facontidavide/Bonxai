@@ -221,6 +221,13 @@ class VoxelGrid {
   VoxelGrid(VoxelGrid&& other) = default;
   VoxelGrid& operator=(VoxelGrid&& other) = default;
 
+  /// Frees the nodes last to first, as clear(CLEAR_MEMORY) does: the root map's own
+  /// destructor would free them first to last, and glibc would hand the memory back to the
+  /// kernel, for the next grid to fault in again (2x the time of creating a wide grid).
+  ~VoxelGrid() {
+    clear(CLEAR_MEMORY);
+  }
+
   uint32_t innetBits() const {
     return shape_.INNER_BITS;
   }
