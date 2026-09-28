@@ -7,6 +7,7 @@ variants compile the headers of a checkout as they are:
   real_this      this branch: unordered_dense's map
   real_coordmap  the branch at d6b4d88, when VoxelGrid used CoordMap
   real_main      main at 8d5904f: std::unordered_map
+  real_seg       unordered_dense's segmented_map: the worktree .worktrees/segmented
 Run setup.sh first."""
 import concurrent.futures as cf
 import os
@@ -38,6 +39,7 @@ REAL = {
     "real_this": os.path.join(REPO, "bonxai_core", "include"),
     "real_coordmap": os.path.join(WORK, "coordmap", "bonxai_core", "include"),
     "real_main": os.path.join(WORK, "main", "bonxai_core", "include"),
+    "real_seg": os.path.join(REPO, ".worktrees", "segmented", "bonxai_core", "include"),
 }
 
 

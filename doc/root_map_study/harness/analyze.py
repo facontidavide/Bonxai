@@ -43,10 +43,11 @@ NAMES = {
     "real_this": "unordered_dense map, in Bonxai (this branch)",
     "real_coordmap": "CoordMap, in Bonxai (d6b4d88)",
     "real_main": "std::unordered_map, in Bonxai (main)",
+    "real_seg": "unordered_dense segmented_map, in Bonxai",
 }
 HARNESS = ["coordmap", "akmap_inl_pack", "akseg_pack", "akmap_up_pmxA", "akmap_raw_pack",
            "bflat192_inl_pack", "bnode192_pack"]
-REAL = ["real_coordmap", "real_this", "real_main"]
+REAL = ["real_coordmap", "real_this", "real_seg", "real_main"]
 
 
 def load(path):
@@ -149,9 +150,11 @@ def rule(h, p):
     if seg and flat:
         print(f"unordered_dense map against segmented_map, every time: {flat['all'] / seg['all']:.3f} "
               f"(the map is preferred only at 0.95 or less)")
-    t = p.get("real_this")
-    if t:
-        print(f"\nBuilt into Bonxai, unordered_dense's map against CoordMap: every time {t['all']:.3f}, "
+    for v in ("real_this", "real_seg"):
+        t = p.get(v)
+        if not t:
+            continue
+        print(f"\nBuilt into Bonxai, {NAMES[v]} against CoordMap: every time {t['all']:.3f}, "
               f"per category {t['cats']:.3f}, total time {t['total']:.3f}, end to end {t.get('e2e', float('nan')):.4f}")
         ok = t["all"] < 1.05 and t.get("e2e", 9) <= 1.05
         print(f"It {'confirms' if ok else 'does NOT confirm'} a switch to it (score < 1.05 and end to end <= 1.05).")
@@ -188,7 +191,7 @@ def main():
     table(runs, REAL, "real_coordmap", skip=("alloc",))
     rule(h, p)
     print("\n# main, CoordMap and this branch, every time, medians in ms (ratio to main)\n")
-    side_by_side(runs, ["real_main", "real_coordmap", "real_this"])
+    side_by_side(runs, [v for v in ["real_main", "real_coordmap", "real_this", "real_seg"] if any(k[0] == v for k in runs)])
     growth(os.path.join(out, "growth.jsonl"))
 
 

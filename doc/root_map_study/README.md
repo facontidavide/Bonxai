@@ -106,12 +106,15 @@ Then, from the repository at this branch:
 ```bash
 doc/root_map_study/harness/setup.sh      # dependencies and worktrees, next to the repository
 doc/root_map_study/harness/build.py      # 10 binaries
-ROOT_MAP_CORE=2 ROOT_MAP_ROUNDS=5 doc/root_map_study/harness/run_all.sh
+ROOT_MAP_CORES="2 4 6 8" ROOT_MAP_ROUNDS=8 doc/root_map_study/harness/run_all.sh
 ```
 
 `ROOT_MAP_WORK` moves the working directory (default: `../bonxai_root_map_work` next to the
-repository). `ROOT_MAP_CORE` should be a core with nothing else on it; on a CPU with
-hyperthreads, leave its sibling idle too. The run takes one to two hours and resumes where
+repository). `ROOT_MAP_CORES` are the cores to run on, one runner each, sharing the rounds:
+physical cores with nothing else on them; on a CPU with hyperthreads, leave their siblings
+idle; on a hybrid CPU, performance cores only. The runners share the last level cache and
+the memory, which adds noise but, every variant meeting the same neighbours, no bias. One
+core and 5 rounds take one to two hours; the run resumes where
 it stopped if interrupted. It ends with `$ROOT_MAP_WORK/results/analysis.md`: the tables,
 the rule applied, `main` against CoordMap against this branch, and the growth of a map of
 970k roots. Send back that file with `final.jsonl` and `growth.jsonl` of the same

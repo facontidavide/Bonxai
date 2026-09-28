@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""run.py --out results.jsonl --rounds N --workloads w1,w2 [--bin DIR] [--core 3] variant...
+"""run.py --out results.jsonl --rounds N --workloads w1,w2 [--bin DIR] [--core 3]
+          [--first F --stride S] variant...
 
 Every (round, workload) runs each variant once, in its own process pinned to one core,
-in a new random order. Resumes: what is already in --out is not run again."""
+in a new random order. Runs the rounds F, F+S, F+2S... below N, so that S processes on S
+cores share the rounds. Resumes: what is already in --out is not run again."""
 import json
 import os
 import random
@@ -12,7 +14,7 @@ import time
 
 args = sys.argv[1:]
 opts = {"--out": None, "--rounds": "3", "--workloads": None, "--bin": None, "--core": "3",
-        "--timeout": "600"}
+        "--timeout": "600", "--first": "0", "--stride": "1"}
 variants = []
 i = 0
 while i < len(args):
@@ -37,12 +39,13 @@ if os.path.exists(out):
         except Exception:
             pass
 
-total = rounds * len(workloads) * len(variants)
 count = len(done)
 t_start = time.time()
 f = open(out, "a")
-rng = random.Random(12345)
-for r in range(rounds):
+my_rounds = range(int(opts["--first"]), rounds, int(opts["--stride"]))
+total = len(my_rounds) * len(workloads) * len(variants)
+for r in my_rounds:
+    rng = random.Random(12345 + r)  # the order of a round does not depend on who runs it
     for w in workloads:
         order = variants[:]
         rng.shuffle(order)
@@ -65,6 +68,6 @@ for r in range(rounds):
             f.flush()
             count += 1
     el = time.time() - t_start
-    print(f"round {r + 1}/{rounds} done, {count}/{total}, {el / 60:.1f} min", file=sys.stderr,
-          flush=True)
+    print(f"core {opts['--core']}: round {r + 1}/{rounds} done, {count}/{total}, {el / 60:.1f} min",
+          file=sys.stderr, flush=True)
 print("finished", file=sys.stderr)

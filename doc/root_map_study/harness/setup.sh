@@ -3,6 +3,7 @@
 # (default: ../bonxai_root_map_work next to the repository):
 #   ext/unordered_dense   ankerl::unordered_dense v5.1.0, for the harness's variants
 #   ext/boost/*           boost.unordered 1.92 and the headers it needs
+#   ext/nanovdb           NanoVDB's headers, OpenVDB v13.1.0, for nanovdb.py
 #   main/                 a worktree of main as the branch started from (8d5904f)
 #   coordmap/             a worktree of the branch when VoxelGrid used CoordMap (d6b4d88)
 set -euo pipefail
@@ -18,6 +19,12 @@ for m in unordered assert config container_hash core describe mp11 predef static
          throw_exception type_traits; do
   clone "https://github.com/boostorg/$m" boost-1.92.0 "$WORK/ext/boost/$m"
 done
+[ -d "$WORK/ext/nanovdb" ] || {
+  curl -sL https://github.com/AcademySoftwareFoundation/openvdb/archive/refs/tags/v13.1.0.tar.gz |
+    tar xz -C "$WORK/ext" --wildcards 'openvdb-13.1.0/nanovdb/nanovdb/*'
+  mkdir -p "$WORK/ext/nanovdb" && mv "$WORK/ext/openvdb-13.1.0/nanovdb/nanovdb" "$WORK/ext/nanovdb/"
+  rm -rf "$WORK/ext/openvdb-13.1.0"
+}
 git -C "$REPO" fetch -q origin 2>/dev/null || true
 [ -d "$WORK/main" ] || git -C "$REPO" worktree add -q --detach "$WORK/main" 8d5904f
 [ -d "$WORK/coordmap" ] || git -C "$REPO" worktree add -q --detach "$WORK/coordmap" d6b4d88
