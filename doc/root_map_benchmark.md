@@ -238,9 +238,9 @@ the guarantee that the accessors rely on. `VoxelGridRootMap.AccessorsSurviveRele
 has a reader cache the last of 100 roots, releases half of them, and checks that the reader
 then finds every remaining cell, none of the released ones, and a write made through
 another accessor: a map that fills the holes of erased roots with other roots, as
-unordered_dense's do, must pass it too. `VoxelGridRootMap.AccessorsSurviveChangesThroughRootMap`
-erases and inserts roots through `rootMap()`, behind the accessors' back, and checks what
-a reader finds afterwards. `CoordHash.DoesNotCollapseOnLargeGrids` checks
+unordered_dense's do, must pass it too. `VoxelGridRootMap.AccessorsSurviveChangesToOtherRoots`
+erases and inserts, through `rootMap()`, roots other than the one a reader cached, and
+checks what the reader finds afterwards. `CoordHash.DoesNotCollapseOnLargeGrids` checks
 `std::hash<CoordT>` on three grids of root keys, two of them crossing zero, and on its low
 20 bits alone. CI runs all of them with and without the address and undefined behaviour
 sanitizers.

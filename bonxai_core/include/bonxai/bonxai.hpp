@@ -205,6 +205,9 @@ class VoxelGrid {
   const RootMap& rootMap() const {
     return root_map;
   }
+  /// Erasing a root through this, or clearing the map, frees nodes that accessors may have
+  /// cached: create the accessors again afterwards. clear() and releaseUnusedMemory() do
+  /// not have this problem.
   RootMap& rootMap() {
     return root_map;
   }
@@ -666,7 +669,8 @@ inline bool VoxelGrid<DataT, Shape>::Accessor::setCellOff(const CoordT& coord) {
   refreshCache();
   const CoordT inner_key = mutable_grid_.getInnerKey(coord);
 
-  if (inner_key != prev_inner_coord_) {
+  // a leaf missing when it was cached may have been created since, by another accessor
+  if (inner_key != prev_inner_coord_ || prev_leaf_ptr_ == nullptr) {
     prev_leaf_ptr_ = getLeafGrid(coord, false);
     cacheKey(prev_inner_coord_, inner_key);
   }

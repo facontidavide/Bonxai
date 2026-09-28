@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+#include <limits>
 #include <stdexcept>
 #include <tuple>
 #include <type_traits>
@@ -46,7 +47,8 @@ namespace Bonxai {
  *   first; a key that is not there is almost always rejected without leaving the buckets;
  *   and growing the index moves buckets only, never values.
  * - It is iterated in insertion order, which is also the order in which the values were
- *   allocated: a traversal walks the memory forward.
+ *   allocated: a traversal walks the memory forward. Erasing a key moves the last value
+ *   into its place.
  *
  * Its hash is internal and only good in its upper bits, which are the only ones it uses:
  * std::hash<CoordT> is the one to use in other containers.
@@ -254,7 +256,7 @@ class CoordMap {
 
   void reserve(size_type count) {
     uint32_t bits = std::max(bits_, kMinBits);
-    while (bits <= 32 && (size_t(1) << bits) / 2 < count) {
+    while (bits <= kMaxBits && (size_t(1) << bits) / 2 < count) {
       ++bits;
     }
     if (bits != bits_) {
@@ -278,6 +280,9 @@ class CoordMap {
   };
 
   static constexpr uint32_t kMinBits = 4;
+  // positions are 32 bits, and a size_t of 32 bits cannot be shifted by 32
+  static constexpr uint32_t kMaxBits =
+      std::min<uint32_t>(32, std::numeric_limits<size_t>::digits - 1);
 
   std::vector<value_type*> values_;  // in insertion order
   // Until the first insertion, the map points at a single, static, empty bucket, rather
@@ -358,7 +363,7 @@ class CoordMap {
   }
 
   void rehash(uint32_t bits) {
-    if (bits > 32) {
+    if (bits > kMaxBits) {
       throw std::length_error("CoordMap: too many elements");
     }
     Bucket* buckets = new Bucket[size_t(1) << bits];

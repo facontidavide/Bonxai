@@ -362,6 +362,20 @@ TEST(VoxelGridStaleCache, ConstAccessorDoesNotCacheAMiss) {
   EXPECT_TRUE(reader.isCellOn(coord));
 }
 
+// An accessor that cached a missing leaf must see it once another accessor creates it: it
+// used to keep the miss, and setCellOff() did nothing.
+TEST(VoxelGridStaleCache, AccessorSetCellOffSeesALeafCreatedByAnother) {
+  Bonxai::VoxelGrid<int> grid(1.0);
+  auto first = grid.createAccessor();
+  auto second = grid.createAccessor();
+  const Bonxai::CoordT coord{0, 0, 0};
+
+  EXPECT_EQ(first.value(coord), nullptr);
+  second.setValue(coord, 5);
+  EXPECT_TRUE(first.setCellOff(coord));
+  EXPECT_FALSE(grid.createConstAccessor().isCellOn(coord));
+}
+
 TEST(VoxelGridStaleCache, AccessorReadAfterWriteIsConsistent) {
   Bonxai::VoxelGrid<int> grid(1.0);
   auto accessor = grid.createAccessor();
@@ -417,8 +431,9 @@ TEST(VoxelGridRootMap, InnerGridsAreNotMovedByInsertion) {
 }
 
 // Code that goes through rootMap() changes the map behind the accessors' back, erasing
-// and inserting roots. The accessors must notice, whoever changed the map.
-TEST(VoxelGridRootMap, AccessorsSurviveChangesThroughRootMap) {
+// and inserting roots other than the ones they cached: they must find what is left. Erasing
+// a root that an accessor cached is not supported, see VoxelGrid::rootMap().
+TEST(VoxelGridRootMap, AccessorsSurviveChangesToOtherRoots) {
   Bonxai::VoxelGrid<int> grid(1.0);
   auto writer = grid.createAccessor();
   for (int i = 0; i < 10; ++i) {
