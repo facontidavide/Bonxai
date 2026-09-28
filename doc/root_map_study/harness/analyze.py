@@ -40,14 +40,13 @@ NAMES = {
     "akmap_raw_pack": "unordered_dense map, raw pointer",
     "bflat192_inl_pack": "boost unordered_flat_map 1.92, InnerGrids in the map",
     "bnode192_pack": "boost unordered_node_map 1.92",
-    "real_this": "unordered_dense map, in Bonxai (this branch)",
+    "real_this": "CoordMap, in Bonxai (this branch)",
     "real_coordmap": "CoordMap, in Bonxai (d6b4d88)",
     "real_main": "std::unordered_map, in Bonxai (main)",
-    "real_seg": "unordered_dense segmented_map, in Bonxai",
 }
 HARNESS = ["coordmap", "akmap_inl_pack", "akseg_pack", "akmap_up_pmxA", "akmap_raw_pack",
            "bflat192_inl_pack", "bnode192_pack"]
-REAL = ["real_coordmap", "real_this", "real_seg", "real_main"]
+REAL = ["real_coordmap", "real_this", "real_main"]
 
 
 def load(path):
@@ -150,7 +149,7 @@ def rule(h, p):
     if seg and flat:
         print(f"unordered_dense map against segmented_map, every time: {flat['all'] / seg['all']:.3f} "
               f"(the map is preferred only at 0.95 or less)")
-    for v in ("real_this", "real_seg"):
+    for v in ("real_this",):
         t = p.get(v)
         if not t:
             continue
@@ -191,7 +190,7 @@ def main():
     table(runs, REAL, "real_coordmap", skip=("alloc",))
     rule(h, p)
     print("\n# main, CoordMap and this branch, every time, medians in ms (ratio to main)\n")
-    side_by_side(runs, [v for v in ["real_main", "real_coordmap", "real_this", "real_seg"] if any(k[0] == v for k in runs)])
+    side_by_side(runs, ["real_main", "real_coordmap", "real_this"])
     growth(os.path.join(out, "growth.jsonl"))
 
 

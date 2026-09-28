@@ -19,18 +19,7 @@
 #include <utility>
 #include <vector>
 
-#include "detail/unordered_dense.h"
-#include "grid_coord.hpp"
-
-#ifndef BONXAI_NOINLINE
-#if defined(__GNUC__) || defined(__clang__)
-#define BONXAI_NOINLINE __attribute__((noinline))
-#elif defined(_MSC_VER)
-#define BONXAI_NOINLINE __declspec(noinline)
-#else
-#define BONXAI_NOINLINE
-#endif
-#endif
+#include "coord_map.hpp"
 #include "grid_allocator.hpp"
 #include "grid_coord.hpp"
 #include "mask.hpp"
@@ -187,25 +176,7 @@ class VoxelGrid {
  public:
   using LeafGrid = Grid<DataT>;
   using InnerGrid = Grid<std::shared_ptr<LeafGrid>>;
-
-  /// The hash of a root key: unordered_dense mixes it further. Each coordinate is
-  /// multiplied on its own: packed in one word, x and y would be read with one 64 bits
-  /// load, which cannot be forwarded from the 32 bits stores that write a key computed
-  /// field by field, and the lookups would stop overlapping.
-  struct RootKeyHash {
-    uint64_t operator()(const CoordT& p) const noexcept {
-      return (uint64_t(uint32_t(p.x)) * UINT64_C(0x9e3779b97f4a7c15)) ^
-             (uint64_t(uint32_t(p.y)) * UINT64_C(0xc2b2ae3d27d4eb4f)) ^
-             (uint64_t(uint32_t(p.z)) * UINT64_C(0x165667b19e3779f9));
-    }
-  };
-
-  /// ankerl::unordered_dense's map, vendored in bonxai/detail. It keeps the InnerGrids in
-  /// one array, in insertion order: inserting a root may move all of them to a larger
-  /// array, and erasing one moves the last into its place. The accessors check the root
-  /// they cached before using it; code that holds a reference to an InnerGrid must not
-  /// keep it across an insertion or an erasure.
-  using RootMap = unordered_dense::map<CoordT, InnerGrid, RootKeyHash>;
+  using RootMap = CoordMap<InnerGrid>;
 
   /**
    * @brief VoxelGrid constructor
@@ -220,13 +191,6 @@ class VoxelGrid {
 
   VoxelGrid(VoxelGrid&& other) = default;
   VoxelGrid& operator=(VoxelGrid&& other) = default;
-
-  /// Frees the nodes last to first, as clear(CLEAR_MEMORY) does: the root map's own
-  /// destructor would free them first to last, and glibc would hand the memory back to the
-  /// kernel, for the next grid to fault in again (2x the time of creating a wide grid).
-  ~VoxelGrid() {
-    clear(CLEAR_MEMORY);
-  }
 
   uint32_t innetBits() const {
     return shape_.INNER_BITS;
@@ -320,7 +284,7 @@ class VoxelGrid {
     /// @brief lastInnerGrid returns the pointer to the InnerGrid in the cache.
     [[nodiscard]] const InnerGrid* lastInnerGrid() const {
       refreshCache();
-      return cachedRoot(prev_root_coord_);
+      return prev_inner_ptr_;
     }
 
     /// @brief lastLeafGrid returns the pointer to the LeafGrid in the cache.
@@ -351,29 +315,6 @@ class VoxelGrid {
       cached.z = key.z;
     }
 
-    /// The InnerGrid of root_key, if it is the root in the cache and still where the
-    /// accessor saw it. The root map may have moved it since: to a larger array when a
-    /// root was inserted, or into the place of an erased root. Whoever did it, this or
-    /// another accessor, or code going through rootMap(), the cached pointer is used only if
-    /// the array is the same and the key at that position is still root_key.
-    const InnerGrid* cachedRoot(const CoordT& root_key) const {
-      if (prev_root_ == nullptr || root_key != prev_root_coord_) {
-        return nullptr;
-      }
-      const auto& values = grid_.root_map.values();
-      if (values.data() != prev_values_ || prev_root_ >= values.data() + values.size() ||
-          prev_root_->first != root_key) {
-        return nullptr;
-      }
-      return &prev_root_->second;
-    }
-
-    void cacheRoot(const CoordT& root_key, const typename RootMap::value_type* root) const {
-      cacheKey(prev_root_coord_, root_key);
-      prev_root_ = root;
-      prev_values_ = grid_.root_map.values().data();
-    }
-
     /// Drop the cache if the grid released the nodes that these pointers refer to.
     void refreshCache() const {
       if (cache_epoch_ == grid_.cache_epoch_) {
@@ -382,7 +323,7 @@ class VoxelGrid {
       cache_epoch_ = grid_.cache_epoch_;
       prev_root_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
       prev_inner_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
-      prev_root_ = nullptr;
+      prev_inner_ptr_ = nullptr;
       prev_leaf_ptr_ = nullptr;
     }
 
@@ -390,9 +331,7 @@ class VoxelGrid {
     mutable uint32_t cache_epoch_;
     mutable CoordT prev_root_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
     mutable CoordT prev_inner_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
-    // the root in the cache: its place in the root map's array, and where that array was
-    mutable const typename RootMap::value_type* prev_root_ = nullptr;
-    mutable const typename RootMap::value_type* prev_values_ = nullptr;
+    mutable const InnerGrid* prev_inner_ptr_ = nullptr;
     mutable const LeafGrid* prev_leaf_ptr_ = nullptr;
   };
 
@@ -460,10 +399,9 @@ class VoxelGrid {
         int32_t x, int32_t y, int32_t z, bool create_if_missing);
 
     // The cache lives in ConstAccessor, which is a dependent base class.
-    using ConstAccessor::cachedRoot;
     using ConstAccessor::cacheKey;
-    using ConstAccessor::cacheRoot;
     using ConstAccessor::prev_inner_coord_;
+    using ConstAccessor::prev_inner_ptr_;
     using ConstAccessor::prev_leaf_ptr_;
     using ConstAccessor::prev_root_coord_;
     using ConstAccessor::refreshCache;
@@ -764,10 +702,10 @@ typename VoxelGrid<DataT, Shape>::LeafGrid* VoxelGrid<DataT, Shape>::Accessor::f
     int32_t x, int32_t y, int32_t z, bool create_if_missing) {
   refreshCache();
   const CoordT coord{x, y, z};
+  auto* inner_ptr = const_cast<InnerGrid*>(prev_inner_ptr_);
   const CoordT root_key = mutable_grid_.getRootKey(coord);
-  auto* inner_ptr = const_cast<InnerGrid*>(cachedRoot(root_key));
 
-  if (!inner_ptr) {
+  if (root_key != prev_root_coord_ || !inner_ptr) {
     auto& root_map = mutable_grid_.root_map;
     auto it = root_map.find(root_key);
     if (it == root_map.end()) {
@@ -777,7 +715,9 @@ typename VoxelGrid<DataT, Shape>::LeafGrid* VoxelGrid<DataT, Shape>::Accessor::f
       it = root_map.try_emplace(root_key, mutable_grid_.shape_.INNER_BITS).first;
     }
     inner_ptr = &(it->second);
-    cacheRoot(root_key, &*it);
+    // update the cache
+    cacheKey(prev_root_coord_, root_key);
+    prev_inner_ptr_ = inner_ptr;
   }
 
   const uint32_t inner_index = mutable_grid_.getInnerIndex(coord);
@@ -800,16 +740,18 @@ inline const typename VoxelGrid<DataT, Shape>::LeafGrid*
 VoxelGrid<DataT, Shape>::ConstAccessor::findLeaf(int32_t x, int32_t y, int32_t z) const {
   refreshCache();
   const CoordT coord{x, y, z};
+  const InnerGrid* inner_ptr = prev_inner_ptr_;
   const CoordT root_key = grid_.getRootKey(coord);
-  const InnerGrid* inner_ptr = cachedRoot(root_key);
 
-  if (!inner_ptr) {
+  if (root_key != prev_root_coord_ || !inner_ptr) {
     auto it = grid_.root_map.find(root_key);
     if (it == grid_.root_map.end()) {
       return nullptr;
     }
     inner_ptr = &(it->second);
-    cacheRoot(root_key, &*it);
+    // update the cache
+    cacheKey(prev_root_coord_, root_key);
+    prev_inner_ptr_ = inner_ptr;
   }
 
   const uint32_t inner_index = grid_.getInnerIndex(coord);
@@ -823,14 +765,9 @@ VoxelGrid<DataT, Shape>::ConstAccessor::findLeaf(int32_t x, int32_t y, int32_t z
 
 template <typename DataT, typename Shape>
 inline size_t VoxelGrid<DataT, Shape>::memUsage() const {
-  // the root map: its index, where each group of 16 buckets holds their fingerprints and
-  // counters (bucket_type) and 16 positions in the array of values; the key of each root;
-  // the spare capacity of that array. inner_grid.memUsage() below counts the InnerGrids
-  const auto& values = root_map.values();
-  constexpr size_t group_bytes = sizeof(typename RootMap::bucket_type) +
-                                 16 * sizeof(typename RootMap::bucket_type::value_idx_type);
-  size_t total_size = root_map.bucket_count() / 16 * group_bytes + values.size() * sizeof(CoordT) +
-                      (values.capacity() - values.size()) * sizeof(values[0]);
+  // the index of the root map, and the key of each root: inner_grid.memUsage() below
+  // counts the rest of each node
+  size_t total_size = root_map.memUsage() + root_map.size() * sizeof(CoordT);
 
   for (const auto& [key, inner_grid] : root_map) {
     total_size += inner_grid.memUsage();
@@ -849,16 +786,7 @@ inline size_t VoxelGrid<DataT, Shape>::memUsage() const {
 template <typename DataT, typename Shape>
 inline void VoxelGrid<DataT, Shape>::clear(ClearOption opt) {
   if (opt == CLEAR_MEMORY) {
-    {
-      // Last to first. The InnerGrids allocated their arrays in insertion order: freed front
-      // to back, in increasing addresses, glibc merges them into the top of the heap and
-      // hands it back to the kernel, and the next grid faults it in again.
-      auto values = std::move(root_map).extract();
-      while (!values.empty()) {
-        values.pop_back();
-      }
-    }
-    RootMap().swap(root_map);
+    root_map.clear();
     leaf_block_allocator_.clear();
     ++cache_epoch_;
     return;

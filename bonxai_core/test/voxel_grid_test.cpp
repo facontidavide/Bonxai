@@ -383,36 +383,30 @@ TEST(VoxelGridStaleCache, AccessorReadAfterWriteIsConsistent) {
   EXPECT_EQ(*value, 42);
 }
 
-// The root map keeps the InnerGrids in one array, which it moves to a larger one as it
-// grows. An accessor that cached a root before must find it where it is now, rather than
-// read the array that was freed: the address sanitizer catches the latter.
-TEST(VoxelGridRootMap, AccessorsSurviveGrowth) {
+// The accessors cache a raw pointer to the InnerGrid stored in the root map, so the
+// container must not move its elements when a new root is inserted. CoordMap allocates
+// every value on its own and does not, but this is worth pinning: it rules out the flat
+// hash maps, whose whole point is to move their values around.
+TEST(VoxelGridRootMap, InnerGridsAreNotMovedByInsertion) {
   Bonxai::VoxelGrid<int> grid(1.0);
-  auto writer = grid.createAccessor();
-  const Bonxai::CoordT first{0, 0, 0};
-  writer.setValue(first, 42);
+  auto accessor = grid.createAccessor();
 
-  // both cache the root of `first`
-  auto early_writer = grid.createAccessor();
-  auto reader = grid.createConstAccessor();
-  ASSERT_NE(early_writer.value(first), nullptr);
-  ASSERT_NE(reader.value(first), nullptr);
+  const Bonxai::CoordT first{0, 0, 0};
+  accessor.setValue(first, 42);
+  // this is exactly the pointer that an Accessor caches
   const auto* first_inner = &(grid.rootMap().find(grid.getRootKey(first))->second);
 
-  // enough roots to make the array grow several times
+  // enough roots to force the container to grow several times
   for (int i = 1; i < 10000; ++i) {
-    writer.setValue({i * 32, 0, 0}, i);
+    accessor.setValue({i * 32, 0, 0}, i);
   }
-  const auto* first_inner_now = &(grid.rootMap().find(grid.getRootKey(first))->second);
-  EXPECT_NE(first_inner, first_inner_now) << "the test no longer makes the root map move";
 
-  // another leaf of the root of `first`: the accessors go through the root they cached
-  const Bonxai::CoordT same_root{8, 0, 0};
-  early_writer.setValue(same_root, 7);
-  const int* value = reader.value(same_root);
-  ASSERT_NE(value, nullptr);
-  EXPECT_EQ(*value, 7);
-  value = reader.value(first);
+  const auto* first_inner_now = &(grid.rootMap().find(grid.getRootKey(first))->second);
+  EXPECT_EQ(first_inner, first_inner_now) << "the root map moved an InnerGrid on insertion";
+
+  // and every value is still readable
+  auto reader = grid.createConstAccessor();
+  const int* value = reader.value(first);
   ASSERT_NE(value, nullptr);
   EXPECT_EQ(*value, 42);
   for (int i = 1; i < 10000; ++i) {
@@ -422,16 +416,15 @@ TEST(VoxelGridRootMap, AccessorsSurviveGrowth) {
   }
 }
 
-// Code that goes through rootMap() changes the map behind the accessors' back: erasing a
-// root moves the last one into its place, inserting one puts it where the last was. The
-// accessors must notice, whoever changed the map.
+// Code that goes through rootMap() changes the map behind the accessors' back, erasing
+// and inserting roots. The accessors must notice, whoever changed the map.
 TEST(VoxelGridRootMap, AccessorsSurviveChangesThroughRootMap) {
   Bonxai::VoxelGrid<int> grid(1.0);
   auto writer = grid.createAccessor();
   for (int i = 0; i < 10; ++i) {
     writer.setValue({i * 32, 0, 0}, i);
   }
-  // a reader that caches the last root, the one that erasing another moves
+  // a reader that caches the last root
   auto reader = grid.createConstAccessor();
   ASSERT_NE(reader.value({9 * 32, 0, 0}), nullptr);
 
@@ -442,7 +435,7 @@ TEST(VoxelGridRootMap, AccessorsSurviveChangesThroughRootMap) {
   ASSERT_NE(value, nullptr);
   EXPECT_EQ(*value, 90);
 
-  // a new root, in the place where the last one was before the erasure
+  // a new root
   const Bonxai::CoordT new_root{-32, 0, 0};
   grid.rootMap().try_emplace(grid.getRootKey(new_root), grid.innetBits());
   EXPECT_EQ(reader.value({9 * 32 + 16, 0, 0}), nullptr);
@@ -458,9 +451,9 @@ TEST(VoxelGridRootMap, AccessorsSurviveChangesThroughRootMap) {
   EXPECT_EQ(reader.value({0, 0, 0}), nullptr);
 }
 
-// releaseUnusedMemory() erases the empty roots, and the root map fills the holes with
-// other roots: every accessor must drop the pointers it cached, and then find exactly what
-// is left.
+// releaseUnusedMemory() erases the empty roots, and a root map may fill the holes with
+// other roots, as unordered_dense's maps do: every accessor must drop the pointers it
+// cached, and then find exactly what is left.
 TEST(VoxelGridRootMap, AccessorsSurviveReleasingManyRoots) {
   Bonxai::VoxelGrid<int> grid(1.0);
   auto writer = grid.createAccessor();

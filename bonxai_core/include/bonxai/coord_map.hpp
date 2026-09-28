@@ -8,10 +8,6 @@
 
 #pragma once
 
-// CoordMap is not used by VoxelGrid at the moment: its root map is unordered_dense's map.
-// It is kept, with its tests, until the comparison of the two on bare metal is done: see
-// doc/root_map_study/README.md. VoxelGrid used it as its RootMap at commit d6b4d88.
-
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>

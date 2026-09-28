@@ -1,0 +1,395 @@
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.38840332811539413}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1639.9478839994117}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.441425851465827}
+{"round": 0, "variant": "this", "test": "NanoVDBReadOnly_Iterate/min_time:1.000", "ms": 0.36990260620610366, "cells": 48499.0}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.1318843409883683}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 2.161529792053251}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 14.81074867962924}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.4734553510562861}
+{"round": 1, "variant": "this", "test": "NanoVDB_WideCreate/min_time:1.000", "ms": 1050.100520998967}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.5644798467469763}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.23864145801281353, "cells": 48499.0}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.23594082448981804, "cells": 48499.0}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.3841298157534945}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.26596087957962733, "cells": 48499.0}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 7.277397666671301}
+{"round": 1, "variant": "coordmap", "test": "MemoryUsage", "ms": 1.4219986042007803e-15, "Bonxai_MB": 10.25393, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.4676628266201444}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.08863251211687}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.2800971532933603, "cells": 48499.0}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.0596487830723655}
+{"round": 0, "variant": "this", "test": "NanoVDB_Query/1/min_time:1.000", "ms": 1.4811285031579533}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 414.8889196670401}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.24028110948750667, "cells": 48499.0}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.5621447816998824}
+{"round": 1, "variant": "this", "test": "NanoVDB_WideQuery/1/min_time:1.000", "ms": 14.54049295959218}
+{"round": 1, "variant": "this", "test": "NanoVDBReadOnly_Query/1/min_time:1.000", "ms": 1.3401847572226775}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 29.51947186952368}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.5405805274725195}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.2502480766244904, "cells": 48499.0}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.5003415697257163}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.42234644617202405}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.8814804161010033}
+{"round": 1, "variant": "this", "test": "NanoVDB_Create/min_time:1.000", "ms": 5.0309122056695745}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 31.709766590872526}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.24628463107092105, "cells": 48499.0}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.46270333993299034}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.2875373860297525}
+{"round": 1, "variant": "this", "test": "NanoVDB_WideQuery/0/min_time:1.000", "ms": 24.03801876189102}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 161.8276316248739}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.41622603922753}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 159.239279375015}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1531.3842860014117}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1536.112835001404}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 42.082625588163324}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 42.613543696929945}
+{"round": 1, "variant": "this", "test": "MemoryUsage", "ms": 1.809999957913533e-15, "Bonxai_MB": 10.255226, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.250538875741659, "cells": 48499.0}
+{"round": 0, "variant": "this", "test": "NanoVDB_WideQuery/0/min_time:1.000", "ms": 24.37673396428051}
+{"round": 0, "variant": "seg", "test": "MemoryUsage", "ms": 1.848999090725556e-15, "Bonxai_MB": 10.239866, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 1, "variant": "this", "test": "NanoVDB_Convert/min_time:1.000", "ms": 3.2701166118955363}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 12.554719376351786}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 2.258534616849151}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 15.261956254725414}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 31.23752620459444}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.4141458608089157}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 29.876283553173206}
+{"round": 0, "variant": "this", "test": "NanoVDB_WideCreate/min_time:1.000", "ms": 1081.2632349989144}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 48.697829689601726}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.5400436853934074}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 14.710443526901047}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.038692270654015}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.469784807166633}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 146.91067900015955}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 33.96152406664138}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.2880360202961703}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.45117805195165345}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.2458285526550623}
+{"round": 1, "variant": "this", "test": "NanoVDBReadOnly_Query/0/min_time:1.000", "ms": 0.32286701886803504}
+{"round": 0, "variant": "this", "test": "NanoVDB_Convert/min_time:1.000", "ms": 3.351573698992459}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.2453639368888818}
+{"round": 1, "variant": "this", "test": "NanoVDB_Update/min_time:1.000", "ms": 0.605472952504022}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.6791167357587256}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 31.144206125039393}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.0668902282095771}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 8.274727815465408}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 163.37473344416745}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.1389241172655127}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 51.8138785926028}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.6184838799068848}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.899116233694851}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.0869531770198286}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1681.580300002679}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 34.47050885370118}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.5100873869549821}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.3863365541102241}
+{"round": 1, "variant": "main", "test": "MemoryUsage", "ms": 1.839001924963668e-15, "Bonxai_MB": 10.236949, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 0, "variant": "this", "test": "NanoVDB_Create/min_time:1.000", "ms": 4.965671942850999}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.6112375559407204}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 32.9247862499952}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.41633881823561725}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 28.064062274543353}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.5350991070315558}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.6491519433271744}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 7.230337257722792}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.24356844484072301, "cells": 48499.0}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 13.694599252418802}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.23714488934069425, "cells": 48499.0}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 6.404264650225765}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.40747851762224124}
+{"round": 0, "variant": "this", "test": "NanoVDB_Update/min_time:1.000", "ms": 0.6091416996527854}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.1176080047963701}
+{"round": 0, "variant": "this", "test": "NanoVDBReadOnly_Query/1/min_time:1.000", "ms": 1.3443897745663378}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.41609724599328984}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.459292988581015}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.0516052698658094}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.4366215113931721}
+{"round": 1, "variant": "this", "test": "NanoVDB_Query/0/min_time:1.000", "ms": 0.31367516170498855}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.5176388071886084}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.41435414416566924}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 34.81336252384824}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.4625509129302712}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.24032638300063236, "cells": 48499.0}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1532.808587002364}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 27.76718704000814}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.1096506043685117}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 6.751166198144197}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 27.049506549006118}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.4416595066537867}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 28.500713428559035}
+{"round": 0, "variant": "main", "test": "MemoryUsage", "ms": 1.8130012904293835e-15, "Bonxai_MB": 10.236949, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 1, "variant": "this", "test": "NanoVDB_Query/1/min_time:1.000", "ms": 1.481554952280597}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1552.1449410007335}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.1203329166642688}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 15.808560550549677}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.2766652368006109, "cells": 48499.0}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.41615560047702976}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 28.5927724600333}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.44328299495201495}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1485.861567998654}
+{"round": 1, "variant": "seg", "test": "MemoryUsage", "ms": 1.491000148234889e-15, "Bonxai_MB": 10.239866, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.4640134033000115}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 143.63307471441138}
+{"round": 0, "variant": "this", "test": "NanoVDBReadOnly_Query/0/min_time:1.000", "ms": 0.3279604117364497}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.5508024469508895}
+{"round": 0, "variant": "this", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 158.46315588876473}
+{"round": 0, "variant": "coordmap", "test": "MemoryUsage", "ms": 2.5909976102411746e-15, "Bonxai_MB": 10.25393, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.3868323304152061}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.1370088597054797}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.45668628806887435}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.24568048382529406, "cells": 48499.0}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.4262871573767922}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 33.66112582498317}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.1257698560469533}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.24855369484930553, "cells": 48499.0}
+{"round": 0, "variant": "this", "test": "NanoVDB_Query/0/min_time:1.000", "ms": 0.31886761384346435}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 8.695427401242476}
+{"round": 1, "variant": "main", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.2608655746087152, "cells": 48499.0}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1563.0550330024562}
+{"round": 0, "variant": "this", "test": "NanoVDB_WideQuery/1/min_time:1.000", "ms": 14.666371134020682}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.46887425911925956}
+{"round": 0, "variant": "main", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 422.79186933349894}
+{"round": 1, "variant": "this", "test": "NanoVDBReadOnly_Iterate/min_time:1.000", "ms": 0.4044413895345529, "cells": 48499.0}
+{"round": 0, "variant": "this", "test": "MemoryUsage", "ms": 1.8470018403604624e-15, "Bonxai_MB": 10.255226, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 1, "variant": "seg", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.5036785868264315}
+{"round": 0, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 26.67620388675923}
+{"round": 1, "variant": "this", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.2676321349216745, "cells": 48499.0}
+{"round": 0, "variant": "seg", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.4733339128240159}
+{"round": 1, "variant": "coordmap", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.1294283734362882}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.38430426596023354}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.4960584896503421}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.6551391514816896}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 6.28338296186392}
+{"round": 2, "variant": "coordmap", "test": "MemoryUsage", "ms": 2.1679989004041996e-15, "Bonxai_MB": 10.25393, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.262567776428435}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.4162833582984074}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.23915973373271435, "cells": 48499.0}
+{"round": 2, "variant": "main", "test": "MemoryUsage", "ms": 1.901000359794125e-15, "Bonxai_MB": 10.236949, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 7.495919076151446}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.25018277370905534, "cells": 48499.0}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 8.432130491015783}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.0409825369672436}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 33.630410738017716}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.4409117733090167}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.14572246153625}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 168.86727037490343}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 15.368711154617802}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.1158050531390917}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 434.1754989994418}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 29.105807163283984}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 33.51986709527583}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.24755587360900388, "cells": 48499.0}
+{"round": 2, "variant": "this", "test": "NanoVDB_Update/min_time:1.000", "ms": 0.6086875024014282}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.43024774742452987}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 29.917615195660368}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.0624528501222983}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.5609053888894977}
+{"round": 2, "variant": "this", "test": "MemoryUsage", "ms": 1.7819984350353477e-15, "Bonxai_MB": 10.255226, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 141.36645539983874}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.7533201278658193}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1666.9458680007665}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.2665276769818011, "cells": 48499.0}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1528.3440429993789}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 27.381298490189355}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.38524735110378727}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.4437320432622251}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1553.6179500013532}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.4497415820447586}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 8.406851351191152}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.1408077996508235}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.4544747618887064}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.0448014214287267}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.23692221771454977, "cells": 48499.0}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1547.570679002092}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 458.73364933261956}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 30.43438502123884}
+{"round": 2, "variant": "this", "test": "NanoVDBReadOnly_Query/1/min_time:1.000", "ms": 1.3629443865611641}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.054690093749855}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.24654973808110262, "cells": 48499.0}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 26.49148654718202}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 2.11077245030428}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.4244422403360425}
+{"round": 2, "variant": "seg", "test": "MemoryUsage", "ms": 1.3309982023201883e-15, "Bonxai_MB": 10.239866, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.25968163159851765, "cells": 48499.0}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 158.30620499966446}
+{"round": 3, "variant": "this", "test": "NanoVDB_Update/min_time:1.000", "ms": 0.6030571966726919}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.1321581229586797}
+{"round": 3, "variant": "seg", "test": "MemoryUsage", "ms": 2.238997694803402e-15, "Bonxai_MB": 10.239866, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 2, "variant": "this", "test": "NanoVDB_Query/0/min_time:1.000", "ms": 0.31723410869539553}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.2487407114685243}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.1158768803808339}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.4785081434403441}
+{"round": 2, "variant": "this", "test": "NanoVDB_Create/min_time:1.000", "ms": 5.357784090225131}
+{"round": 3, "variant": "this", "test": "NanoVDB_Convert/min_time:1.000", "ms": 3.3434896534474463}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 169.6732987497853}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.4683163575015152}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 2.160889730769738}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 32.413352857128345}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1543.4217469992288}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.2421532233549197, "cells": 48499.0}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.4851021250014578}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 31.94259435717651}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 45.62830696769167}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.43422151371872897}
+{"round": 2, "variant": "this", "test": "NanoVDB_Convert/min_time:1.000", "ms": 3.2800064318757904}
+{"round": 3, "variant": "this", "test": "NanoVDB_WideQuery/0/min_time:1.000", "ms": 22.447165844855117}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.461282266666302}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 161.5176030002961}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.40899921761949426}
+{"round": 3, "variant": "main", "test": "MemoryUsage", "ms": 1.77300171344541e-15, "Bonxai_MB": 10.236949, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 29.362616021740983}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.2350224402279053, "cells": 48499.0}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.0393826337717456}
+{"round": 3, "variant": "this", "test": "NanoVDBReadOnly_Query/0/min_time:1.000", "ms": 0.32460815945119625}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 26.760571115398935}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.1509782963603004}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.612653501728652}
+{"round": 3, "variant": "this", "test": "NanoVDB_WideCreate/min_time:1.000", "ms": 1040.500555998733}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.149165043889}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.41465478838151343}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.4654516190648844}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.38777533284110954}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.27418771000794157, "cells": 48499.0}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.5786949876110974}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 39.796362257142654}
+{"round": 2, "variant": "this", "test": "NanoVDB_WideCreate/min_time:1.000", "ms": 1034.6294769988162}
+{"round": 3, "variant": "this", "test": "NanoVDBReadOnly_Query/1/min_time:1.000", "ms": 1.3408193749988584}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.242205376074691, "cells": 48499.0}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.46432712207460325}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 6.523692964433899}
+{"round": 2, "variant": "this", "test": "NanoVDB_WideQuery/1/min_time:1.000", "ms": 14.445999814419451}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 146.2166668570717}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 33.488167463407834}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.24708640369620752, "cells": 48499.0}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.8703741068102062}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.2537218076845018, "cells": 48499.0}
+{"round": 3, "variant": "this", "test": "NanoVDB_Query/1/min_time:1.000", "ms": 1.5052797946508385}
+{"round": 2, "variant": "this", "test": "NanoVDBReadOnly_Iterate/min_time:1.000", "ms": 0.37095271360371423, "cells": 48499.0}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.2781907063761174, "cells": 48499.0}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.5332889291759411}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 14.655441361723437}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.132741706311196}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.453600711133035}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.4065357906704513}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 29.477582255299723}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.5063973122953681}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 13.93710976767717}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.41632529205115526}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.411685805088117}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.535780917666838}
+{"round": 3, "variant": "this", "test": "MemoryUsage", "ms": 1.79200287675485e-15, "Bonxai_MB": 10.255226, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 33.45889911623428}
+{"round": 3, "variant": "this", "test": "NanoVDB_Query/0/min_time:1.000", "ms": 0.3134820090146341}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.45710495849597654}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1548.7426559993764}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.243390009484129, "cells": 48499.0}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.4785413148901136}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.5214173505508088}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 28.52972464582611}
+{"round": 3, "variant": "this", "test": "NanoVDBReadOnly_Iterate/min_time:1.000", "ms": 0.3857921329676813, "cells": 48499.0}
+{"round": 2, "variant": "this", "test": "NanoVDB_Query/1/min_time:1.000", "ms": 1.483818553078852}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 7.8602044254267085}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 13.29010672899666}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.6208372213200897}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.4117845200357819}
+{"round": 3, "variant": "coordmap", "test": "MemoryUsage", "ms": 1.7370002751704306e-15, "Bonxai_MB": 10.25393, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.0362998245741393}
+{"round": 2, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 15.563567056812063}
+{"round": 2, "variant": "this", "test": "NanoVDBReadOnly_Query/0/min_time:1.000", "ms": 0.32893326777807164}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 54.360707076949225}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.46559613780348963}
+{"round": 3, "variant": "main", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.49353435787142086}
+{"round": 2, "variant": "this", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.547666617581534}
+{"round": 3, "variant": "this", "test": "NanoVDB_Create/min_time:1.000", "ms": 4.886653041391802}
+{"round": 3, "variant": "this", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.4571513449909964}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 49.82547740736562}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1692.5956240011146}
+{"round": 3, "variant": "this", "test": "NanoVDB_WideQuery/1/min_time:1.000", "ms": 14.235629701024383}
+{"round": 2, "variant": "main", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.9054276040825695}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1554.4985019987507}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.4647015649420602}
+{"round": 2, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 13.454471680015558}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 29.084994733340057}
+{"round": 3, "variant": "coordmap", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.2580974795004773}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.23628160110907814, "cells": 48499.0}
+{"round": 2, "variant": "this", "test": "NanoVDB_WideQuery/0/min_time:1.000", "ms": 22.65566379033008}
+{"round": 3, "variant": "seg", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.5233094108660463}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 12.409080315305514}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 27.81703571999969}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 29.116009766012404}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.4435730389854944}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.43131524667342386}
+{"round": 4, "variant": "this", "test": "NanoVDBReadOnly_Query/1/min_time:1.000", "ms": 1.3437511636001327}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 158.91104677777753}
+{"round": 4, "variant": "this", "test": "NanoVDB_WideQuery/0/min_time:1.000", "ms": 22.562945450044932}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.2418475288697822, "cells": 48499.0}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.38455841356447173}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1521.3700999993307}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.683781770430834}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 12.84028039251701}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.927325286685474}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.4286623036793393}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.044573916853946}
+{"round": 4, "variant": "this", "test": "MemoryUsage", "ms": 1.8290011212229728e-15, "Bonxai_MB": 10.255226, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.38743943575390494}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.4725334537814727}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.2506039953709945, "cells": 48499.0}
+{"round": 4, "variant": "this", "test": "NanoVDB_Update/min_time:1.000", "ms": 0.6085870282460377}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.1118760780266765}
+{"round": 4, "variant": "this", "test": "NanoVDBReadOnly_Query/0/min_time:1.000", "ms": 0.32816712059905173}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 5.630291044066013}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.4685595068535558}
+{"round": 4, "variant": "this", "test": "NanoVDBReadOnly_Iterate/min_time:1.000", "ms": 0.37107021482302366, "cells": 48499.0}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.24843400181219974, "cells": 48499.0}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 2.121913760245728}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.2561649953306566}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.4562985449484917}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 26.791975641486406}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.5387082398679874}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.116683080204217}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 31.487370711127163}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.289398372567654}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.5046675805404136}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 28.593642520794067}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 32.56676972092083}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.133265771765525}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.27496691844313975, "cells": 48499.0}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.2342084611706114, "cells": 48499.0}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 6.658644314548312}
+{"round": 4, "variant": "seg", "test": "MemoryUsage", "ms": 1.4809993444941938e-15, "Bonxai_MB": 10.239866, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.4531050372895709}
+{"round": 4, "variant": "this", "test": "NanoVDB_Convert/min_time:1.000", "ms": 3.277677885749004}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.037828585308338}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 25.436283418159952}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/0/min_time:1.000", "ms": 46.50156016662852}
+{"round": 4, "variant": "coordmap", "test": "MemoryUsage", "ms": 2.0510015019681304e-15, "Bonxai_MB": 10.25393, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_Create<StaticShape<>>/min_time:1.000", "ms": 1.0590131250010568}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1541.885321999871}
+{"round": 4, "variant": "this", "test": "NanoVDB_Query/1/min_time:1.000", "ms": 1.4791899581966284}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 401.0129956671638}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.4620761216922382}
+{"round": 4, "variant": "this", "test": "NanoVDB_WideQuery/1/min_time:1.000", "ms": 13.856366019777257}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1503.5232929985793}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 13.963707310678235}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_Create<DynamicShape>/min_time:1.000", "ms": 1.1329946222979677}
+{"round": 4, "variant": "main", "test": "MemoryUsage", "ms": 1.7050006135832517e-15, "Bonxai_MB": 10.236949, "NanoVDB_ReadOnly_MB": 10.749088, "cells": 48499.0}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 140.37472890013308}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<4, 3>>/1/min_time:1.000", "ms": 31.18084530433407}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.4169220800240001}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.26526340685709976, "cells": 48499.0}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_Update<StaticShape<>>/min_time:1.000", "ms": 0.4148358739313198}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.6104698331435616}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_Iterate<DynamicShape>/min_time:1.000", "ms": 0.2497008410584377, "cells": 48499.0}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_WideQuery<StaticShape<>>/0/min_time:1.000", "ms": 39.33232525721125}
+{"round": 4, "variant": "this", "test": "NanoVDB_WideCreate/min_time:1.000", "ms": 1034.8884439990798}
+{"round": 4, "variant": "seg", "test": "Bonxai_NV_Query<StaticShape<>>/1/min_time:1.000", "ms": 1.5653321859681535}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_WideCreate<StaticShape<>>/min_time:1.000", "ms": 157.552453374592}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_Update<DynamicShape>/min_time:1.000", "ms": 0.5373430805212018}
+{"round": 4, "variant": "this", "test": "NanoVDB_Query/0/min_time:1.000", "ms": 0.32002359047824913}
+{"round": 4, "variant": "this", "test": "NanoVDB_Create/min_time:1.000", "ms": 4.774011452699032}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_WideQuery<StaticShape<>>/1/min_time:1.000", "ms": 7.670578043247145}
+{"round": 4, "variant": "this", "test": "Bonxai_NV_Iterate<StaticShape<>>/min_time:1.000", "ms": 0.24229671631954058, "cells": 48499.0}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_Query<StaticShape<>>/0/min_time:1.000", "ms": 0.415114965804319}
+{"round": 4, "variant": "main", "test": "Bonxai_NV_WideCreate<StaticShape<4, 3>>/min_time:1.000", "ms": 1637.6010960011627}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_Query<DynamicShape>/1/min_time:1.000", "ms": 1.4644931812502666}
+{"round": 4, "variant": "coordmap", "test": "Bonxai_NV_Query<DynamicShape>/0/min_time:1.000", "ms": 0.4721910219296205}

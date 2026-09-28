@@ -24,4 +24,8 @@ The code built into Bonxai (`real_this` against `real_coordmap`) must confirm th
 - **Second application** (VM, after the fix, contenders only): every contender scored 0.79
   to 0.92, so CoordMap goes. Built into Bonxai, unordered_dense's `map` scored 0.85 and
   passed the end to end check by a hair, 1.0499. The branch switched to it.
-- **Third application**: on bare metal, with `harness/run_all.sh`. To be done.
+- **Third application** (bare metal, i7-13700H, two runs of 8 rounds): in the harness,
+  every contender scores 0.74 to 0.80, so CoordMap would go. Built into Bonxai,
+  unordered_dense's `map` scores 0.87 to 0.89 but is 1.06 to 1.08 end to end, and
+  `segmented_map` 0.92 and 1.08: the code built into Bonxai does not confirm the harness.
+  CoordMap stays, by the rule this time.

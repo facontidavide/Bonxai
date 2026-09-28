@@ -7,9 +7,10 @@ accessor's cached inner node goes through that map.
 
 This records why the map is now a `CoordMap` (`bonxai/coord_map.hpp`) rather than a
 `std::unordered_map`, how it works, and how it was chosen: against 20 hash maps, each at
-its best, on 21 workloads. It is not the fastest map on every operation, the ones it loses
-are in *Where CoordMap loses*, and keeping it departs from the rule written down before
-the comparison: see *The decision*.
+its best, on 21 workloads, then on bare metal against the finalists built into Bonxai. It
+is not the fastest map on every operation, the ones it loses are in *Where CoordMap
+loses*; it stays because, built into Bonxai, none of the alternatives is as fast end to
+end, which the rule written down before the comparison requires: see *The decision*.
 
 ## What was wrong
 
@@ -237,7 +238,9 @@ the guarantee that the accessors rely on. `VoxelGridRootMap.AccessorsSurviveRele
 has a reader cache the last of 100 roots, releases half of them, and checks that the reader
 then finds every remaining cell, none of the released ones, and a write made through
 another accessor: a map that fills the holes of erased roots with other roots, as
-unordered_dense's do, must pass it too. `CoordHash.DoesNotCollapseOnLargeGrids` checks
+unordered_dense's do, must pass it too. `VoxelGridRootMap.AccessorsSurviveChangesThroughRootMap`
+erases and inserts roots through `rootMap()`, behind the accessors' back, and checks what
+a reader finds afterwards. `CoordHash.DoesNotCollapseOnLargeGrids` checks
 `std::hash<CoordT>` on three grids of root keys, two of them crossing zero, and on its low
 20 bits alone. CI runs all of them with and without the address and undefined behaviour
 sanitizers.
@@ -253,10 +256,12 @@ case, the comparison was redone with every header only map of
 [hashtable-bench](https://github.com/renzibei/hashtable-bench) and a few more, each at its
 best, on 21 workloads. It partly was: `CoordMap` is not the fastest map on every operation,
 nor by the usual summaries of them, where Martin Ankerl's
-[unordered_dense](https://github.com/martinus/unordered_dense) is ahead, and the rule
-written down before the final results would have replaced it. It stays because,
-in what Bonxai's users pay for, the total time of their workloads and the end to end ones,
-no alternative is better without a flaw that the averages hide. The details follow.
+[unordered_dense](https://github.com/martinus/unordered_dense) is ahead. It stays because
+finding cells that are there, what ray casting and the queries of a map spend their time
+on, is faster with it: built into Bonxai, unordered_dense's maps are 8% slower end to end,
+and the rule written down before the final results does not let them in. The details
+follow; the tables of this section come from a virtual machine, *On bare metal* gives the
+final numbers.
 
 ### The candidates
 
@@ -428,34 +433,83 @@ a library that scores 0.95 or less and is at most 5% slower end to end; within 5
 way, prefer the established library; keep `CoordMap` only if it is at least 5% better.
 Between unordered_dense's two maps, prefer `segmented_map`, which, like
 `std::unordered_map`, never moves an `InnerGrid` when inserting, unless the flat `map` is
-another 5% better on the code that ships.
+another 5% better. The code built into Bonxai must confirm what the harness says.
 
-By that rule, `CoordMap` should have gone: seven configurations of unordered_dense and
-boost score 0.95 or less. On the code that ships, `segmented_map` scores 0.96, and is 3%
-slower in total time and 8% slower end to end: the rule rejects it. The flat `map` scores
-0.89, is 4% faster in total time and 2% slower end to end: the rule picks it.
+On the virtual machine, the harness picked unordered_dense's `map`, and the branch
+switched to it. That machine turned out as noisy as the differences being decided (one
+binary, three runs: 631, 729 and 776 ms), and an earlier finding against that map, 2.7
+times as long to build 1M roots, was the benchmark's: glibc caps the threshold above
+which it maps memory directly at 32 MB, the harness's `mallopt(M_MMAP_THRESHOLD)` did not
+keep the flat maps' larger arrays, and each build paid for page faults that the next one
+would not have. The final comparison ran on bare metal, *On bare metal* below.
 
-It was not picked, and this departs from the rule. Its values live in one array, which it
-copies whole every time it doubles: 120 bytes per root, 116 MB at 1M roots. Building the
-1M root map took 2.7 times as long, 1.5 s instead of 0.56. Each of those copies happens at
-once, inside one insertion: a pause that grows with the map, where `CoordMap` only copies
-its 16 bytes buckets. It would also invalidate the references to `InnerGrid`s that code
-using `rootMap()` holds, whenever the map grows. The rule's averages cannot see either.
+There, in the harness, every contender scores 0.74 to 0.80: by the rule `CoordMap` goes.
+Built into Bonxai, the rule's last clause does not confirm it: unordered_dense's `map` is
+0.87 to 0.89 every time but 1.06 to 1.08 end to end, over the 5% allowed, in both runs;
+`segmented_map`, 0.92 every time and 1.08 end to end, fails the same way. The loss is
+consistent: the random and endpoint queries of `rays10` and the queries of the
+probabilistic map took unordered_dense 6 to 28% longer in 46 of their 48 pairs of runs
+(eight rounds, two runs), the two others in the same round.
 
-The other candidates fall on one side or the other of the same line.
-`boost::unordered_flat_map` holds the `InnerGrid`s the same way and copies them the same
-way: building the 1M map took it 1.4 times as long. The maps that never move an
-`InnerGrid` on insertion take more total time or more time end to end: `segmented_map` 3%
-and 8% on the code that ships, boost's node maps 7 to 8% more total time, unordered_dense's
-`map` holding pointers 9 to 10% more end to end, phmap's maps and absl's node map 9 to 11%
-more total time.
+`CoordMap` therefore stays. If misses, building and clearing, or the map on its own matter
+more to your use of Bonxai than finding cells, unordered_dense's `map` is the one to try:
+2 to 3 times faster on misses, 5 to 15% faster to build, and half of `main`'s time
+overall. The change to `VoxelGrid` is in this branch's history: commit `adc6c23`, and
+`0564a50`, a destructor that frees the nodes last to first, without which creating and
+destroying a large grid takes twice as long.
 
-That leaves `CoordMap`, against the rule: it stays for the time that Bonxai's users spend
-finding cells, where no map is faster on the largest map and none takes less than 0.84 of
-its time on any other, and because it grows without copying its values. If misses, the map
-on its own or short lived grids matter more to your use of Bonxai than hits,
-`segmented_map` is the one to try: vendored and renamed so that it cannot clash with
-another copy, it takes a change of about 30 lines to `VoxelGrid`, all measured above.
+## On bare metal
+
+An Intel Core i7-13700H laptop, GCC 15, turbo off, the performance governor. Every run a
+process of its own, pinned to a performance core whose hyperthread sibling stays idle,
+two cores sharing the rounds, the variants in a new random order every round; medians of
+eight rounds. The scripts and the raw results are in `doc/root_map_study`. The first run
+compared every contender, in the harness and built into Bonxai; the second, the three
+built into Bonxai, unordered_dense's `map` with the destructor of `0564a50`. The numbers
+below are the second's, relative to `main`: lower is better.
+
+| | `CoordMap` (this) | unordered_dense `map` | unordered_dense `segmented_map` |
+|---|---|---|---|
+| large maps | 0.48 | **0.44** | 0.45 |
+| key patterns | 0.45 | **0.36** | 0.37 |
+| small maps | 0.73 | **0.61** | 0.62 |
+| **end to end** | **0.75** | 0.81 | 0.81 |
+| allocator | 0.58 | **0.55** | 0.67 |
+| every time | 0.56 | **0.50** | 0.52 |
+
+| | `main`, ms | `CoordMap` (this) | `map` | `segmented_map` |
+|---|---|---|---|---|
+| wide: build | 181 | 0.51 | 0.47 | 0.43 |
+| wide: query a cell that is there | 41.6 | 0.66 | 0.68 | 0.71 |
+| wide: query a cell that is not | 29.8 | 0.27 | 0.24 | 0.27 |
+| wide: `forEachCell` | 45.7 | 0.58 | 0.60 | 0.63 |
+| wide: `clear()` | 150 | 0.40 | 0.36 | 0.37 |
+| 1M: build | 710 | 0.46 | 0.40 | 0.39 |
+| 1M: query a cell that is there | 149 | 0.62 | 0.71 | 0.76 |
+| 1M: query a cell that is not | 95.1 | 0.43 | 0.25 | 0.29 |
+| 1M: update every cell | 184 | 0.55 | 0.60 | 0.61 |
+| 250k random roots: query a cell that is there | 166 | 0.75 | 0.92 | 0.93 |
+| 250k random roots: query a cell that is not | 83.6 | 0.35 | 0.13 | 0.14 |
+| room: shuffled queries | 1.91 | 0.69 | 0.84 | 0.86 |
+| rays: cast all the rays | 2090 | 0.96 | 0.96 | 0.96 |
+| rays: random queries | 90.1 | 0.52 | 0.59 | 0.60 |
+| rays: query the endpoints | 47.2 | 0.71 | 0.86 | 0.85 |
+| probabilistic map: insert the clouds | 4430 | 0.92 | 0.94 | 0.95 |
+| probabilistic map: query | 167 | 0.72 | 0.83 | 0.81 |
+| wide, glibc's defaults: build again | 319 | 0.38 | 0.34 | 0.76 |
+| 970k roots: build, memory kept | 775 | 0.50 | 0.44 | 0.43 |
+| 970k roots: worst insertion, ms | 93.9 | 11.2 | 12.8 | 14.7 |
+
+The two alternatives trade finding cells for missing them: 2 to 3 times faster on misses,
+faster to build and clear, 3 to 25% slower to find a cell that is there. In the harness,
+where the maps are compared on their own as well, the other finalists were estimated the
+same way: `boost::unordered_flat_map` at 0.50 of `main` overall and 0.75 end to end, but
+2 times slower to iterate and clear than the others, and with a worst insertion of 21 ms,
+96 on the first build.
+
+The spread of a measurement over the eight rounds, max over min, has a median of 4% and a
+90th percentile of 10% in the second run; the first, with a language server busy during
+part of it, 11% and 28%. The end to end differences held in 46 of 48 pairs of runs.
 
 ## What bit along the way
 
@@ -538,7 +592,8 @@ answers nearly every step. What it gains comes from the cache being copied field
 field. The first build of the 1M map in a process faults in 3 GB of fresh memory; the
 later ones reuse it, and show the map itself.
 
-These numbers come from a 4 core Xeon (Skylake-SP) virtual machine, where the 64 bits
+*On bare metal* has the final numbers. These come from a 4 core Xeon (Skylake-SP) virtual
+machine, where the 64 bits
 division that `std::unordered_map` does on every lookup is slow and page faults are very
 expensive: the ratios may differ on another CPU, the ordering should not.
 
@@ -554,38 +609,37 @@ cmake --build build
 ```
 
 NanoVDB 13.1.0 here, and `tools::build::Grid`, its mutable structure. Each benchmark ran
-in a process of its own, `main`'s and this branch's in turn: in one process, the
-allocator's state left by the previous benchmark moves the timings of creation by up to
-2.5 times, NanoVDB's included. Medians of 3, in ms, with the ratio to `main` in brackets.
+in a process of its own: in one process, the allocator's state left by the previous
+benchmark moves the timings of creation by up to 2.5 times, NanoVDB's included.
+`doc/root_map_study/harness/nanovdb.py` builds it against `main` and this branch and runs
+it that way. On the machine of *On bare metal*, medians of 5, in ms, with the ratio to
+`main` in brackets.
 
 | | main | this | NanoVDB |
 |---|---|---|---|
-| room: create | 1.14 | 1.20 (1.06) | 3.87 |
-| room: update | 0.402 | 0.383 (0.95) | 0.675 |
-| room: query, in scan order | 0.455 | 0.435 (0.96) | 0.330 |
-| room: query, shuffled | 1.74 | 1.26 (0.73) | 1.33 |
-| room: `forEachCell` | 0.278 | 0.272 (0.98) | 0.366 (`NanoGrid`) |
-| wide: create | 1264 | 393 (0.31) | 1373 |
-| wide: query a cell that is there | 83.5 | 56.6 (0.68) | 46.8 |
-| wide: query a cell that is not | 56.1 | 16.1 (0.29) | 30.4 |
-| wide, `StaticShape<4, 3>`: create | 2438 | 1999 (0.82) | |
-| wide, `StaticShape<4, 3>`: query a cell that is there | 103 | 77.3 (0.75) | |
-| wide, `StaticShape<4, 3>`: query a cell that is not | 58.2 | 28.1 (0.48) | |
+| room: create | 1.12 | 1.05 (0.94) | 4.97 |
+| room: update | 0.416 | 0.387 (0.93) | 0.609 |
+| room: query, in scan order | 0.456 | 0.415 (0.91) | 0.317 |
+| room: query, shuffled | 1.90 | 1.29 (0.68) | 1.48 |
+| room: `forEachCell` | 0.265 | 0.237 (0.89) | 0.371 (`NanoGrid`) |
+| wide: create | 423 | 162 (0.38) | 1041 |
+| wide: query a cell that is there | 42.1 | 26.7 (0.63) | 22.7 |
+| wide: query a cell that is not | 29.5 | 8.41 (0.28) | 14.5 |
+| wide, `StaticShape<4, 3>`: create | 1667 | 1543 (0.93) | |
+| wide, `StaticShape<4, 3>`: query a cell that is there | 49.8 | 29.9 (0.60) | |
+| wide, `StaticShape<4, 3>`: query a cell that is not | 33.6 | 13.3 (0.40) | |
 
 On random access to the wide map, Bonxai's default shape now takes 1.2 times as long as
-NanoVDB when the cell is there, where `main` took 1.8 times as long, and half as long when
-it is not. On the room, shuffled queries are now level with NanoVDB; in scan order, where
-the accessors' caches answer nearly every query and the root map hardly matters, NanoVDB
-stays 1.3 times faster. The wider `StaticShape<4, 3>` does not pay off, with `main` or
-with this: fewer roots, but inner grids of 64 KB.
-
-Only creating the room takes longer than with `main`, 6%, within the spread of the three
-runs: it is the creation and destruction of small grids with glibc's default settings of
-*Where CoordMap loses*.
+NanoVDB when the cell is there, where `main` took 1.9 times as long, and 0.6 times as long
+when it is not. On the room, shuffled queries are now faster than NanoVDB's; in scan
+order, where the accessors' caches answer nearly every query and the root map hardly
+matters, NanoVDB stays 1.3 times faster. The wider `StaticShape<4, 3>` does not pay off,
+with `main` or with this: fewer roots, but inner grids of 64 KB.
 
 Comparing the creation timings of the two libraries says little here: they measure how
 glibc trades memory with the kernel, which each library's pattern of allocation triggers
-differently. Setting `GLIBC_TUNABLES=glibc.malloc.trim_threshold=4294967295`, the room
+differently. On the virtual machine, setting
+`GLIBC_TUNABLES=glibc.malloc.trim_threshold=4294967295`, the room
 takes NanoVDB 1.5 ms instead of 4.3, and Bonxai 4.8 ms instead of 1.3, `main` 5.0 instead
 of 1.2: that setting also freezes the threshold above which glibc maps memory directly,
 which then applies to every chunk of 512 leaves, 1 MB of `float` cells. Between `main` and

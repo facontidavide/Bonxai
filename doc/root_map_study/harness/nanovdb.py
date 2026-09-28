@@ -21,8 +21,7 @@ REPO = subprocess.run(["git", "-C", HERE, "rev-parse", "--show-toplevel"],
 WORK = os.environ.get("ROOT_MAP_WORK", os.path.join(os.path.dirname(REPO), "bonxai_root_map_work"))
 BIN = os.path.join(WORK, "bin_nanovdb")
 OUT = os.path.join(WORK, "results", "nanovdb.jsonl")
-HEADERS = {"main": os.path.join(WORK, "main"), "coordmap": os.path.join(WORK, "coordmap"), "this": REPO,
-           "seg": os.path.join(REPO, ".worktrees", "segmented")}
+HEADERS = {"main": os.path.join(WORK, "main"), "coordmap": os.path.join(WORK, "coordmap"), "this": REPO}
 opts = {"--cores": "2", "--rounds": "5"}
 for i in range(1, len(sys.argv) - 1, 2):
     opts[sys.argv[i]] = sys.argv[i + 1]
@@ -75,14 +74,14 @@ def report():
         if "ms" in d:
             key = "Bonxai_MB" if "Bonxai_MB" in d else "ms"
             res[(d["test"].replace("/min_time:1.000", "").replace("Bonxai_NV_", ""), d["variant"])].append(d[key])
-    print("| benchmark | main | CoordMap | this | segmented | spread (max/min, this) |\n|---|---|---|---|---|---|")
+    print("| benchmark | main | CoordMap | this | spread (max/min, this) |\n|---|---|---|---|---|")
     for t in dict.fromkeys(k[0] for k in res):
         m = {v: statistics.median(res[(t, v)]) for v in HEADERS if (t, v) in res}
         if "main" in m:
             cells = [f"{m['main']:.4g}"] + [f"{m[v]:.4g} ({m[v] / m['main']:.2f})" if v in m else ""
-                                            for v in ("coordmap", "this", "seg")]
+                                            for v in ("coordmap", "this")]
         else:
-            cells = ["", "", f"{m['this']:.4g}", ""]
+            cells = ["", "", f"{m['this']:.4g}"]
         xs = res[(t, "this")]
         print(f"| {t} | " + " | ".join(cells) + f" | {max(xs) / min(xs):.2f} |")
 
