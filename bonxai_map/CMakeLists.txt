@@ -5,6 +5,9 @@ add_library(bonxai_map
     src/pcl_utils.cpp
     src/probabilistic_map.cpp)
 
+# static by default, and linked into bonxai_ros's shared library bonxai_server
+set_target_properties(bonxai_map PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 add_library(Bonxai::bonxai_map ALIAS bonxai_map)
 
 target_compile_definitions(bonxai_map PRIVATE
