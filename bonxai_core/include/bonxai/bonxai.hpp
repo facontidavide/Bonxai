@@ -170,8 +170,24 @@ class VoxelGrid {
   GridBlockAllocator<DataT> leaf_block_allocator_;
 
   // Bumped whenever inner/leaf nodes are released, so that the Accessors can tell that the
-  // pointers they cached do not refer to live nodes anymore.
-  uint32_t cache_epoch_ = 0;
+  // pointers they cached do not refer to live nodes anymore. Moving a grid bumps it too, on
+  // both sides: the moved-from grid's accessors cached nodes it no longer owns, and a
+  // move-assigned grid's accessors cached nodes that were destroyed.
+  struct CacheEpoch {
+    uint32_t value = 0;
+
+    CacheEpoch() = default;
+    CacheEpoch(CacheEpoch&& other) noexcept
+        : value(other.value) {
+      ++other.value;
+    }
+    CacheEpoch& operator=(CacheEpoch&& other) noexcept {
+      ++value;
+      ++other.value;
+      return *this;
+    }
+  };
+  CacheEpoch cache_epoch_;
 
  public:
   using LeafGrid = Grid<DataT>;
@@ -266,7 +282,7 @@ class VoxelGrid {
    public:
     ConstAccessor(const VoxelGrid& grid)
         : grid_(grid),
-          cache_epoch_(grid.cache_epoch_) {}
+          cache_epoch_(grid.cache_epoch_.value) {}
 
     /** @brief value getter.
      *
@@ -298,10 +314,10 @@ class VoxelGrid {
    protected:
     /// Drop the cache if the grid released the nodes that these pointers refer to.
     void refreshCache() const {
-      if (cache_epoch_ == grid_.cache_epoch_) {
+      if (cache_epoch_ == grid_.cache_epoch_.value) {
         return;
       }
-      cache_epoch_ = grid_.cache_epoch_;
+      cache_epoch_ = grid_.cache_epoch_.value;
       prev_root_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
       prev_inner_coord_ = {std::numeric_limits<int32_t>::max(), 0, 0};
       prev_inner_ptr_ = nullptr;
@@ -441,6 +457,8 @@ inline size_t Grid<DataT>::memUsage() const {
 
 template <typename DataT, typename Shape>
 inline void VoxelGrid<DataT, Shape>::releaseUnusedMemory() {
+  // first: if anything below throws, the accessors must not use the leaves already freed
+  ++cache_epoch_.value;
   std::vector<CoordT> keys_to_delete;
   for (auto& [key, inner_grid] : root_map) {
     for (auto inner_it = inner_grid.mask().beginOn(); inner_it; ++inner_it) {
@@ -459,7 +477,6 @@ inline void VoxelGrid<DataT, Shape>::releaseUnusedMemory() {
     root_map.erase(key);
   }
   leaf_block_allocator_.releaseUnusedMemory();
-  ++cache_epoch_;
 }
 
 template <typename DataT, typename Shape>
@@ -766,7 +783,7 @@ inline void VoxelGrid<DataT, Shape>::clear(ClearOption opt) {
   if (opt == CLEAR_MEMORY) {
     root_map.clear();
     leaf_block_allocator_.clear();
-    ++cache_epoch_;
+    ++cache_epoch_.value;
     return;
   }
   auto accessor = createAccessor();

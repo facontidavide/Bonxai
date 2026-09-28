@@ -36,10 +36,20 @@ class GridBlockAllocator {
   GridBlockAllocator& operator=(const GridBlockAllocator& other) = delete;
   GridBlockAllocator& operator=(GridBlockAllocator&& other) = default;
 
+  /// What the leaves need when they give their block back. It does not live in the
+  /// allocator, which moves with its VoxelGrid: every chunk points to it, and so every
+  /// leaf, through the chunk its Deleter holds.
+  struct State {
+    std::mutex mutex;
+    size_t size = 0;  // blocks in use
+  };
+
   struct Chunk {
-    Chunk()
-        : mask(3, true) {}
+    explicit Chunk(std::shared_ptr<State> s)
+        : mask(3, true),
+          state(std::move(s)) {}
     Mask mask;
+    std::shared_ptr<State> state;
     // not a std::vector: resize() would memset the whole chunk, and no cell is
     // read before it is written
     std::unique_ptr<char[]> data;
@@ -51,29 +61,30 @@ class GridBlockAllocator {
   class Deleter {
    public:
     Deleter() = default;
-    Deleter(GridBlockAllocator* allocator, std::shared_ptr<Chunk> chunk, uint32_t index)
-        : allocator_(allocator),
-          chunk_(std::move(chunk)),
+    Deleter(std::shared_ptr<Chunk> chunk, uint32_t index)
+        : chunk_(std::move(chunk)),
           index_(index) {}
 
     void operator()() const {
       assert(index_ < blocks_per_chunk);
-      std::unique_lock lock(*allocator_->mutex_);
+      State& state = *chunk_->state;
+      std::unique_lock lock(state.mutex);
       chunk_->mask.setOn(index_);
-      allocator_->size_--;
+      state.size--;
     }
 
    private:
-    GridBlockAllocator* allocator_ = nullptr;
     std::shared_ptr<Chunk> chunk_;
     uint32_t index_ = 0;
   };
 
   std::pair<DataT*, Deleter> allocateBlock();
 
+  /// Leaves still alive give their blocks back to the chunks they came from, which they
+  /// keep alive, and not to the new ones.
   void clear() {
     chunks_.clear();
-    size_ = 0;
+    state_ = std::make_shared<State>();
     capacity_ = 0;
   }
 
@@ -84,7 +95,7 @@ class GridBlockAllocator {
   }
 
   size_t size() const {
-    return size_;
+    return state_->size;
   }
 
   size_t memUsage() const;
@@ -96,9 +107,8 @@ class GridBlockAllocator {
   size_t log2dim_ = 0;
   size_t block_bytes_ = 0;
   size_t capacity_ = 0;
-  size_t size_ = 0;
   std::vector<std::shared_ptr<Chunk>> chunks_;
-  std::unique_ptr<std::mutex> mutex_;
+  std::shared_ptr<State> state_;
 
   void addNewChunk();
 };
@@ -111,21 +121,21 @@ template <typename DataT>
 inline GridBlockAllocator<DataT>::GridBlockAllocator(size_t log2dim)
     : log2dim_(log2dim),
       block_bytes_(std::pow((1 << log2dim), 3) * sizeof(DataT)),
-      mutex_(new std::mutex) {}
+      state_(std::make_shared<State>()) {}
 
 template <typename DataT>
 inline std::pair<DataT*, typename GridBlockAllocator<DataT>::Deleter>
 GridBlockAllocator<DataT>::allocateBlock() {
-  std::unique_lock lock(*mutex_);
-  if (size_ >= capacity_) {
+  std::unique_lock lock(state_->mutex);
+  if (state_->size >= capacity_) {
     // Need more memory. Create a new chunk
     addNewChunk();
     // first index of new chunk is available
     std::shared_ptr<Chunk> chunk = chunks_.back();
     DataT* ptr = reinterpret_cast<DataT*>(chunk->data.get());
     chunk->mask.setOff(0);
-    size_++;
-    return {ptr, Deleter(this, chunk, 0)};
+    state_->size++;
+    return {ptr, Deleter(chunk, 0)};
   }
 
   // There must be available memory, somewhere. Search in reverse order
@@ -137,8 +147,8 @@ GridBlockAllocator<DataT>::allocateBlock() {
       size_t data_index = block_bytes_ * mask_index;
       DataT* ptr = reinterpret_cast<DataT*>(&chunk->data[data_index]);
       chunk->mask.setOff(mask_index);
-      size_++;
-      return {ptr, Deleter(this, chunk, mask_index)};
+      state_->size++;
+      return {ptr, Deleter(chunk, mask_index)};
     }
   }
   throw std::logic_error("Unexpected end of GridBlockAllocator::allocateBlock");
@@ -146,7 +156,7 @@ GridBlockAllocator<DataT>::allocateBlock() {
 
 template <typename DataT>
 inline void GridBlockAllocator<DataT>::releaseUnusedMemory() {
-  std::unique_lock lock(*mutex_);
+  std::unique_lock lock(state_->mutex);
   int to_be_erased_count = 0;
   auto remove_if = std::remove_if(chunks_.begin(), chunks_.end(), [&](const auto& chunk) -> bool {
     bool notUsed = chunk->mask.isOn();
@@ -164,7 +174,7 @@ inline size_t GridBlockAllocator<DataT>::memUsage() const {
 
 template <typename DataT>
 inline void GridBlockAllocator<DataT>::addNewChunk() {
-  auto chunk = std::make_shared<Chunk>();
+  auto chunk = std::make_shared<Chunk>(state_);
   chunk->data.reset(new char[blocks_per_chunk * block_bytes_]);
   chunks_.push_back(chunk);
   capacity_ += blocks_per_chunk;
