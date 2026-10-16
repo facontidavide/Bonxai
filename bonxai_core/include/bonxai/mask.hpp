@@ -153,12 +153,14 @@ class Mask {
     return SIZE;
   }
 
+  /// Index of the lowest bit on in v, which must not be zero.
+  static uint32_t FindLowestOn(uint64_t v);
+  /// Number of bits on in v.
+  static uint32_t CountOn(uint64_t v);
+
  private:
   /// bits of the last word that are inside SIZE
   uint64_t lastWordMask() const;
-
-  static uint32_t FindLowestOn(uint64_t v);
-  static uint32_t CountOn(uint64_t v);
 
   // Number of bits in mask
   uint32_t SIZE;

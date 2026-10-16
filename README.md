@@ -129,6 +129,19 @@ An accessor caches the last nodes it visited, but it remains valid for the entir
 lifetime of the grid: `VoxelGrid::clear()` and `VoxelGrid::releaseUnusedMemory()`
 free nodes, and the accessors detect it and refresh their cache transparently.
 
+## Compact storage, for sparse data
+
+By default a leaf allocates a value for every one of its cells. When few of them are on,
+as on the surfaces seen by a LiDAR, `CompactStorage` keeps the values of the cells that are on only:
+
+```c++
+Bonxai::VoxelGrid<float, Bonxai::StaticShape<>, Bonxai::CompactStorage> grid(voxel_resolution);
+```
+
+The API is the same. Turning a cell on or off takes time proportional to the cells already on
+in its leaf, and moves the values of that leaf: a pointer returned by `value()` is valid until
+a cell of the same leaf is turned on or off. For dense volumes, keep the default storage.
+
 ## Note about multi-threading
 
 `Bonxai::VoxelGrid` is **not** thread-safe, for write operations.
@@ -159,4 +172,5 @@ use multi-threading, but each thread should have its own `accessor`.
 It is... complicated.
 
 If you need to store very sparse point clouds, Bonxai will probably use more memory (20-40% more).
+For those, see `CompactStorage` above.
 If the point cloud is relatively dense, Bonxai might use less memory than Octomap (even less than half).
