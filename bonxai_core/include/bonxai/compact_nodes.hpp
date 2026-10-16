@@ -31,60 +31,37 @@ inline constexpr bool HARDWARE_POPCOUNT = true;
 inline constexpr bool HARDWARE_POPCOUNT = false;
 #endif
 
-/**
- * @brief The number of bits on in words[0, count) and in last; words holds MAX_COUNT words.
- * Without a popcount instruction, the bits on in each byte are summed across the words, and
- * the bytes of that sum are added once, at the end.
- */
-template <uint32_t MAX_COUNT, bool HARDWARE = HARDWARE_POPCOUNT>
-inline uint32_t CountOnPrefix(const uint64_t* words, uint32_t count, uint64_t last) {
+/// The number of bits on in v; without a popcount instruction, a SWAR sum rather than a call.
+template <bool HARDWARE = HARDWARE_POPCOUNT>
+inline uint32_t CountOn(uint64_t v) {
   if constexpr (HARDWARE) {
-    uint32_t total = Mask::CountOn(last);
-    for (uint32_t i = 0; i < count; ++i) {
-      total += Mask::CountOn(words[i]);
-    }
-    return total;
+    return Mask::CountOn(v);
   } else {
-    // every word loaded and masked past count: no loop exit to mispredict, and it vectorizes
-    constexpr bool FIXED_LENGTH = MAX_COUNT <= 30;
-    const uint32_t length = FIXED_LENGTH ? MAX_COUNT : count;
-    const auto word = [&](uint32_t i) {
-      return words[i] & (FIXED_LENGTH && i >= count ? 0 : ~uint64_t(0));
-    };
-    static_assert(
-        (MAX_COUNT + 1) * 64 <= 0xFFFF,
-        "Without a popcount instruction, a node of CompactStorage has 32^3 children at most");
-    constexpr uint64_t M1 = 0x5555555555555555;
-    constexpr uint64_t M2 = 0x3333333333333333;
-    constexpr uint64_t M4 = 0x0F0F0F0F0F0F0F0F;
-    constexpr uint64_t M8 = 0x00FF00FF00FF00FF;
-    const auto byte_counts = [](uint64_t v) {
-      v -= (v >> 1) & M1;
-      v = (v & M2) + ((v >> 2) & M2);
-      return (v + (v >> 4)) & M4;
-    };
-    uint64_t bytes = byte_counts(last);
-    uint64_t lanes = 0;
-    for (uint32_t i = 0; i < length; ++i) {
-      bytes += byte_counts(word(i));
-      // a byte holds the counts of 31 words at most, 31 * 8 = 248: move them to 16 bits lanes
-      if (!FIXED_LENGTH && i % 30 == 29) {
-        lanes += (bytes & M8) + ((bytes >> 8) & M8);
-        bytes = 0;
-      }
-    }
-    lanes += (bytes & M8) + ((bytes >> 8) & M8);
-    return static_cast<uint32_t>((lanes * 0x0001000100010001) >> 48);
+    v -= (v >> 1) & 0x5555555555555555;
+    v = (v & 0x3333333333333333) + ((v >> 2) & 0x3333333333333333);
+    v = (v + (v >> 4)) & 0x0F0F0F0F0F0F0F0F;
+    return static_cast<uint32_t>((v * 0x0101010101010101) >> 56);
   }
 }
 
+/// The number of bits on in the words before each word of a mask.
+template <uint32_t WORD_COUNT>
+struct WordOffsets {
+  uint16_t before[WORD_COUNT] = {};
+};
+
+template <>
+struct WordOffsets<1> {};
+
 }  // namespace details
 
-/// A mask of (2^LOG2DIM)^3 bits, sized at compile time: it takes no more room than its bits.
+/// A mask of (2^LOG2DIM)^3 bits, sized at compile time, that counts the bits below any bit in
+/// O(1): it keeps the number of bits on before each of its words.
 template <uint32_t LOG2DIM>
-class StaticMask {
+class StaticMask : private details::WordOffsets<((uint32_t(1) << (3 * LOG2DIM)) + 63) / 64> {
  public:
   static constexpr uint32_t WORD_COUNT = ((uint32_t(1) << (3 * LOG2DIM)) + 63) / 64;
+  static_assert(LOG2DIM <= 5, "The offsets of the words are 16 bits");
 
   [[nodiscard]] bool isOn(uint32_t n) const {
     return (words_[n >> 6] >> (n & 63)) & 1;
@@ -103,24 +80,29 @@ class StaticMask {
   bool setOn(uint32_t n) {
     const uint64_t bit = uint64_t(1) << (n & 63);
     const bool was_on = (words_[n >> 6] & bit) != 0;
-    words_[n >> 6] |= bit;
+    if (!was_on) {
+      words_[n >> 6] |= bit;
+      shiftOffsets(n >> 6, 1);
+    }
     return was_on;
   }
 
   void setOff(uint32_t n) {
-    words_[n >> 6] &= ~(uint64_t(1) << (n & 63));
+    const uint64_t bit = uint64_t(1) << (n & 63);
+    if (words_[n >> 6] & bit) {
+      words_[n >> 6] &= ~bit;
+      shiftOffsets(n >> 6, -1);
+    }
   }
 
   [[nodiscard]] uint32_t countOn() const {
-    return details::CountOnPrefix<WORD_COUNT>(words_, WORD_COUNT, 0);
+    return offset(WORD_COUNT - 1) + details::CountOn(words_[WORD_COUNT - 1]);
   }
 
   /// The number of bits on below n: where the element of bit n sits in a packed array.
   [[nodiscard]] uint32_t rank(uint32_t n) const {
-    // with one word, n is below 64: a constant word lets the compiler drop the loop
-    const uint32_t word = WORD_COUNT == 1 ? 0 : n >> 6;
-    const uint64_t below = words_[word] & ((uint64_t(1) << (n & 63)) - 1);
-    return details::CountOnPrefix<WORD_COUNT>(words_, word, below);
+    const uint32_t word = n >> 6;
+    return offset(word) + details::CountOn(words_[word] & ((uint64_t(1) << (n & 63)) - 1));
   }
 
   /// Calls func(n) for every bit n that is on, in increasing order.
@@ -134,6 +116,22 @@ class StaticMask {
   }
 
  private:
+  [[nodiscard]] uint32_t offset(uint32_t word) const {
+    if constexpr (WORD_COUNT == 1) {
+      return 0;
+    } else {
+      return this->before[word];
+    }
+  }
+
+  void shiftOffsets(uint32_t word, int delta) {
+    if constexpr (WORD_COUNT > 1) {
+      for (uint32_t i = word + 1; i < WORD_COUNT; ++i) {
+        this->before[i] = static_cast<uint16_t>(this->before[i] + delta);
+      }
+    }
+  }
+
   uint64_t words_[WORD_COUNT] = {};
 };
 
@@ -186,6 +184,15 @@ class CompactLeaf {
       mask_.setOn(n);
       return {&values_[rank], false};
     }
+  }
+
+  /// Turns cell n on with value, whether it was on or off; returns whether it was on.
+  bool insertOrAssign(uint32_t n, const DataT& value) {
+    const auto [cell, was_on] = insert(n, value);
+    if (was_on) {
+      *cell = value;
+    }
+    return was_on;
   }
 
   /// Turns cell n off and destroys its value, moving the others; returns whether it was on.

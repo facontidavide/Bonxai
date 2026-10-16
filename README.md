@@ -140,7 +140,8 @@ Bonxai::VoxelGrid<float, Bonxai::StaticShape<>, Bonxai::CompactStorage> grid(vox
 
 The API is the same. Turning a cell on or off takes time proportional to the cells already on
 in its leaf, and moves the values of that leaf: a pointer returned by `value()` is valid until
-a cell of the same leaf is turned on or off. For dense volumes, keep the default storage.
+a cell of the same leaf is turned on or off. Each access costs a little more than with the
+default storage: keep it for dense volumes, and for small grids that fit in the cache.
 
 ## Note about multi-threading
 

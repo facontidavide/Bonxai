@@ -124,6 +124,13 @@ class Grid {
     }
   }
 
+  /// Turns cell n on with value, whether it was on or off; returns whether it was on.
+  bool insertOrAssign(uint32_t n, const DataT& value) {
+    const bool was_on = mask_.setOn(n);
+    data_[n] = value;
+    return was_on;
+  }
+
   /// Turns cell n off, keeping its value; returns whether it was on.
   bool erase(uint32_t n) {
     return mask_.setOff(n);
@@ -646,12 +653,7 @@ inline bool VoxelGrid<DataT, Shape, Storage>::Accessor::setValue(
   }
 
   const uint32_t index = mutable_grid_.getLeafIndex(coord);
-  LeafGrid* leaf_ptr = mutableLeaf(prev_leaf_ptr_);
-  const auto [cell, was_on] = leaf_ptr->insert(index, value);
-  if (was_on) {
-    *cell = value;
-  }
-  return was_on;
+  return mutableLeaf(prev_leaf_ptr_)->insertOrAssign(index, value);
 }
 
 //----------------------------------

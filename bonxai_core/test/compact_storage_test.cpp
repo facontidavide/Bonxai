@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <map>
 #include <random>
 #include <string>
@@ -256,28 +257,33 @@ TEST(CompactStorage, EveryValueIsDestroyedOnce) {
   EXPECT_EQ(Counted::alive, 0);
 }
 
-// Both ways of counting, whatever the build; full words are where the byte sums could overflow.
-TEST(StaticMask, CountOnPrefixAgreesWithPopcount) {
-  using Bonxai::details::CountOnPrefix;
+// Both ways of counting, whatever the build.
+TEST(StaticMask, CountOnAgreesWithPopcount) {
   std::mt19937_64 rng(3);
-  std::vector<uint64_t> words(64);
-  for (int trial = 0; trial < 100; ++trial) {
-    const bool full = trial % 4 == 0;
-    for (auto& word : words) {
-      word = full ? ~uint64_t(0) : rng();
+  for (int trial = 0; trial < 1000; ++trial) {
+    const uint64_t word = trial == 0 ? ~uint64_t(0) : rng();
+    ASSERT_EQ(Bonxai::details::CountOn<false>(word), Bonxai::Mask::CountOn(word));
+    ASSERT_EQ(Bonxai::details::CountOn<true>(word), Bonxai::Mask::CountOn(word));
+  }
+}
+
+// The offsets of the words follow bits turned on and off, across word boundaries.
+TEST(StaticMask, RankCountsTheBitsBelow) {
+  Bonxai::StaticMask<3> mask;
+  std::vector<bool> bits(512, false);
+  std::mt19937 rng(5);
+  std::uniform_int_distribution<uint32_t> pick(0, 511);
+  for (int step = 0; step < 5000; ++step) {
+    const uint32_t n = pick(rng);
+    if (step % 3 == 0) {
+      mask.setOff(n);
+      bits[n] = false;
+    } else {
+      ASSERT_EQ(mask.setOn(n), bool(bits[n]));
+      bits[n] = true;
     }
-    const uint64_t last = full ? ~uint64_t(0) : rng();
-    uint32_t expected = Bonxai::Mask::CountOn(last);
-    for (uint32_t count = 0; count <= words.size(); ++count) {
-      ASSERT_EQ((CountOnPrefix<64, false>(words.data(), count, last)), expected);
-      ASSERT_EQ((CountOnPrefix<64, true>(words.data(), count, last)), expected);
-      if (count <= 8) {
-        ASSERT_EQ((CountOnPrefix<8, false>(words.data(), count, last)), expected);
-        ASSERT_EQ((CountOnPrefix<8, true>(words.data(), count, last)), expected);
-      }
-      if (count < words.size()) {
-        expected += Bonxai::Mask::CountOn(words[count]);
-      }
-    }
+    const uint32_t probe = pick(rng);
+    ASSERT_EQ(mask.rank(probe), uint32_t(std::count(bits.begin(), bits.begin() + probe, true)));
+    ASSERT_EQ(mask.countOn(), uint32_t(std::count(bits.begin(), bits.end(), true)));
   }
 }
