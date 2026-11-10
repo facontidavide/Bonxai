@@ -64,6 +64,21 @@ Octomap_IterateAllCells     698 us
 - **Update** means modifying the value of an already allocated VoxelGrid.
 - **IterateAllCells** will get the value and the coordinates of all the existing cells.
 
+# Example data
+
+PCD example files are tracked with [Git LFS](https://git-lfs.com/).
+Install Git LFS before cloning, or run `git lfs pull` in an existing checkout
+to download the example data.
+
+To clone without downloading example data:
+
+```bash
+GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/facontidavide/Bonxai.git
+```
+
+When adding or updating PCD files, stage them normally with `git add`.
+The `.gitattributes` rule stores their contents in Git LFS.
+
 # How to use it
 
 The core of **Bonxai** is a header-only library that you can simply copy into your project
