@@ -2,6 +2,10 @@
 
 # 1. Installation
 
+ROS header compatibility uses `.hpp` headers when available and falls back to `.h`
+for older installations. Subscriber QoS uses the legacy API on Humble and Jazzy,
+and the `rclcpp::QoS` API on Kilted and Rolling.
+
 1. Navigate towards your workspace `src` folder
 ```bash
 cd ~/ws_bonxai/src
